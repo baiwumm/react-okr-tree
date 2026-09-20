@@ -44,6 +44,16 @@ export default function App({ data }: { data: TreeNodeData[] }) {
 
 </Callout>
 
+下面这条切换条就是上面那句话的活样例：前六个按钮直接传 `theme`，最后一个「跟随站点主题」是
+`useTheme().resolvedTheme === 'dark' ? 'dark' : 'default'`（next-themes 的站级主题），
+点它的时候树会跟着站点的明暗走，而 `auto` 不会。
+
+import { BasicDemo } from '@/components/demo/basic'
+
+<ThemeSwitcher>
+  <BasicDemo />
+</ThemeSwitcher>
+
 ## 自定义主题 / 覆盖变量
 
 ```css

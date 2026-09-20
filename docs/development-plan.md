@@ -148,7 +148,7 @@
 - [ ] 8.4 过滤与事件组（16–19）：Filter 含 11 个方法按钮 + **空值恢复语义**；OKR Filter 左右同时命中
 - [ ] 8.5 状态组（13–15）：受控与方法 / 懒加载 / Viewport（含 `exportImage` 注入 `toPng` 避开动态导入）
 - [ ] 8.6 交互组（20–24）：手风琴 / 点击展开 / 复选框 / 拖拽 / SVG 连接线（非 svg 时形状按钮 disabled）
-- [ ] 8.7 主题切换条（6 套，含 6.3 第 3 点的「站级 `.dark` ≠ `theme="auto"`」说明与跟随站点主题的变体）
+- [x] 8.7 主题切换条（6 套 + 「跟随站点主题」第七个按钮）：`components/demo/theme-switcher.tsx`，已登记进 MDX 白名单并接在 `content/theme/index.mdx` 那条「`auto` 跟的是媒体查询、不是 `.dark` 类」的警告后面，作为该结论的活样例（不新增任何站点 CSS：跟随站点走的是 `resolvedTheme` → `theme` prop 这条路，另一条「祖先覆盖变量」的路子在页面上用代码块说明）
 - [ ] 8.8 源码展示：`<DemoBlock file>` 在 RSC 侧 `readFileSync` + 构建期 shiki 高亮 + 原生 `<details>` 折叠（已落地，24 个用例复用同一条链路；不做客户端 shiki）
 
 ## 阶段 9：文档、验收与发布
@@ -164,9 +164,12 @@
   - 提前跑过（阶段 7 期间，dist 为今日构建）：`verify:package` publint "All good!" + attw 全 🟢（node10 / node16 CJS / node16 ESM / bundler 四格）；`size` 三条全过——**ESM 18.48 kB / 20 kB（已用掉 92%）**、CSS 3.79 / 4 kB、UMD 16.66 / 21 kB。CSS 与 ESM 余量都很薄，阶段 8/9 若再加特性要先看这两条。覆盖率阈值待 9.4 正式收口时跑 `test:coverage`。
 - [ ] 9.5 CI：`verify` / `peer-matrix`（React 18.2 + `@types/react@18` 下编译一份消费者示例，确保 d.ts 不引用 19 独有类型）/ `visual` / `website-build`（export 静态性断言）/ `website-deploy`（Cloudflare，仅 main）/ `release`（tag → 门禁 → `npm publish --provenance` → GitHub Release）
   - 已落地（阶段 7 期间）：`.github/workflows/ci.yml` 的 `verify`（node 22/24 两档，含 format:check / lint / typecheck / test / coverage / build / verify:dist / verify:package / size / npm pack --dry-run）、`website`（先出库 dist → typecheck:website → next build → verify:export）、`peer-matrix`（pnpm overrides 钉 react ~18.2 / ~18.3 + @types/react ~18.3，跑全套测试）。
-  - 还差三件：① peer-matrix 的**消费者示例**（现有腿只跑库自身测试，编译的是 `src/`；要再加一个用 `paths: {"react-okr-tree": ["../dist/index.d.ts"]}` 的 `tsc --noEmit` 才能真的验到 d.ts）；② `visual.yml`（等阶段 8 有 Demo 路由）；③ release 链路。**部署不走 GH Actions**：与源项目一致由 Cloudflare Workers Builds 跑 `npx wrangler deploy` 读仓库根 `wrangler.jsonc`，所以计划里这条 `website-deploy` 作业取消（等价的静态性断言已在 website job 里）。
+  - ① 已落地：`tests-consumer/consumer.tsx` + `tests-consumer/tsconfig.json`（`paths` 指到 `../dist/index.d.ts`）+ `pnpm verify:peer-types`，已挂进 peer-matrix 作业。写它时撞出三条臆测（`filterNodeMethod` 不做泛型收窄、没有 `onNodeSelect` / `onZoomCommit` / `getCurrentKey` 这三个 prop），全是示例写错而不是库的问题。
+  - 还差两件：② `visual.yml`（等阶段 8 有 Demo 路由）；③ release 链路。**部署不走 GH Actions**：与源项目一致由 Cloudflare Workers Builds 跑 `npx wrangler deploy` 读仓库根 `wrangler.jsonc`，所以计划里这条 `website-deploy` 作业取消（等价的静态性断言已在 website job 里）。
   - 预扫结论（阶段 7 期间，dist 为当日构建）：`dist/index.d.ts` 的公开面上只出现 `ReactNode`(13) / `useSyncExternalStore`(1) 与项目自己的 `useEvent`，没有任何 `@types/react@19` 独有类型——18.2 起这些都在。消费者示例要做的是把这个结论钉成门禁。
-- [ ] 9.6 README（结构见 requirements 7 的「文档」行）：**必须显式写** D7（原地变更与 `refreshData()`）、Q3（增删方法回写源数据）、`nodeKey` 缺失时注册表为空导致哪些方法静默、冻结数据边界、CDN 无开发期警告
+- [x] 9.6 README（结构见 requirements 7 的「文档」行）：**必须显式写** D7（原地变更与 `refreshData()`）、Q3（增删方法回写源数据）、`nodeKey` 缺失时注册表为空导致哪些方法静默、冻结数据边界、CDN 无开发期警告
+  - 已落地 `packages/react-okr-tree/README.md`（657 行，结构与源项目 README 对齐，仅中文）。五处硬性说明全部写了，其中「数据变更检测」独立成节按三条路径分述。
+  - 它反过来查到三处「文档说有、实现没有」：默认导出（D6）与 `'use client'`（R8）确实缺，已补进实现；`getCheckedKeys` 未设 nodeKey 返回 `[]` 是实现/源项目/requirements 三方一致，是我给 agent 的任务书写错，库侧无改动。
 - [ ] 9.7 `shared/api.ts` 驱动文档站 `<ApiTable>`（首版）；`gen:readme` + README 生成段留到 1.1.0（11.4）
 - [ ] 9.8 dist 双路径收口：website 切到引 `dist` 产物跑一遍 24 个 Demo（源项目 6.8 的做法，验证发布产物与源码路径渲染一致）
 - [ ] 9.9 `CHANGELOG.md` 1.0.0、`LICENSE`、`repository` 字段、`npm publish --dry-run`

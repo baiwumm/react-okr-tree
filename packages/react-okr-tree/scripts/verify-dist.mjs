@@ -164,6 +164,28 @@ assert(
 )
 assert(cjs.NODE_KEY === '$treeNodeId', 'require() 可拿到 NODE_KEY')
 
+// D6 + R8 的产物层面落地：默认导出与 RSC 边界指令
+assert(
+  cjs.default != null && cjs.default === cjs.OkrTree,
+  'require() 的 default 与具名 OkrTree 是同一引用（D6）'
+)
+for (const [name, file] of [
+  ['es', distEs],
+  ['cjs', distCjs],
+  ['umd', distUmd],
+]) {
+  const src = readFileSync(file, 'utf8')
+  /**
+   * 必须「以分号或换行收尾」，而不只是开头有这句话：压缩会把 banner 与下一行并成一行，
+   * `"use client"(function(...){...})` 就成了「把字符串当函数调用」，整包在加载期 TypeError。
+   * UMD 的形态正是 `"use client";(function(e,t){...}` ——有分号，紧跟 `(` 是另一条语句。
+   */
+  assert(
+    /^(['"])use client\1(?:;|\r?\n)/.test(src),
+    `${name} 首行是收尾明确的 'use client'（RSC 边界，R8）`
+  )
+}
+
 const umdSource = readFileSync(distUmd, 'utf8')
 assert(/factory\(exports, React\)/.test(umdSource) || /React/.test(umdSource), 'UMD 外部化 react')
 

@@ -42,6 +42,11 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.node } },
   },
   {
+    // benchmark 脚本跑在 Node 里，但自己用 jsdom 造了一份 document/window，读的是浏览器全局
+    files: ['scripts/benchmark.mjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+  {
     files: ['tests/**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'off',

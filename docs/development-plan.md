@@ -126,6 +126,7 @@
 - [ ] 9.5 CI：`verify` / `peer-matrix`（React 18.2 + `@types/react@18` 下编译一份消费者示例，确保 d.ts 不引用 19 独有类型）/ `visual` / `website-build`（export 静态性断言）/ `website-deploy`（Cloudflare，仅 main）/ `release`（tag → 门禁 → `npm publish --provenance` → GitHub Release）
   - 已落地（阶段 7 期间）：`.github/workflows/ci.yml` 的 `verify`（node 22/24 两档，含 format:check / lint / typecheck / test / coverage / build / verify:dist / verify:package / size / npm pack --dry-run）、`website`（先出库 dist → typecheck:website → next build → verify:export）、`peer-matrix`（pnpm overrides 钉 react ~18.2 / ~18.3 + @types/react ~18.3，跑全套测试）。
   - 还差三件：① peer-matrix 的**消费者示例**（现有腿只跑库自身测试，编译的是 `src/`；要再加一个用 `paths: {"react-okr-tree": ["../dist/index.d.ts"]}` 的 `tsc --noEmit` 才能真的验到 d.ts）；② `visual.yml`（等阶段 8 有 Demo 路由）；③ release 链路。**部署不走 GH Actions**：与源项目一致由 Cloudflare Workers Builds 跑 `npx wrangler deploy` 读仓库根 `wrangler.jsonc`，所以计划里这条 `website-deploy` 作业取消（等价的静态性断言已在 website job 里）。
+  - 预扫结论（阶段 7 期间，dist 为当日构建）：`dist/index.d.ts` 的公开面上只出现 `ReactNode`(13) / `useSyncExternalStore`(1) 与项目自己的 `useEvent`，没有任何 `@types/react@19` 独有类型——18.2 起这些都在。消费者示例要做的是把这个结论钉成门禁。
 - [ ] 9.6 README（结构见 requirements 7 的「文档」行）：**必须显式写** D7（原地变更与 `refreshData()`）、Q3（增删方法回写源数据）、`nodeKey` 缺失时注册表为空导致哪些方法静默、冻结数据边界、CDN 无开发期警告
 - [ ] 9.7 `shared/api.ts` 驱动文档站 `<ApiTable>`（首版）；`gen:readme` + README 生成段留到 1.1.0（11.4）
 - [ ] 9.8 dist 双路径收口：website 切到引 `dist` 产物跑一遍 24 个 Demo（源项目 6.8 的做法，验证发布产物与源码路径渲染一致）

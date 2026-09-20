@@ -183,8 +183,8 @@ export interface OkrTreeProps<T extends TreeNodeData = TreeNodeData> {
   renderExpandBtn?: (scope: ExpandBtnScope) => ReactNode
   /** data 为空数组时渲染（等价 #empty 插槽） */
   empty?: ReactNode
-  /** children 传函数时等价 renderNode；传节点则追加到容器末尾 */
-  children?: ReactNode | ((scope: NodeScope) => ReactNode)
+  /** 只接受函数形式，等价 `renderNode`（传 JSX 节点不会渲染，开发期给一次警告） */
+  children?: (scope: NodeScope) => ReactNode
 
   className?: string
   style?: CSSProperties
@@ -718,6 +718,15 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
     if (props.defaultCheckedKeys === store.defaultCheckedKeys) return
     store.setDefaultCheckedKeys(props.defaultCheckedKeys)
   }, [props.defaultCheckedKeys, store])
+
+  // children 只是 renderNode 的别名（函数形式）；传 JSX 节点没有可落点（树的容器结构由组件自己拥有），
+  // 类型上已经收严，这里再给一次运行期警告兜住 JS 消费者。
+  useEffect(() => {
+    if (props.children !== undefined && typeof props.children !== 'function')
+      warn(
+        'children 只接受函数形式（等价 renderNode）；JSX 节点不会被渲染，请改用 renderNode 或 empty。'
+      )
+  }, [props.children])
 
   // 字段映射：label / disabled 为动态读取本就即时生效；children 字段变更需按新映射增量重建
   useEffect(() => {

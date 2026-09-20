@@ -26,8 +26,9 @@ describe('模型层框架无关性', () => {
   it('viewport.ts 不引用 react，且 html-to-image 只经变量动态导入', () => {
     const code = read('viewport.ts')
     expect(code).not.toMatch(/from\s+['"]react/)
-    // 说明符必须是变量：写死 import('html-to-image') 会让打包器把可选依赖内联进发布产物
-    expect(code).toMatch(/import\(\s*\/\* @vite-ignore \*\/\s*specifier\)/)
+    // 说明符必须是变量：写死 import('html-to-image') 会让打包器把可选依赖内联进发布产物。
+    // import(...) 里允许出现若干 ignore 注释（@vite-ignore / webpackIgnore / turbopackIgnore）。
+    expect(code).toMatch(/import\(\s*(?:\/\*[\s\S]*?\*\/\s*)*specifier\s*\)/)
     expect(code).not.toMatch(/import\(\s*['"]html-to-image['"]\s*\)/)
   })
 })

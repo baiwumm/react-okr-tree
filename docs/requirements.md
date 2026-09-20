@@ -220,7 +220,7 @@ src/
 - `useSyncExternalStore` 必须提供 `getServerSnapshot`（常量即可，首屏正确性来自直接读模型字段，不依赖订阅）。
 - 交互相关的 effect（ResizeObserver、`document.fonts.ready`、pointer/wheel 监听）只在挂载后注册。
 - `exportImage`、`html-to-image` 动态 import、`scrollToNode` 均为客户端专属。
-- 组件文件加 `'use client'`（App Router 下可直接 import）。
+- RSC 边界：产物首行要带 `'use client'`（App Router 下消费者可直接在 server component 里 import）。实现走 **Rollup `output.banner`** 而不是逐个源文件写指令：本包是 lib 模式、三种格式各打成单文件，逐文件写指令在打包后会被剥掉；而事后用脚本补又会让 sourcemap 整体错一行。banner 里的**分号不能省**——Oxc 压缩会把 banner 与下一行并成一行，`"use client"(function(e,t){…}` 就成了「把字符串当函数调用」，UMD 在加载期直接 TypeError（`verify:dist` 有断言：指令必须以 `;` 或换行收尾）。
 - 冒烟用例覆盖与源项目对齐：三套布局、OKR 左树、受控 props、`renderNode` / `empty`、`OkrTreeGroup` / `OkrTreeViewport` 包裹。
 - **实现约束（SSR 用例抓到的一条）**：受控初始值（`expandedKeys` / `currentKey`）必须在 store 创建期同步应用，不能只放 effect——effect 在服务端不执行，首屏渲染结果会与「受控」语义不符，客户端首帧也会闪一下非受控状态。创建期赋值不违反 R1 第 7 条，因为那时还没有订阅者。
 

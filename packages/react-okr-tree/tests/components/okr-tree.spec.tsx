@@ -550,3 +550,30 @@ describe('数据响应', () => {
     expect(labels(container)).toContain('Right2')
   })
 })
+
+describe('children 与默认导出（D6 / 渲染定制）', () => {
+  it('children 传函数等价 renderNode', () => {
+    const { container } = render(
+      <OkrTree data={[{ id: 1, label: 'Root' }]}>
+        {({ node }) => <b>{`c-${node.label}`}</b>}
+      </OkrTree>
+    )
+    expect(q(container, '.org-chart-node-label-inner').textContent).toBe('c-Root')
+  })
+
+  it('children 传非函数不渲染，并给一次开发期警告', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    // 类型上已经收严为「只接受函数」，这里演的是 JS 消费者的误用
+    const props = { data: [{ id: 1, label: 'Root' }], children: <span>串</span> }
+    const { container } = render(<OkrTree {...(props as unknown as OkrTreeProps)} />)
+    expect(container.querySelector('span')).toBeNull()
+    expect(container.querySelector('.org-chart-node-label-inner')?.textContent).toBe('Root')
+    expect(spy.mock.calls.map(c => String(c[0])).join('\n')).toContain('children 只接受函数形式')
+    spy.mockRestore()
+  })
+
+  it('默认导出与具名 OkrTree 同一引用（源码层面，D6）', async () => {
+    const mod = await import('../../src/index')
+    expect(mod.default).toBe(mod.OkrTree)
+  })
+})

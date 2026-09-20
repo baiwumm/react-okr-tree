@@ -41,6 +41,15 @@ export default defineConfig({
       ],
       output: {
         exports: 'named',
+        /**
+         * RSC 边界（requirements R8）：整包都是客户端代码（hooks / useEffect / ResizeObserver），
+         * 但没有 'use client' 的话，Next App Router 的消费者在 server component 里
+         * 直接 import 就会抛 "useState only works in client components"。
+         * 走 Rollup banner 而不是事后改文件——那样 sourcemap 的行号会整体错位一行。
+         * 分号不能省：Oxc 压缩会把 banner 与下一行并成一行，UMD 就变成
+         * `'use client'(function(...))`——字符串被当函数调用，整包在加载期直接炸。
+         */
+        banner: "'use client';\n",
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',

@@ -42,3 +42,10 @@ export type {
   TreeTheme,
 } from './types'
 export { BUILT_IN_THEMES } from './types'
+
+/**
+ * D6：源项目的默认导出是 `VueOkrTreePlugin`（`app.use()` 用的插件对象），React 没有对应物，
+ * 这里的默认导出改为组件本身，与具名导出 `OkrTree` 是同一个引用。
+ * UMD 消费者写 `const OkrTree = ReactOkrTree.default`，ESM/CJS 走具名即可。
+ */
+export { OkrTree as default } from './OkrTree'

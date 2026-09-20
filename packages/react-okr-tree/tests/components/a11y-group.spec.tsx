@@ -93,9 +93,10 @@ describe('可访问性：ARIA 属性', () => {
       q(itemByLabel(container, 'A'), ':scope > .org-chart-node-children').getAttribute('role')
     ).toBe('group')
     expect(
-      q(itemByLabel(container, 'A'), ':scope > .org-chart-node-label > .org-chart-node-btn').getAttribute(
-        'aria-hidden'
-      )
+      q(
+        itemByLabel(container, 'A'),
+        ':scope > .org-chart-node-label > .org-chart-node-btn'
+      ).getAttribute('aria-hidden')
     ).toBe('true')
 
     act(() => {
@@ -181,9 +182,9 @@ describe('可访问性：键盘导航', () => {
   it('收起容器中的节点不参与方向键遍历', () => {
     // A 展开（B、D 可见），B 收起（C 不可见）
     const { container } = mountTree({ defaultExpandAll: false, defaultExpandedKeys: [1] })
-    expect(
-      q(itemByLabel(container, 'B'), ':scope > .org-chart-node-children').classList
-    ).toContain('is-hidden')
+    expect(q(itemByLabel(container, 'B'), ':scope > .org-chart-node-children').classList).toContain(
+      'is-hidden'
+    )
     keyDown(container, 'B', 'ArrowDown')
     expect(activeText()).toBe('D')
   })
@@ -398,7 +399,9 @@ describe('泛型类型收窄（对应源项目 createTypedOkrTree<T>，D5）', (
     // React 版无需工厂函数：OkrTree 本身就是泛型组件，T 只是类型参数（无运行时代码）
     type Dept = { id: number; label: string; leader?: string }
     expectTypeOf<OkrTreeProps<Dept>['data']>().toEqualTypeOf<Dept[]>()
-    expectTypeOf<NonNullable<OkrTreeProps<Dept>['onNodeClick']>>().parameter(0).toEqualTypeOf<Dept>()
+    expectTypeOf<NonNullable<OkrTreeProps<Dept>['onNodeClick']>>()
+      .parameter(0)
+      .toEqualTypeOf<Dept>()
     // @ts-expect-error leader 只能是 string：泛型收窄在编译期生效（由 typecheck 把关）
     const wrong: OkrTreeProps<Dept> = { data: [{ id: 1, label: 'X', leader: 42 }] }
     expect(wrong.data[0].label).toBe('X')

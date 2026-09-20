@@ -1,4 +1,14 @@
 {
   "title": "指南",
-  "pages": ["index", "demos", "data", "controlled", "lazy", "viewport", "group", "keyboard", "typed"]
+  "pages": [
+    "index",
+    "demos",
+    "data",
+    "controlled",
+    "lazy",
+    "viewport",
+    "group",
+    "keyboard",
+    "typed"
+  ]
 }

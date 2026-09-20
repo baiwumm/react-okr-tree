@@ -62,6 +62,7 @@
     "dev": "vite --config vite.dev.config.ts",
     "build": "vite build && node scripts/post-build.mjs",
     "verify:dist": "node scripts/verify-dist.mjs",
+    "verify:peer-types": "tsc --noEmit -p tests-consumer/tsconfig.json",
     "build:check": "pnpm build && pnpm verify:dist",
     "build:dev": "vite build --config vite.dev.config.ts",
     "preview:dev": "vite preview --config vite.dev.config.ts",

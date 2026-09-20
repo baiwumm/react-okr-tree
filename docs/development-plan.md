@@ -109,14 +109,47 @@
 
 ## 阶段 8：24 个 Demo 用例
 
-- [ ] 8.1 数据集移植 `playground/data.ts`（7 个工厂函数，保证每用例独立副本——Q3 回写下的必要设计）
-- [ ] ⭐ 8.2 基础组（1–9）：基础 / 水平 / 可展开 / 全展开 / key 展开 / 节点样式 / 三种内容定制对比 / 按钮内容 / 动画（6 名 + 时长）
-- [ ] ⭐ 8.3 OKR 组（10–12）：OKR 模式 + `OkrTreeGroup` 两树对比 / OKR 自定义内容（`node.isLeftChild` 分支）/ OKR 节点数
-- [ ] 8.4 过滤与事件组（13–16）：Filter（含 11 个方法按钮 + **空值恢复语义**）/ OKR Filter（左右同时命中）/ 事件 / OKR 事件
-- [ ] 8.5 状态组（17–19）：受控与方法 / 懒加载 / Viewport（含 `exportImage` 注入 `toPng` 避开动态导入）
+> **契约表（文件名与导出名定死，页面按此引用，写文件的与装配页面的互不猜测）**
+> Demo 组件放 `apps/website/components/demo/`，一个用例一个文件、默认导出一个客户端组件；
+> 共享数据在 `components/demo/data.ts`（7 个工厂函数，每次调用返回新副本——Q3 回写下的必要设计）。
+> 模板见 `components/demo/basic.tsx`；页面装配在 `content/guide/demos.mdx`，源码由 `<DemoBlock file="…">`
+> 在构建期 `readFileSync` 读本文件，所以 demo 组件里**不要再抄一份代码字符串**。
+
+| # | 源项目用例 | React 文件 | 导出名 |
+| - | ---------- | ---------- | ------ |
+| 1 | `Base01` 基础用法 | `basic.tsx` | `BasicDemo` |
+| 2 | `Base02` 水平方向 | `horizontal.tsx` | `HorizontalDemo` |
+| 3 | `Base03` 是否可展开 | `collapsable.tsx` | `CollapsableDemo` |
+| 4 | `Base04` 默认全部展开 | `expand-all.tsx` | `ExpandAllDemo` |
+| 5 | `Base041` 指定默认展开 | `default-expanded-keys.tsx` | `DefaultExpandedKeysDemo` |
+| 6 | `Base05` 节点的样式 | `node-style.tsx` | `NodeStyleDemo` |
+| 7 | `Base06` 内容定制三种写法对比 | `content-modes.tsx` | `ContentModesDemo` |
+| 8 | `Base062` 展开按钮自定义 | `expand-btn.tsx` | `ExpandBtnDemo` |
+| 9 | `Base061` 节点动画 | `animation.tsx` | `AnimationDemo` |
+| 10 | `Base07` OKR + Group 两树对比 | `okr-group.tsx` | `OkrGroupDemo` |
+| 11 | `Base08` OKR 自定义内容 | `okr-content.tsx` | `OkrContentDemo` |
+| 12 | `Base081` OKR 节点数 | `okr-node-num.tsx` | `OkrNodeNumDemo` |
+| 13 | `Base09` 受控状态与方法 | `controlled.tsx` | `ControlledDemo` |
+| 14 | `Base10` 懒加载 | `lazy.tsx` | `LazyDemo` |
+| 15 | `Base11` 画布 Viewport | `viewport.tsx` | `ViewportDemo` |
+| 16 | `BaseFilter` 过滤 | `filter.tsx` | `FilterDemo` |
+| 17 | `BaseFilterOkr` OKR 过滤 | `filter-okr.tsx` | `FilterOkrDemo` |
+| 18 | `BaseEvents` 事件 | `events.tsx` | `EventsDemo` |
+| 19 | `BaseEventsOkr` OKR 事件 | `events-okr.tsx` | `EventsOkrDemo` |
+| 20 | `BaseAccordion` 手风琴 | `accordion.tsx` | `AccordionDemo` |
+| 21 | `BaseNodeClick` 点击展开/选中 | `node-click.tsx` | `NodeClickDemo` |
+| 22 | `BaseCheckbox` 复选框 | `checkbox.tsx` | `CheckboxDemo` |
+| 23 | `BaseDraggable` 拖拽 | `draggable.tsx` | `DraggableDemo` |
+| 24 | `BaseConnector` SVG 连接线 | `connector.tsx` | `ConnectorDemo` |
+
+- [x] 8.1 数据集移植 `playground/data.ts`（7 个工厂函数 → `components/demo/data.ts`）
+- [ ] 8.2 基础组（1–9）
+- [ ] 8.3 OKR 组（10–12）
+- [ ] 8.4 过滤与事件组（16–19）：Filter 含 11 个方法按钮 + **空值恢复语义**；OKR Filter 左右同时命中
+- [ ] 8.5 状态组（13–15）：受控与方法 / 懒加载 / Viewport（含 `exportImage` 注入 `toPng` 避开动态导入）
 - [ ] 8.6 交互组（20–24）：手风琴 / 点击展开 / 复选框 / 拖拽 / SVG 连接线（非 svg 时形状按钮 disabled）
 - [ ] 8.7 主题切换条（6 套，含 6.3 第 3 点的「站级 `.dark` ≠ `theme="auto"`」说明与跟随站点主题的变体）
-- [ ] 8.8 源码展示：RSC 侧 `readFileSync` 读 demo 组件原文传 `<DemoBlock code>`（6.3 第 2 点），代码块用 fumadocs `CodeBlock`
+- [ ] 8.8 源码展示：`<DemoBlock file>` 在 RSC 侧 `readFileSync` + 构建期 shiki 高亮 + 原生 `<details>` 折叠（已落地，24 个用例复用同一条链路；不做客户端 shiki）
 
 ## 阶段 9：文档、验收与发布
 

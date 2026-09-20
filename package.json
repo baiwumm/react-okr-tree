@@ -11,6 +11,7 @@
     "dev": "pnpm --filter react-okr-tree dev",
     "build": "pnpm --filter react-okr-tree build",
     "verify:dist": "pnpm --filter react-okr-tree verify:dist",
+    "verify:peer-types": "pnpm --filter react-okr-tree verify:peer-types",
     "build:check": "pnpm --filter react-okr-tree build:check",
     "verify:package": "pnpm --filter react-okr-tree verify:package",
     "test": "pnpm --filter react-okr-tree test",

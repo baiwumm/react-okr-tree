@@ -134,5 +134,12 @@ jobs:
       - name: Assert resolved versions
         run: node -e "console.log('react', require('react/package.json').version, '| @types/react', require('@types/react/package.json').version)"
 
+      # 编译 tests-consumer/consumer.tsx，它 import 的是包名而 paths 指到 dist/index.d.ts：
+      # 库自身的 typecheck 编的是 src/，只有这一步能挡住「产物 d.ts 引用了 React 19 独有类型」。
+      - name: Typecheck consumer against published d.ts
+        run: |
+          pnpm build
+          pnpm verify:peer-types
+
       - name: Unit & component tests
         run: pnpm test

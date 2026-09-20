@@ -120,30 +120,29 @@ await measure('首渲染（全部展开，约 2041 个节点 DOM）', async () =
     filterNodeMethod: (value, d) => d.label && d.label.includes(value),
   })
   tree.render()
-  const vm = tree.handle
 
   // ---- 3. 展开 / 收起全部 ----
   await measure('expandAll（2041 节点状态 + 渲染）', async () => {
     const t0 = performance.now()
-    await act(async () => vm.expandAll())
+    await act(async () => tree.handle.expandAll())
     const t1 = performance.now()
     return { ms: t1 - t0 }
   })
   await measure('collapseAll（2041 节点状态 + 渲染）', async () => {
     const t0 = performance.now()
-    await act(async () => vm.collapseAll())
+    await act(async () => tree.handle.collapseAll())
     const t1 = performance.now()
     return { ms: t1 - t0 }
   })
 
   // ---- 4. filter ----
-  await act(async () => vm.expandAll())
+  await act(async () => tree.handle.expandAll())
   await measure(
     'filter（全量 2000 节点过滤 + 渲染）',
     async () => {
       const t0 = performance.now()
-      await act(async () => vm.filter('员工-1'))
-      await act(async () => vm.filter(''))
+      await act(async () => tree.handle.filter('员工-1'))
+      await act(async () => tree.handle.filter(''))
       const t1 = performance.now()
       return { ms: t1 - t0, note: '含恢复全显的二次过滤' }
     },
@@ -177,12 +176,23 @@ await measure('首渲染（全部展开，约 2041 个节点 DOM）', async () =
   // ---- 7. 展开单个节点（R1 局部更新的实际用户路径，源项目没有这一条） ----
   // 2041 节点全收起后点一个部门的 ± ：订阅层只 bump 该节点，
   // 其余 2040 个组件不该跟着重渲染。这条是 R1 设计的全部意义所在。
-  await act(async () => vm.collapseAll())
   await measure('展开单个节点（局部更新：1 个组件重渲染，其余 2040 个不动）', async () => {
+    // 每轮前先整体收起：expandNode 不是幂等的，第二轮起「展开」会原地踏步，
+    // 计时与可见节点数都测不到任何东西（第一版就被这个假数字骗过一次）。
+    await act(async () => tree.handle.collapseAll())
+    const before = tree.handle.getVisibleNodes().length
     const t0 = performance.now()
-    await act(async () => vm.expandNode(data[5]))
+    await act(async () => tree.handle.expandNode(data[5]))
     const t1 = performance.now()
-    return { ms: t1 - t0, note: '对照场景 3 的 expandAll——差一个数量级，因为只渲染受影响子树' }
+    const after = tree.handle.getVisibleNodes().length
+    /**
+     * 先证明这次展开真的发生了再谈耗时：0.01 ms 这种数字多半是「什么都没干」，
+     * 而不是「快」。可见节点没增长就说明入参或订阅链出了问题，直接报错退出。
+     */
+    if (after <= before) {
+      throw new Error(`场景 7 无效：展开后可见节点数未变化（${before} → ${after}）`)
+    }
+    return { ms: t1 - t0, note: `可见节点 ${before} → ${after}；对照场景 3 的 expandAll` }
   })
 
   tree.unmount()

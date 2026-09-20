@@ -8,6 +8,7 @@
     "dev": "node scripts/with-memory-cap.mjs dev",
     "build": "node scripts/with-memory-cap.mjs build",
     "start": "node scripts/with-memory-cap.mjs start",
+    "verify:export": "node scripts/verify-export.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

@@ -1,0 +1,13 @@
+{
+  // Cloudflare Workers 静态资产部署配置（文档站）
+  // 由 Workers Builds 的部署命令 `npx wrangler deploy` 读取（仓库根执行，故路径相对仓库根）。
+  // 与源项目 vue3-okr-tree 同一套链路：纯静态资产，没有任何 Worker 运行时。
+  // 资产目录由 `pnpm build:website` 生成（先出库的 dist，再 next build 静态导出到 out/）。
+  "name": "react-okr-tree",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./apps/website/out",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}

@@ -525,7 +525,7 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 
 **spike 结论（阶段 0.2，2026-09-20）**：从 `fumadocs-ui@16.15.7` / `fumadocs-core@16.15.7` 的产物清单核实——搜索侧确实提供了面向无服务端场景的静态客户端 `search/client/orama-static`（`oramaStaticClient` + `StaticOptions`，`from` 默认 `/api/search`，可指向构建期导出的静态索引）与 `search/client/flexsearch-static`，因此**静态导出与站内搜索不冲突**，且不必额外引入 Pagefind。其余部分（`DocsLayout` / TOC / 侧栏树）是纯构建期能力。**注意这是包产物层面的核实，不是运行时验证**：真正的门禁在阶段 7 的 `website-build`（`next build` + `output:'export'` 跑通 + 浏览器里搜得到结果），届时把结果回写到这里。
 
-配置产物：`apps/website/wrangler.jsonc`（`name: "react-okr-tree"`、`assets.directory: "./apps/website/out"`）、部署命令 `pnpm --filter <website> build && wrangler deploy`、域名 `react-okr-tree.baiwumm.com`（与 `vue3-okr-tree.baiwumm.com` 并存）。注意：参考站仓库内**不含**任何 Cloudflare 配置（其 `package.json` 描述写的是 Vercel），所以本节基线取的是**源 okr-tree 站的 wrangler 配置**，不是参考站。
+配置产物：**仓库根** `wrangler.jsonc`（`name: "react-okr-tree"`、`assets.directory: "./apps/website/out"`；放根是为了让这条路径与 Workers Builds 的执行目录一致，源项目也是配置在根、命令在根跑）、部署命令 `pnpm build:website && npx wrangler deploy`、域名 `react-okr-tree.baiwumm.com`（与 `vue3-okr-tree.baiwumm.com` 并存）。`wrangler` 不进 devDependencies——源项目同样只靠 `npx wrangler`。注意：参考站仓库内**不含**任何 Cloudflare 配置（其 `package.json` 描述写的是 Vercel），所以本节基线取的是**源 okr-tree 站的 wrangler 配置**，不是参考站。
 
 ---
 

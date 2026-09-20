@@ -75,7 +75,10 @@ export async function DemoBlock({
     : undefined
 
   return (
-    <div id={anchorOf(id, file)} className="my-6 scroll-mt-16 overflow-hidden rounded-xl border border-fd-border">
+    <div
+      id={anchorOf(id, file)}
+      className="my-6 scroll-mt-16 overflow-hidden rounded-xl border border-fd-border"
+    >
       <div className="overflow-x-auto p-4">{children}</div>
       {title || description || file ? (
         <div className="border-t border-fd-border px-4 py-3">

@@ -1,14 +1,8 @@
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" rx="8" fill="#fafafa" />
-  <g stroke="#a1a1aa" stroke-width="1.4">
-    <path d="M16 11.5v3.5" />
-    <path d="M7.5 15h17" />
-    <path d="M7.5 15v3.5" />
-    <path d="M16 15v3.5" />
-    <path d="M24.5 15v3.5" />
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360">
+  <rect x="2" y="2" width="356" height="356" rx="78" fill="#FAFAFA" stroke="#FFF" stroke-opacity="0.12" stroke-width="4"/>
+  <g fill="none" stroke="#0A0A0B" stroke-width="22" stroke-linecap="round">
+    <path d="M110.6 149.1a76 76 0 0 1 138.8 0M110.6 210.9a76 76 0 0 0 138.8 0"/>
+    <path d="M62 180h26M272 180h26"/>
   </g>
-  <rect x="11.5" y="6.5" width="9" height="5" rx="2" fill="#18181b" />
-  <rect x="4" y="18.5" width="7" height="5" rx="2" fill="#52525b" />
-  <rect x="12.5" y="18.5" width="7" height="5" rx="2" fill="#52525b" />
-  <rect x="21" y="18.5" width="7" height="5" rx="2" fill="#52525b" />
+  <rect x="163" y="163" width="34" height="34" rx="10" fill="#3370FF"/>
 </svg>

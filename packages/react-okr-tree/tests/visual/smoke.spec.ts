@@ -101,9 +101,7 @@ test('关键 Demo 交互与零控制台报错', async ({ page }) => {
   // 6. 主题切换条：点 dark 后组件根容器带上 okr-theme-dark（站级明暗与此无关）
   await open(page, '/docs/theme/')
   await page.getByRole('button', { name: 'dark', exact: true }).click()
-  await expect(page.locator('#theme-switcher .org-chart-container')).toHaveClass(
-    /okr-theme-dark/
-  )
+  await expect(page.locator('#theme-switcher .org-chart-container')).toHaveClass(/okr-theme-dark/)
 
   expect(errors, '浏览器控制台不应有报错：\n' + errors.join('\n')).toHaveLength(0)
   // 资源加载失败的数量必须全部是上面那类 RSC 预取缺失，一条都不能多

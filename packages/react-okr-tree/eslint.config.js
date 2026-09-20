@@ -42,8 +42,8 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.node } },
   },
   {
-    // benchmark 脚本跑在 Node 里，但自己用 jsdom 造了一份 document/window，读的是浏览器全局
-    files: ['scripts/benchmark.mjs'],
+    // benchmark / gen-og 跑在 Node 里，但 page.evaluate 与 jsdom 会读浏览器全局，按浏览器环境放行
+    files: ['scripts/benchmark.mjs', 'scripts/gen-og.mjs'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {

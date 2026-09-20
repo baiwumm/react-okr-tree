@@ -162,7 +162,7 @@ src/
   styles/transition.css
 ```
 
-上面的 `src/` 位于 `packages/react-okr-tree/`。workspace 另一侧是 `apps/website/`（`app` / `components/{landing,docs,demo,background}` / `content` / `lib` / `scripts` / `source.config.ts`）。`shared/api.ts`（6.4）放在 **workspace 根**，让库与文档站都能 import 同一份表数据。
+上面的 `src/` 位于 `packages/react-okr-tree/`。workspace 另一侧是 `apps/website/`（`app` / `components/{landing,docs,demo,background}` / `content` / `lib` / `scripts` / `source.config.ts`）。`shared/api.ts`（6.4）放在 **`packages/react-okr-tree/shared/`**，让库与文档站 import 同一份表数据——原定 workspace 根，落地时改到包内：vitest 的 transform 拒绝加载 root（本包）以外的文件，而包侧必须有测试才能防住「表格与 `OkrTreeHandle` 漂移」；文档站用相对路径跨包引用（Turbopack 的 root 已放开到仓库根，实测可用）。
 
 ### R5 事件回调签名
 

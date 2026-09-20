@@ -1,7 +1,8 @@
-import { apiSections, type ApiSection } from '../../../../shared/api'
+import { apiSections, type ApiSection } from '../../../../packages/react-okr-tree/shared/api'
 
 /**
- * API 表：内容取自仓库根的 `shared/api.ts`（单一来源，README 生成器读的是同一份）。
+ * API 表：内容取自 `packages/react-okr-tree/shared/api.ts`（单一来源，README 生成器与
+ * 库侧的防漂移测试读的是同一份；放包里而不是仓库根是因为 vitest 不加载 root 以外的文件）。
  *
  * 单元格里带 `<code>` / `<strong>` 片段，所以用 innerHTML 渲染——数据是本仓库构建期文件，
  * 不是用户输入。`prose` 作用域不到组件内部的 code，故在 td 上手动补 code 样式。

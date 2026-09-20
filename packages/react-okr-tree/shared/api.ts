@@ -1,6 +1,10 @@
 /**
  * API 文档数据的单一来源（对齐源项目 vue3-okr-tree 的 shared/api.ts，换成 React 命名）。
  *
+ * 位置放在 `packages/react-okr-tree/shared/`（**不是** workspace 根）：vitest 的 transform
+ * 拒绝加载 root（本包）以外的文件，防漂移测试 `tests/api-surface.spec.tsx` 要 import 它；
+ * 文档站在 workspace 根一侧用相对路径引同一条路径（Turbopack 的 root 已放开到仓库根）。
+ *
  * 三处消费：
  * - apps/website 的 `<ApiTable>`（文档站 API 页）
  * - README 的 API 段落（1.1.0 起由 scripts/gen-readme-api.mjs 生成）
@@ -62,7 +66,13 @@ export const attributesSection: ApiSection = {
       '—',
       '—',
     ],
-    ['currentLableClassName', '当前选中节点的 className（保留原版拼写）', 'Function(node) / string', '—', '—'],
+    [
+      'currentLableClassName',
+      '当前选中节点的 className（保留原版拼写）',
+      'Function(node) / string',
+      '—',
+      '—',
+    ],
     [
       'showCollapsable',
       '节点是否可展开/折叠（显示 +/- 圆盘）。为 false 时组件<strong>强制全部展开</strong>（原版行为）',
@@ -121,7 +131,13 @@ export const attributesSection: ApiSection = {
       'css / svg',
       'css',
     ],
-    ['connectorShape', 'svg 模式的路径形状（仅 <code>connector="svg"</code> 生效）', 'string', 'curve / orthogonal / straight', 'curve'],
+    [
+      'connectorShape',
+      'svg 模式的路径形状（仅 <code>connector="svg"</code> 生效）',
+      'string',
+      'curve / orthogonal / straight',
+      'curve',
+    ],
     [
       'unstyled',
       '去掉卡片外观（背景/边框/圆角/阴影，含 hover），保留布局与连接线。<strong>刻意不动</strong> padding / 字号 / 文字色——改 padding 会移动节点盒、牵动连接线几何',
@@ -129,8 +145,20 @@ export const attributesSection: ApiSection = {
       '—',
       'false',
     ],
-    ['showNodeNum', '折叠时在圆盘内显示子节点数（只计未被 filter 隐藏的可见子节点）', 'boolean', '—', 'false'],
-    ['defaultExpandAll', '默认全部展开（仅在 showCollapsable 为 true 时有意义）', 'boolean', '—', 'false'],
+    [
+      'showNodeNum',
+      '折叠时在圆盘内显示子节点数（只计未被 filter 隐藏的可见子节点）',
+      'boolean',
+      '—',
+      'false',
+    ],
+    [
+      'defaultExpandAll',
+      '默认全部展开（仅在 showCollapsable 为 true 时有意义）',
+      'boolean',
+      '—',
+      'false',
+    ],
     [
       'renderContent',
       '节点内容区渲染函数。<strong>React 版不传 <code>h</code></strong>（D1），返回 <code>ReactNode</code>；入参 <code>node</code> 为内部 TreeNode（源数据在 <code>node.data</code>，文本在 <code>node.label</code>）',
@@ -148,11 +176,17 @@ export const attributesSection: ApiSection = {
     ],
     ['props', '字段映射配置，见下表', 'object', '—', '见下表'],
     ['nodeKey', '节点唯一标识字段名（整棵树应唯一）', 'string', '—', '—'],
-    ['defaultExpandedKeys', '默认展开的 key 数组（需 nodeKey）；OKR 下左右两树同时生效', 'array', '—', '—'],
+    [
+      'defaultExpandedKeys',
+      '默认展开的 key 数组（需 nodeKey）；OKR 下左右两树同时生效',
+      'array',
+      '—',
+      '—',
+    ],
     ['currentNodeKey', '初始选中节点的 key（需 nodeKey，单向）', 'string / number', '—', '—'],
     [
       'filterNodeMethod',
-      '节点筛选方法，返回 false 隐藏。<code>filter(\'\')</code> 时同样执行，需对空值返回 true 才能恢复全部显示',
+      "节点筛选方法，返回 false 隐藏。<code>filter('')</code> 时同样执行，需对空值返回 true 才能恢复全部显示",
       'Function(value, data, node)',
       '—',
       '—',
@@ -166,7 +200,13 @@ export const attributesSection: ApiSection = {
       'okr-zoom-in-center',
     ],
     ['animateDuration', '动画时长 ms', 'number', '—', '200'],
-    ['alignRoot', 'OKR 模式下按左右子树自动对齐根节点（纯 CSS），展开/收起不改变根位置；false 回退原版行为', 'boolean', '—', 'true'],
+    [
+      'alignRoot',
+      'OKR 模式下按左右子树自动对齐根节点（纯 CSS），展开/收起不改变根位置；false 回退原版行为',
+      'boolean',
+      '—',
+      'true',
+    ],
     [
       'theme',
       '内置主题或自定义名字（自定义需自写 <code>.okr-theme-{name}</code> 变量）。所有外观取值均可用 <code>--okr-*</code> 覆盖',
@@ -188,7 +228,13 @@ export const attributesSection: ApiSection = {
       '—',
       '—',
     ],
-    ['lazy', '懒加载：初始 data 中没有 children（或为空数组）的节点视为未加载，首次展开时调 <code>load</code>', 'boolean', '—', 'false'],
+    [
+      'lazy',
+      '懒加载：初始 data 中没有 children（或为空数组）的节点视为未加载，首次展开时调 <code>load</code>',
+      'boolean',
+      '—',
+      'false',
+    ],
     [
       'load',
       '懒加载取数函数。<code>resolve(children)</code> 后子节点写入源数据 children 并展开；<code>reject()</code> 或抛错回到折叠态、可重试。<code>node.isLeftChild</code> 可区分 OKR 左树',
@@ -203,8 +249,20 @@ export const attributesSection: ApiSection = {
       '—',
       'true',
     ],
-    ['className / style', '透传到 <code>.org-chart-container</code> 根容器', 'string / CSSProperties', '—', '—'],
-    ['children', '传函数时等价 <code>renderNode</code>（对应源项目 <code>#default</code> 插槽）', 'ReactNode | Function(scope)', '—', '—'],
+    [
+      'className / style',
+      '透传到 <code>.org-chart-container</code> 根容器',
+      'string / CSSProperties',
+      '—',
+      '—',
+    ],
+    [
+      'children',
+      '传函数时等价 <code>renderNode</code>（对应源项目 <code>#default</code> 插槽）',
+      'ReactNode | Function(scope)',
+      '—',
+      '—',
+    ],
   ],
 }
 
@@ -222,7 +280,12 @@ export const propsSection: ApiSection = {
       'string / function(data, node)',
       'disabled',
     ],
-    ['isLeaf', '叶子字段：lazy 下未加载节点据此判定，标记为叶子则不显示按钮、不触发 load', 'string / function(data, node)', '—'],
+    [
+      'isLeaf',
+      '叶子字段：lazy 下未加载节点据此判定，标记为叶子则不显示按钮、不触发 load',
+      'string / function(data, node)',
+      '—',
+    ],
   ],
 }
 
@@ -257,8 +320,16 @@ export const eventsSection: ApiSection = {
     ['onNodeDragEnter', '拖拽进入某节点', '(draggingNode, dropNode, event)'],
     ['onNodeDragLeave', '拖拽离开某节点', '(draggingNode, dropNode, event)'],
     ['onNodeDragOver', '悬停在有效放置区内', '(draggingNode, dropNode, event)'],
-    ['onNodeDragEnd', '拖拽结束；未完成放置时后两参为 null', '(draggingNode, dropNode | null, dropType | null, event)'],
-    ['onNodeDrop', '完成放置（源数据已在 moveNode 中同步）', '(draggingNode, dropNode, dropType, event)'],
+    [
+      'onNodeDragEnd',
+      '拖拽结束；未完成放置时后两参为 null',
+      '(draggingNode, dropNode | null, dropType | null, event)',
+    ],
+    [
+      'onNodeDrop',
+      '完成放置（源数据已在 moveNode 中同步）',
+      '(draggingNode, dropNode, dropType, event)',
+    ],
   ],
 }
 
@@ -269,22 +340,46 @@ export const methodsSection: ApiSection = {
     '通过 <code>ref</code> 拿到 <code>OkrTreeHandle</code> 调用。增删类方法会同步修改传入的源数据（与源项目一致）。入参普遍接受 <strong>key / data 对象 / TreeNode 实例</strong>三种形态。',
   columns: ['方法', '说明', '参数'],
   rows: [
-    ['filter', '触发过滤；onlyBothTree 下同时过滤左右子树。未设置 filterNodeMethod 时抛错', '(value)'],
-    ['updateKeyChildren', '用新数据替换 key 节点的全部子节点（需 nodeKey，缺失抛错）', '(key, data)'],
-    ['getNode', '获取内部 Node。OKR 下右树优先，未命中回退左树；<strong>未设 nodeKey 时按 data 对象查不到</strong>', '(data)'],
+    [
+      'filter',
+      '触发过滤；onlyBothTree 下同时过滤左右子树。未设置 filterNodeMethod 时抛错',
+      '(value)',
+    ],
+    [
+      'updateKeyChildren',
+      '用新数据替换 key 节点的全部子节点（需 nodeKey，缺失抛错）',
+      '(key, data)',
+    ],
+    [
+      'getNode',
+      '获取内部 Node。OKR 下右树优先，未命中回退左树；<strong>未设 nodeKey 时按 data 对象查不到</strong>',
+      '(data)',
+    ],
     ['getNodeEl', '取节点对应的 DOM 元素；未渲染/不可见时为 null', '(data)'],
     ['getNodeKey', '取节点用于列表 key 的值（nodeKey 字段或内部 $treeNodeId）', '(node)'],
     ['setCurrentNode', '按 Node 实例设置选中（需 nodeKey，缺失抛错）', '(node)'],
     ['setCurrentKey', '按 key 设置选中（需 nodeKey，缺失抛错）；传 null 取消高亮', '(key | null)'],
     ['getCurrentKey', '当前选中 key；无选中返回 null（需 nodeKey，缺失抛错）', '—'],
     ['getCurrentNode', '当前选中节点的 data；无选中返回 null', '—'],
-    ['remove', '删除节点。<strong>必须设 nodeKey</strong>，未设置时静默无效。会同步删除源数据中的对应项', '(data)'],
-    ['append', '追加子节点（省略 parent 则挂为根）。会同步写入源数据 children', '(data, parentNode?)'],
+    [
+      'remove',
+      '删除节点。<strong>必须设 nodeKey</strong>，未设置时静默无效。会同步删除源数据中的对应项',
+      '(data)',
+    ],
+    [
+      'append',
+      '追加子节点（省略 parent 则挂为根）。会同步写入源数据 children',
+      '(data, parentNode?)',
+    ],
     ['insertBefore', '在参考节点前插入。同上会回写源数据', '(data, refNode)'],
     ['insertAfter', '在参考节点后插入。同上', '(data, refNode)'],
     ['expandAll', '展开全部（含左右两树）；lazy 下未加载节点先加载再展开', '—'],
     ['collapseAll', '收起全部（含左右两树）', '—'],
-    ['expandNode', '展开指定节点，默认连同祖先；OKR 根节点同时展开两侧；lazy 下先加载。返回 Node 或 null', '(data, expandParent = true)'],
+    [
+      'expandNode',
+      '展开指定节点，默认连同祖先；OKR 根节点同时展开两侧；lazy 下先加载。返回 Node 或 null',
+      '(data, expandParent = true)',
+    ],
     ['collapseNode', '收起指定节点；OKR 根节点同时收起两侧', '(data)'],
     [
       'scrollToNode',
@@ -293,17 +388,29 @@ export const methodsSection: ApiSection = {
     ],
     ['getCheckedNodes', '勾选的 Node 实例列表（左右两树）', '(leafOnly = false)'],
     ['getCheckedKeys', '勾选的 key 列表（需 nodeKey；左右合并去重）', '(leafOnly = false)'],
-    ['setCheckedKeys', '整体设置勾选（先清空；非 strictly 时带父子联动；OKR 左右同 key 同时生效）', '(keys, leafOnly = false)'],
+    [
+      'setCheckedKeys',
+      '整体设置勾选（先清空；非 strictly 时带父子联动；OKR 左右同 key 同时生效）',
+      '(keys, leafOnly = false)',
+    ],
     ['getHalfCheckedNodes', '半选节点实例列表', '—'],
     ['getHalfCheckedKeys', '半选节点 key 列表（需 nodeKey；左右合并去重）', '—'],
     ['isChecked', '节点当前是否勾选；未找到为 false', '(data)'],
-    ['moveNode', '移动到目标的 prev / inner / next，同步源数据；inner 时目标自动展开。禁止放进自身或其子树。成功返回 true', '(data, target, type)'],
+    [
+      'moveNode',
+      '移动到目标的 prev / inner / next，同步源数据；inner 时目标自动展开。禁止放进自身或其子树。成功返回 true',
+      '(data, target, type)',
+    ],
     [
       'getVisibleNodes',
       '当前真正可见的节点（含 OKR 左树）：自身通过过滤且各级祖先已展开到它。<strong>折叠子树仍挂载在 DOM 中</strong>，所以不等于 DOM 里的节点数',
       '—',
     ],
-    ['getNodePath', '顶层到目标的链路（含目标）。左树节点的链路留在左树内，不跨接到右树根；未命中返回空数组', '(data)'],
+    [
+      'getNodePath',
+      '顶层到目标的链路（含目标）。左树节点的链路留在左树内，不跨接到右树根；未命中返回空数组',
+      '(data)',
+    ],
     [
       'refreshData',
       '<strong>React 版新增（D7）</strong>：源数据被原地改动而宿主没重渲染时，显式触发增量更新（等价 Vue 的 deep watch）',
@@ -320,14 +427,22 @@ export const slotsSection: ApiSection = {
     '源项目的具名插槽在 React 里是 render props，作用域参数形状保持一致。<code>renderNode</code> 与 <code>renderContent</code> 二选其一即可，插槽优先。',
   columns: ['prop', '对应源项目插槽', '作用域参数'],
   rows: [
-    ['renderNode（或 children 传函数）', '<code>#default</code>', '<code>{ node, data }</code>，node 为内部 TreeNode'],
+    [
+      'renderNode（或 children 传函数）',
+      '<code>#default</code>',
+      '<code>{ node, data }</code>，node 为内部 TreeNode',
+    ],
     [
       'renderExpandBtn',
       '<code>#expand-btn</code>',
       '<code>{ node, data, expanded, side, loading }</code>；side 为 <code>right</code>（常规/右子树）或 <code>left</code>（OKR 左子树）。<code>showNodeNum</code> 的折叠数字优先于它',
     ],
     ['empty', '<code>#empty</code>', '<code>data</code> 为空数组时渲染在容器内'],
-    ['renderToolbar（OkrTreeViewport）', '<code>#toolbar</code>', '<code>{ zoom, zoomIn, zoomOut, reset, fit }</code>'],
+    [
+      'renderToolbar（OkrTreeViewport）',
+      '<code>#toolbar</code>',
+      '<code>{ zoom, zoomIn, zoomOut, reset, fit }</code>',
+    ],
   ],
 }
 
@@ -339,14 +454,26 @@ export const compositionSection: ApiSection = {
   columns: ['名称', '类型', '说明'],
   rows: [
     ['OkrTreeGroup / align', 'prop，boolean，默认 true', 'false 时各树独立排布'],
-    ['OkrTreeGroup / refresh()', 'method', '手动重新测量（字体加载完成、外部样式变化等；组件已自动响应成员挂载/更新与尺寸变化）'],
+    [
+      'OkrTreeGroup / refresh()',
+      'method',
+      '手动重新测量（字体加载完成、外部样式变化等；组件已自动响应成员挂载/更新与尺寸变化）',
+    ],
     ['OkrTreeGroup / children', '—', '放置若干 <code>&lt;OkrTree onlyBothTree /&gt;</code>'],
-    ['OkrTreeViewport props', 'minZoom / maxZoom / zoomStep / zoom + onZoomChange / offset + onOffsetChange / wheelBehavior / toolbar / renderToolbar', '缩放范围与受控值；<code>wheelBehavior</code>：ctrl-zoom（默认，不劫持页面滚动）/ zoom / scroll'],
-    ['OkrTreeViewport methods', 'zoomIn / zoomOut / reset / fitToScreen(padding?) / centerNode / exportImage / getZoom / getOffset', '双击复位；<code>fitToScreen</code> 默认四周留 20px；<code>centerNode</code> 先展开祖先再对准视口中心'],
+    [
+      'OkrTreeViewport props',
+      'minZoom / maxZoom / zoomStep / zoom + onZoomChange / offset + onOffsetChange / wheelBehavior / toolbar / renderToolbar',
+      '缩放范围与受控值；<code>wheelBehavior</code>：ctrl-zoom（默认，不劫持页面滚动）/ zoom / scroll',
+    ],
+    [
+      'OkrTreeViewport methods',
+      'zoomIn / zoomOut / reset / fitToScreen(padding?) / centerNode / exportImage / getZoom / getOffset',
+      '双击复位；<code>fitToScreen</code> 默认四周留 20px；<code>centerNode</code> 先展开祖先再对准视口中心',
+    ],
     [
       'exportImage(options)',
       'method',
-      '<code>{ type: \'png\' | \'svg\', scale = 2, background, toPng?, toSvg? }</code>。依赖可选 peer <code>html-to-image</code>；打包器下动态导入不可靠时用 <code>toPng / toSvg</code> 直接传入渲染函数',
+      "<code>{ type: 'png' | 'svg', scale = 2, background, toPng?, toSvg? }</code>。依赖可选 peer <code>html-to-image</code>；打包器下动态导入不可靠时用 <code>toPng / toSvg</code> 直接传入渲染函数",
     ],
     [
       '键盘导航',

@@ -22,7 +22,7 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "../../shared/**/*.ts",
+    "../../packages/react-okr-tree/shared/**/*.ts",
     ".source/**/*.ts",
     ".source/**/*.mjs",
     ".next/types/**/*.ts",

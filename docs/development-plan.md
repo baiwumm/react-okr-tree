@@ -18,7 +18,8 @@
 - [x] 1.4 Vite 8 库构建：`lib` 模式三格式（`react-okr-tree.es.js` / `.cjs` / `.umd.js`，UMD 全局名 `ReactOkrTree`）+ `cssCodeSplit: false` + `cssFileName: 'style'` + external `react` / `react-dom` / `react/jsx-runtime` + `sourcemap` + `vite-plugin-dts`（`bundleTypes`、单文件 `index.d.ts`）+ `scripts/post-build.mjs`（`.d.cts` 与 ESM 压缩）
   - ⏳ `verify:dist` 脚本与 `pnpm build` 实跑**顺延到阶段 4**：入口还没有组件时不会产出 `style.css`，产物断言没有意义。
 - [x] 1.5 TS / ESLint / Prettier：`tsconfig.json`（`jsx: react-jsx`、`strict`）、flat config 接 `typescript-eslint` + `eslint-plugin-react-hooks@5.2.0`；**`react-hooks/exhaustive-deps` 不得关闭**
-- [x] 1.6 目录结构约定（R4）：`packages/react-okr-tree/{src,model,hooks,styles,tests}` + `shared/api.ts`（workspace 根或 packages 内，供 website import）+ `apps/website` + `docs/`
+- [x] 1.6 目录结构约定（R4）：`packages/react-okr-tree/{src,model,hooks,styles,tests}` + `shared/api.ts`（**定在包内 `packages/react-okr-tree/shared/`**，website 相对引用；原计划的 workspace 根落地后改掉了，原因见 requirements 1.6 段末）+ `apps/website` + `docs/`
+  - 防漂移测试 `tests/api-surface.spec.tsx`（3 条）：拿 `OkrTreeHandle` 的运行时成员与 `methodsSection` 的行做双向差集，两侧都不许多。vitest **不能** import 本包以外的文件（实测 `server.fs.allow` 也放不开），这就是上面改位置的原因。
 - [ ] 1.7 冒烟：一个空 `OkrTree` 组件能被 website import 并渲染（走 workspace 源码路径，验证两包打通）
 
 ## 阶段 2：数据模型层（纯 TS，移植 + 订阅层）

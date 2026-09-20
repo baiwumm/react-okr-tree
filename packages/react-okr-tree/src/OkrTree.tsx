@@ -250,37 +250,44 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
 
   // ---- store 只创建一次：创建期快照的字段（nodeKey / direction / onlyBothTree / deepWatch）
   // 运行时变更不支持，与源项目一致 ----
-  const [store] = useState(
-    () =>
-      new TreeStore({
-        key: props.nodeKey,
-        data: props.data,
-        leftData: props.leftData,
-        props: props.props,
-        defaultExpandedKeys: props.defaultExpandedKeys,
-        showCollapsable: props.showCollapsable,
-        accordion: props.accordion,
-        expandOnClickNode: props.expandOnClickNode,
-        showCheckbox: props.showCheckbox,
-        checkStrictly: props.checkStrictly,
-        defaultCheckedKeys: props.defaultCheckedKeys,
-        draggable: props.draggable,
-        allowDrag: props.allowDrag,
-        allowDrop: props.allowDrop,
-        currentNodeKey: props.currentNodeKey,
-        defaultExpandAll: props.defaultExpandAll,
-        filterNodeMethod: props.filterNodeMethod,
-        labelClassName: props.labelClassName,
-        currentLableClassName: props.currentLableClassName,
-        onlyBothTree: props.onlyBothTree,
-        direction: props.direction,
-        animate: props.animate,
-        animateName: props.animateName,
-        animateDuration: props.animateDuration,
-        lazy: props.lazy,
-        load: props.load,
-      })
-  )
+  const [store] = useState(() => {
+    const created = new TreeStore({
+      key: props.nodeKey,
+      data: props.data,
+      leftData: props.leftData,
+      props: props.props,
+      defaultExpandedKeys: props.defaultExpandedKeys,
+      showCollapsable: props.showCollapsable,
+      accordion: props.accordion,
+      expandOnClickNode: props.expandOnClickNode,
+      showCheckbox: props.showCheckbox,
+      checkStrictly: props.checkStrictly,
+      defaultCheckedKeys: props.defaultCheckedKeys,
+      draggable: props.draggable,
+      allowDrag: props.allowDrag,
+      allowDrop: props.allowDrop,
+      currentNodeKey: props.currentNodeKey,
+      defaultExpandAll: props.defaultExpandAll,
+      filterNodeMethod: props.filterNodeMethod,
+      labelClassName: props.labelClassName,
+      currentLableClassName: props.currentLableClassName,
+      onlyBothTree: props.onlyBothTree,
+      direction: props.direction,
+      animate: props.animate,
+      animateName: props.animateName,
+      animateDuration: props.animateDuration,
+      lazy: props.lazy,
+      load: props.load,
+    })
+    // 受控初始值在创建期就应用（源项目同样在 setup 里同步做）：
+    // 放 effect 里会导致 SSR 首屏与「受控」语义不符，也会让首帧闪一下非受控状态。
+    // 此刻还没有任何订阅者，不违反 R1 第 7 条（render 期间不得触发通知）。
+    if (props.nodeKey) {
+      if (props.expandedKeys !== undefined) created.setExpandedKeys(props.expandedKeys)
+      if (props.currentKey !== undefined) created.setCurrentNodeKey(props.currentKey)
+    }
+    return created
+  })
   const root = store.root
 
   /** 回调与 render props 每次渲染刷新到 ref：context 引用因此恒定，不会整树重渲染 */
@@ -551,6 +558,18 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
   useEffect(() => {
     if (props.connector === 'svg') requestRedraw(true)
   })
+
+  /**
+   * 订阅模型突变。
+   *
+   * ResizeObserver 只在树根盒尺寸真的变化时才回调，而展开一个深层节点未必改动树根
+   * 尺寸（收起的子树本来就占位）；源项目靠 onUpdated + ResizeObserver + 过渡期逐帧重绘
+   * 三重触发，这里对等补上「任意节点状态变化」这一路——否则连接线会停在旧路径上。
+   */
+  useEffect(() => {
+    if (props.connector !== 'svg') return
+    return store.subscribeMutation(() => requestRedraw())
+  }, [props.connector, store, requestRedraw])
 
   useEffect(() => {
     if (props.connector !== 'svg') return

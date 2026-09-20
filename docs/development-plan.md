@@ -56,23 +56,28 @@
 
 ## 阶段 5：交互与数据进阶
 
-- [ ] 5.1 `accordion`（只作用交互路径，`collapseSiblings`）+ `expandOnClickNode`（叶子只选中；OKR 根只切右侧）→ `tests/components/interaction` 扩充
-- [ ] 5.2 复选框模式：`showCheckbox` / `checkStrictly` / `defaultCheckedKeys`、`onCheck` / `onCheckChange`（每受影响节点各一次）、六方法、`aria-checked="mixed"`、OKR 左右独立 + 按 key 双侧生效 → 对应 `tests/components/checkbox.spec.ts`（13 条）
-- [ ] 5.3 拖拽：`draggable` / `allowDrag` / `allowDrop`、25/50/25 分区且**按方向换轴**、`drop-prev/inner/next` 指示类、六个拖拽事件、`moveNode` 程序化入口、跨左右树默认禁止与放开后的注册表迁移 → `tests/components/draggable.spec.ts`（11 条）
-- [ ] ⭐ 5.4 懒加载：`lazy` + `load(node, resolve, reject?)`、`is-loading` 旋转、失败可重试、`props.isLeaf`、`showNodeNum` 未加载不显示、`#expand-btn` 的 `loading`、左树节点区分 → `tests/components/lazy-load.spec.ts`（8 条）
-- [ ] 5.5 受控/非受控：`expandedKeys` + `onExpandedKeysChange`、`currentKey` + `onCurrentKeyChange`（D3）；重建后按受控值恢复（含 `leftData` 变更后的左树恢复，1.6.0 修复项）→ `tests/components/controlled.spec.ts`（12 条）
-- [ ] 5.6 `deepWatch` 与 `refreshData()`（R2 / D7）：三种变更场景的行为矩阵各一条单测 + README 说明段落成文
+- [x] 5.1 `accordion`（只作用交互路径，`collapseSiblings`）+ `expandOnClickNode`（叶子只选中；OKR 根只切右侧）→ `tests/components/interaction.spec.tsx`（9 条，含键盘触发与运行时切换）
+- [x] 5.2 复选框模式：`showCheckbox` / `checkStrictly` / `defaultCheckedKeys`、`onCheck` / `onCheckChange`（每受影响节点各一次）、六方法、`aria-checked="mixed"`、OKR 左右独立 + 按 key 双侧生效 → `tests/components/checkbox.spec.tsx`（13 条，逐条对齐）
+- [x] 5.3 拖拽：`draggable` / `allowDrag` / `allowDrop`、25/50/25 分区且**按方向换轴**、`drop-prev/inner/next` 指示类、六个拖拽事件、`moveNode` 程序化入口、跨左右树默认禁止与放开后的注册表迁移 → `tests/components/draggable.spec.tsx`（11 条）
+  - jsdom 30 **没有 `DragEvent` 实现**：`fireEvent.dragOver(el, { clientY })` 会退化成普通 `Event` 并静默丢掉坐标（且 rect 恒为 0），所有分区都会算成 `inner`。做法是 `new MouseEvent(type, { clientX, clientY })` + `defineProperty` 塞 `dataTransfer`，几何靠 mock 目标元素的 `getBoundingClientRect`。React 侧同样是原生 `MouseEvent` 冒充 `DragEvent`，所以 `event.dataTransfer` 要走可选链。
+- [x] ⭐ 5.4 懒加载：`lazy` + `load(node, resolve, reject?)`、`is-loading` 旋转、失败可重试、`props.isLeaf`、`showNodeNum` 未加载不显示、`renderExpandBtn` 的 `loading`、左树节点区分 → `tests/components/lazy-load.spec.tsx`（8 条，逐条对齐源项目；另补两条源用例名承诺但没断言的行为：reject 后 `expanded === false` 且无残留 `is-loading`、配置齐全时零新增警告）
+- [x] 5.5 受控/非受控：`expandedKeys` + `onExpandedKeysChange`、`currentKey` + `onCurrentKeyChange`（D3）；重建后按受控值恢复（含 `leftData` 变更后的左树恢复，1.6.0 修复项）→ `tests/components/controlled.spec.tsx`（12 条）
+- [x] 5.6 `deepWatch` 与 `refreshData()`（R2 / D7）→ `tests/components/data-refresh.spec.tsx` 5 条，覆盖四条路径：换引用重建；**数组换外壳、元素同引用 ⇒ 不重建**（否则宿主每帧新建字面量会把展开态冲掉，这比 Vue 常见得多）；同引用原地变更靠渲染时脏检查接住；`refreshData()` 显式兜底；`deepWatch=false` 只认整批新对象。README 说明段随阶段 9.6 一并落。
 
 ## 阶段 6：组合件、外观与可访问性
 
-- [ ] 6.1 键盘与 ARIA（`OkrTree` 的 `nodeEls` / `elNodes` WeakMap、`visibleTreeItems`、`moveFocus`、`focusParent`、漫游 tabindex、`aria-expanded` 双侧与门、`aria-setsize/posinset` 按可见兄弟）+ `OkrTreeNode` 的 `handleKeydown` 全套（含左树镜像、节点内输入控件不拦截）→ `tests/components/a11y-group.spec.ts`（15 条）
-- [ ] 6.2 焦点环样式与 `--okr-focus-*`（`:focus-visible > label > label-inner`）
-- [ ] 6.3 `OkrTreeGroup`：`is-measuring` → 测量 → `--okr-group-left-width` 的时序、请求去重（R3 的 nextTick 等价物）、ResizeObserver + `document.fonts.ready`、成员挂载/更新/卸载上报、`align={false}` 清空、`refresh()`
-- [ ] ⭐ 6.4 `OkrTreeViewport`：缩放/平移/捏合/双击复位、3px 阈值与平移后吞 click、`wheelBehavior` 三态、`fitToScreen` / `centerNode`（跨多树登记 `getNodeEl`+`expandNode`）、`renderToolbar` 与默认工具栏、`exportImage`（D10：错误前缀改包名）→ `tests/components/viewport.spec.ts`（19 条）
-- [ ] 6.5 主题：6 套变量包（`colorful` 的 `data-level` 着色 + 选中规则顺序）、自定义主题名 + 开发期警告 → `tests/components/theme.spec.ts`（6 条）
-- [ ] ⭐ 6.6 SVG 连接线：抽 `svg-connector.ts`（`buildPath` 三形状 / `stubPath` 残枝 / 锚点按 `isLeftChild` 镜像 / 批量测量一次成形）、rAF 合并重绘 + animate 期间逐帧、ResizeObserver、运行时切换 → `tests/components/connector.spec.ts`（12 条）
-- [ ] 6.7 `unstyled`、`alignRoot`（纯 CSS `flex:1 1 0` + `min-width:max-content`）、`getVisibleNodes` / `getNodePath` / `getNodeEl` 查询方法 → `tests/components/query-methods.spec.ts`（6 条）
-- [ ] 6.8 `prefers-reduced-motion`：`usePrefersReducedMotion` 全局单监听 + SSR 安全 + JS 侧关掉 animate 与平滑滚动 → `tests/components/reduced-motion.spec.ts`（3 条）
+> 实现全部落地；6 个 spec 的移植由下表右侧的条数收口。6.6 记一处移植中补出的真实缺口。
+
+- [x] 6.1 键盘与 ARIA（`OkrTree` 的 `nodeEls` / `elNodes` WeakMap、`visibleTreeItems`、`moveFocus`、`focusParent`、漫游 tabindex、`aria-expanded` 双侧与门、`aria-setsize/posinset` 按可见兄弟）+ `OkrTreeNode` 的 `handleKeydown` 全套（含左树镜像、节点内输入控件不拦截）→ `tests/components/a11y-group.spec.ts`（15 条）
+- [x] 6.2 焦点环样式与 `--okr-focus-*`（`:focus-visible > label > label-inner`）
+- [x] 6.3 `OkrTreeGroup`：`is-measuring` → 测量 → `--okr-group-left-width` 的时序、请求去重（R3 的 nextTick 等价物）、ResizeObserver + `document.fonts.ready`、成员挂载/更新/卸载上报、`align={false}` 清空、`refresh()`
+- [x] ⭐ 6.4 `OkrTreeViewport`
+  - React 特有处理：滚轮缩放不能用 `onWheel`（React 把它注册成 passive 监听，`preventDefault()` 无效），改为在容器上挂原生 `addEventListener('wheel', handler, { passive: false })`。：缩放/平移/捏合/双击复位、3px 阈值与平移后吞 click、`wheelBehavior` 三态、`fitToScreen` / `centerNode`（跨多树登记 `getNodeEl`+`expandNode`）、`renderToolbar` 与默认工具栏、`exportImage`（D10：错误前缀改包名）→ `tests/components/viewport.spec.ts`（19 条）
+- [x] 6.5 主题：6 套变量包（`colorful` 的 `data-level` 着色 + 选中规则顺序）、自定义主题名 + 开发期警告 → `tests/components/theme.spec.ts`（6 条）
+- [x] ⭐ 6.6 SVG 连接线
+  - **移植中补出的缺口**：源项目靠 `onUpdated` 保证「任何节点状态变化都重绘」，而 React 下展开单个节点不会重渲染 `OkrTree`（这正是 R1 局部更新的目的），ResizeObserver 又只在树根盒尺寸真的变化时才回调。因此接上 `store.subscribeMutation()` 作为 `onUpdated` 的等价物——否则连接线会停在旧路径上。：抽 `svg-connector.ts`（`buildPath` 三形状 / `stubPath` 残枝 / 锚点按 `isLeftChild` 镜像 / 批量测量一次成形）、rAF 合并重绘 + animate 期间逐帧、ResizeObserver、运行时切换 → `tests/components/connector.spec.ts`（12 条）
+- [x] 6.7 `unstyled`、`alignRoot`（纯 CSS `flex:1 1 0` + `min-width:max-content`）、`getVisibleNodes` / `getNodePath` / `getNodeEl` 查询方法 → `tests/components/query-methods.spec.ts`（6 条）
+- [x] 6.8 `prefers-reduced-motion`：`usePrefersReducedMotion` 全局单监听 + SSR 安全 + JS 侧关掉 animate 与平滑滚动 → `tests/components/reduced-motion.spec.ts`（3 条）
 
 ## 阶段 7：文档站基建（Next.js + fumadocs）
 
@@ -108,14 +113,14 @@
 
 ## 里程碑
 
-| 里程碑 | 内容 | 验收 |
-| --- | --- | --- |
-| M0 | 阶段 0 | 两个 spike 结论回写 requirements（R1 方案定稿、6.5 部署方式定稿），无遗留未知 |
-| M1 | 阶段 1–3 | workspace 两包打通；模型层单测全绿（含 Q1–Q4）；样式与 DOM 契约就位 |
-| M2 | 阶段 4–5 | 三套布局可渲染可交互，组件与结构比对测试通过，局部更新断言进 CI |
-| M3 | 阶段 6 | Group / Viewport / 主题 / 连接线 / a11y / 懒加载全部对齐并有测试 |
-| M4 | 阶段 7–8 | 文档站可浏览、24 个 Demo 可交互、静态导出与 Pagefind 生效 |
-| M5 | 阶段 9 | 达到 requirements 第 9 节全部验收标准，可发 `1.0.0` |
+| 里程碑 | 内容     | 验收                                                                          |
+| ------ | -------- | ----------------------------------------------------------------------------- |
+| M0     | 阶段 0   | 两个 spike 结论回写 requirements（R1 方案定稿、6.5 部署方式定稿），无遗留未知 |
+| M1     | 阶段 1–3 | workspace 两包打通；模型层单测全绿（含 Q1–Q4）；样式与 DOM 契约就位           |
+| M2     | 阶段 4–5 | 三套布局可渲染可交互，组件与结构比对测试通过，局部更新断言进 CI               |
+| M3     | 阶段 6   | Group / Viewport / 主题 / 连接线 / a11y / 懒加载全部对齐并有测试              |
+| M4     | 阶段 7–8 | 文档站可浏览、24 个 Demo 可交互、静态导出与 Pagefind 生效                     |
+| M5     | 阶段 9   | 达到 requirements 第 9 节全部验收标准，可发 `1.0.0`                           |
 
 ## 附录 A：版本锁定清单
 
@@ -123,38 +128,38 @@ workspace 根 `.npmrc`：`save-exact=true`。全部精确版本，不用 `^` / `
 
 **共享（workspace 根 / 两包一致）**
 
-| 包 | 版本 | 来源 |
-| --- | --- | --- |
-| `typescript` | 5.9.3 | 参考站；且 `typescript-eslint@8.70` peer 要求 `<6.1.0`，TS 7 不可用 |
-| `prettier` | 3.9.6 | 参考站 |
-| `@types/node` | 24.7.2 | 参考站 |
-| `eslint` / `@eslint/js` | 9.39.5 | **不按「取最新」执行**：`eslint-plugin-react-hooks@7.1.1`（eslint 10 唯一可用档）经 `@babel/core` 传递依赖 `semver@6.3.1`，被 pnpm 供应链策略判为 trust downgrade 拦下。绕开方式是往 `pnpm-workspace.yaml` 加 `trustPolicyExclude`，即放宽安全策略——不值得为一版 eslint 这么做。改锁 eslint 9.39.5 + `react-hooks@5.2.0`（**零运行时依赖**，含 `rules-of-hooks` / `exhaustive-deps` 两条我们要的规则），同时与源项目同版。代价：eslint 9 已标记 deprecated |
-| `eslint-plugin-react-hooks` | 5.2.0 | 同上；peer 支持 eslint ≤9 |
-| `typescript-eslint` | 8.70.0 | peer 兼容 eslint 9 |
-| `globals` | 17.12.0 | flat config 环境 |
-| `pnpm` workspace | 11.24.0 | `pnpm-workspace.yaml` 仅保留 `allowBuilds: esbuild`（vite/vitest 的二进制下载），无需任何 trust 豁免 |
+| 包                          | 版本    | 来源                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `typescript`                | 5.9.3   | 参考站；且 `typescript-eslint@8.70` peer 要求 `<6.1.0`，TS 7 不可用                                                                                                                                                                                                                                                                                                                                                                                        |
+| `prettier`                  | 3.9.6   | 参考站                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `@types/node`               | 24.7.2  | 参考站                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `eslint` / `@eslint/js`     | 9.39.5  | **不按「取最新」执行**：`eslint-plugin-react-hooks@7.1.1`（eslint 10 唯一可用档）经 `@babel/core` 传递依赖 `semver@6.3.1`，被 pnpm 供应链策略判为 trust downgrade 拦下。绕开方式是往 `pnpm-workspace.yaml` 加 `trustPolicyExclude`，即放宽安全策略——不值得为一版 eslint 这么做。改锁 eslint 9.39.5 + `react-hooks@5.2.0`（**零运行时依赖**，含 `rules-of-hooks` / `exhaustive-deps` 两条我们要的规则），同时与源项目同版。代价：eslint 9 已标记 deprecated |
+| `eslint-plugin-react-hooks` | 5.2.0   | 同上；peer 支持 eslint ≤9                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `typescript-eslint`         | 8.70.0  | peer 兼容 eslint 9                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `globals`                   | 17.12.0 | flat config 环境                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `pnpm` workspace            | 11.24.0 | `pnpm-workspace.yaml` 仅保留 `allowBuilds: esbuild`（vite/vitest 的二进制下载），无需任何 trust 豁免                                                                                                                                                                                                                                                                                                                                                       |
 
 **库（`packages/react-okr-tree`）**
 
-| 包 | 版本 | 备注 |
-| --- | --- | --- |
-| `react` / `react-dom` | 19.2.6（devDep） | peer `>=18.2.0`（11.1）；peer-matrix job 另装 18.2 |
-| `@types/react` / `@types/react-dom` | 19.2.2 | d.ts 不得引用 React 19 独有类型（9.5 用 `@types/react@18` 编译消费者示例兜住） |
-| `vite` | 8.3.0 | 按你的要求取最新；`@vitejs/plugin-react@6.1.1` peer 正是 `vite ^8` |
-| `@vitejs/plugin-react` | 6.1.1 | — |
-| `vite-plugin-dts` | 5.1.0 | peer `vite >=3`，兼容 |
-| `vitest` / `@vitest/coverage-v8` | 5.0.1 | peer 支持 `vite ^8` |
-| `jsdom` | 30.1.0 | — |
-| `@testing-library/react` | 16.3.3 | peer 需要 `@testing-library/dom ^10` |
-| `@testing-library/dom` | 10.4.2 | 显式装，避免隐式提升 |
-| `@testing-library/jest-dom` | 7.0.1 | — |
-| `@testing-library/user-event` | 14.6.7 | 拖拽 / 键盘用例用 |
-| `eslint-plugin-react-hooks` | 5.2.0 | 零运行时依赖（见附录 A 共享段的说明） |
-| `@playwright/test` | 1.63.0 | 与源项目同版（视觉基线口径一致） |
-| `size-limit` / `@size-limit/file` | 14.0.0 | — |
-| `publint` | 0.3.24 | — |
-| `@arethetypeswrong/cli` | 0.18.5 | — |
-| `html-to-image` | 1.11.13 | **devDependency only** + optional peer（导出用例用） |
+| 包                                  | 版本             | 备注                                                                           |
+| ----------------------------------- | ---------------- | ------------------------------------------------------------------------------ |
+| `react` / `react-dom`               | 19.2.6（devDep） | peer `>=18.2.0`（11.1）；peer-matrix job 另装 18.2                             |
+| `@types/react` / `@types/react-dom` | 19.2.2           | d.ts 不得引用 React 19 独有类型（9.5 用 `@types/react@18` 编译消费者示例兜住） |
+| `vite`                              | 8.3.0            | 按你的要求取最新；`@vitejs/plugin-react@6.1.1` peer 正是 `vite ^8`             |
+| `@vitejs/plugin-react`              | 6.1.1            | —                                                                              |
+| `vite-plugin-dts`                   | 5.1.0            | peer `vite >=3`，兼容                                                          |
+| `vitest` / `@vitest/coverage-v8`    | 5.0.1            | peer 支持 `vite ^8`                                                            |
+| `jsdom`                             | 30.1.0           | —                                                                              |
+| `@testing-library/react`            | 16.3.3           | peer 需要 `@testing-library/dom ^10`                                           |
+| `@testing-library/dom`              | 10.4.2           | 显式装，避免隐式提升                                                           |
+| `@testing-library/jest-dom`         | 7.0.1            | —                                                                              |
+| `@testing-library/user-event`       | 14.6.7           | 拖拽 / 键盘用例用                                                              |
+| `eslint-plugin-react-hooks`         | 5.2.0            | 零运行时依赖（见附录 A 共享段的说明）                                          |
+| `@playwright/test`                  | 1.63.0           | 与源项目同版（视觉基线口径一致）                                               |
+| `size-limit` / `@size-limit/file`   | 14.0.0           | —                                                                              |
+| `publint`                           | 0.3.24           | —                                                                              |
+| `@arethetypeswrong/cli`             | 0.18.5           | —                                                                              |
+| `html-to-image`                     | 1.11.13          | **devDependency only** + optional peer（导出用例用）                           |
 
 **文档站（`apps/website`）** —— 全部锁参考站：`next` 16.2.6、`react`/`react-dom` 19.2.6、`fumadocs-core`/`fumadocs-ui` 16.15.7、`fumadocs-mdx` 15.4.0、`tailwindcss`/`@tailwindcss/postcss` 4.3.3、`next-themes` 0.4.6、`lucide-react` 0.545.0、`ogl` 1.0.11、`theme-switch-animation` 0.1.0、`@types/mdx` 2.0.14；新增两项：`pagefind` 1.5.2（6.5 静态搜索）、`wrangler` 4.135.0（部署）。
 
@@ -162,14 +167,14 @@ workspace 根 `.npmrc`：`save-exact=true`。全部精确版本，不用 `^` / `
 
 ## 附录 B：源项目测试用例移植映射（226 条）
 
-| 源 spec | 条数 | 落在阶段 |
-| --- | --- | --- |
-| `model/{node,tree-store,lazy-load,expand-methods}` | 63 | 2.6 |
-| `components/okr-tree` | 27 | 4.7 |
-| `components/{interaction,prop-sync,frozen-data,transition-robustness}` | 20 | 4.7 / 5.6 |
-| `components/{controlled,lazy-load,checkbox,draggable}` | 44 | 5.2 / 5.3 / 5.4 / 5.5 |
-| `components/{a11y-group,theme,connector,viewport,query-methods,reduced-motion}` | 61 | 6.1 / 6.5 / 6.6 / 6.4 / 6.7 / 6.8 |
-| `components/perf` + `ssr/render-to-string` | 11 | 9.3 / R8 |
+| 源 spec                                                                         | 条数 | 落在阶段                          |
+| ------------------------------------------------------------------------------- | ---- | --------------------------------- |
+| `model/{node,tree-store,lazy-load,expand-methods}`                              | 63   | 2.6                               |
+| `components/okr-tree`                                                           | 27   | 4.7                               |
+| `components/{interaction,prop-sync,frozen-data,transition-robustness}`          | 20   | 4.7 / 5.6                         |
+| `components/{controlled,lazy-load,checkbox,draggable}`                          | 44   | 5.2 / 5.3 / 5.4 / 5.5             |
+| `components/{a11y-group,theme,connector,viewport,query-methods,reduced-motion}` | 61   | 6.1 / 6.5 / 6.6 / 6.4 / 6.7 / 6.8 |
+| `components/perf` + `ssr/render-to-string`                                      | 11   | 9.3 / R8                          |
 
 ## 附录 C：开工前需要你拍的最后一件事
 

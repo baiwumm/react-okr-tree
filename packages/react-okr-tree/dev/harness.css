@@ -1,0 +1,67 @@
+/* 开发 harness 自有样式：只用于摆版面，不参与组件外观 */
+.harness {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    'PingFang SC',
+    'Microsoft YaHei',
+    sans-serif;
+  color: #1f2329;
+}
+
+.harness-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.harness-header h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.harness-themes {
+  display: flex;
+  gap: 6px;
+}
+
+.harness-themes button {
+  padding: 3px 10px;
+  border: 1px solid #dcdfe6;
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.harness-themes button.is-active {
+  border-color: #3370ff;
+  color: #3370ff;
+}
+
+.harness-card {
+  margin-bottom: 28px;
+}
+
+.harness-card h3 {
+  font-size: 14px;
+  margin: 0 0 10px;
+}
+
+.harness-card-body {
+  overflow: auto;
+  padding: 12px;
+  border: 1px dashed #e5e6eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.harness-card-body.dark-preview {
+  background: #18191a;
+}

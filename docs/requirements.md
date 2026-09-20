@@ -52,34 +52,34 @@ shared/api.ts              (546)       # API 表单一来源（playground / docs
 
 ### 2.2 能力清单（按域）
 
-| 能力域 | 内容 |
-| --- | --- |
-| 布局 | 三套布局：`vertical`（float + 伪元素轨）、`horizontal`（flex + 左侧连接线）、OKR 双向（根节点左右各挂一棵子树，左树是同一组件的完整镜像） |
+| 能力域   | 内容                                                                                                                                                  |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 布局     | 三套布局：`vertical`（float + 伪元素轨）、`horizontal`（flex + 左侧连接线）、OKR 双向（根节点左右各挂一棵子树，左树是同一组件的完整镜像）             |
 | 渲染定制 | `renderContent` / `nodeBtnContent` / `nodeComponent` / `#default` / `#expand-btn` / `#empty`，优先级：插槽 > nodeComponent > renderContent > 默认文本 |
-| 交互 | 点击选中、右键菜单、展开/收起、手风琴、点击节点展开、拖拽换父级（25/50/25 分区）、复选框（父子联动 + 半选）、键盘导航（完整 WAI-ARIA tree） |
-| 数据 | 过滤（全树，父随可见后代）、增删改（同步回写源数据）、`updateKeyChildren`、懒加载、`data` 原地变更增量重建 |
-| 状态 | 非受控（default-*）与受控（`expandedKeys` / `currentKey`）双模 |
-| 外观 | 27 个 `--okr-*` 变量、6 套内置主题、`unstyled`、6 组动画、CSS/SVG 双连接线模式（SVG 三种形状）、打印样式、`prefers-reduced-motion` |
-| 组合件 | `OkrTreeGroup`（跨实例根对齐）、`OkrTreeViewport`（画布缩放平移 + `exportImage`） |
-| 查询 | `getVisibleNodes` / `getNodePath` / `getNodeEl` / `getCheckedKeys` 等 |
-| 工程 | ESM/CJS/UMD 三产物 + 单文件 d.ts、publint + attw、size-limit、视觉回归、CI、文档站 |
+| 交互     | 点击选中、右键菜单、展开/收起、手风琴、点击节点展开、拖拽换父级（25/50/25 分区）、复选框（父子联动 + 半选）、键盘导航（完整 WAI-ARIA tree）           |
+| 数据     | 过滤（全树，父随可见后代）、增删改（同步回写源数据）、`updateKeyChildren`、懒加载、`data` 原地变更增量重建                                            |
+| 状态     | 非受控（default-*）与受控（`expandedKeys` / `currentKey`）双模                                                                                        |
+| 外观     | 27 个 `--okr-*` 变量、6 套内置主题、`unstyled`、6 组动画、CSS/SVG 双连接线模式（SVG 三种形状）、打印样式、`prefers-reduced-motion`                    |
+| 组合件   | `OkrTreeGroup`（跨实例根对齐）、`OkrTreeViewport`（画布缩放平移 + `exportImage`）                                                                     |
+| 查询     | `getVisibleNodes` / `getNodePath` / `getNodeEl` / `getCheckedKeys` 等                                                                                 |
+| 工程     | ESM/CJS/UMD 三产物 + 单文件 d.ts、publint + attw、size-limit、视觉回归、CI、文档站                                                                    |
 
 ### 2.3 源项目已修正的原版缺陷（React 版必须继承修复结果，不得回退）
 
 源项目 `docs/requirements.md` 第 6 节的 Q1–Q9 是它的验收结论，React 版**直接采纳同一决策**：
 
-| 项 | 结论（React 版要求） |
-| --- | --- |
-| Q1 过滤范围 | 从**全部根节点**遍历，所有节点执行 `filterNodeMethod`；父节点不匹配但有可见后代时保持可见（element-ui 语义） |
-| Q2 左右树同 key | **左右分表**（`nodesMap` / `leftNodesMap`）。`getNode` 右树优先、未命中回退左树；`defaultExpandedKeys` / `currentNodeKey` / `defaultCheckedKeys` / `setExpandedKeys` 按 key **同时作用于两棵树** |
-| Q3 源数据回写 | **复刻**：`insertChild` / `removeChild` / `moveNode` / 懒加载 `resolve` 同步修改用户源数据的 `children` 数组，作为正式行为写进 README |
-| Q4 原地变更 | 实现 `updateChildren` 增量重建（脏检查：同引用同长度则跳过本层，仅向下检查），复用子节点的 `expanded` / `leftExpanded` / `isCurrent` / `checked` |
-| Q5/Q8 动画 | `animate` / `animateName` / `animateDuration` 三个 prop 必须真实生效；展开/收起走 CSS 状态类过渡，**折叠子树仍保持挂载并占位**（根节点不位移） |
-| Q6 动画数量 | 6 组 `okr-*` 全部迁移 |
-| Q7 死代码 | `selectedKey` / `orkstyle` / `props.leftChildren` / `props.disabled`(原版) / `findNearestComponent` / `updateLeftLeafState` / `computNodeStyle` / `ondeClass` / `okrEventBus` —— **不移植** |
-| Q9 双格式 | `"type": "module"` 下额外产出 `.cjs`，保证 `import` / `require` / `<script>` 三条路径都可用 |
-| 冻结数据 | 只读源数据下 `defineProperty` 降级到 WeakMap 兜底；回写类操作跳过并输出开发期警告，不抛错、不静默 |
-| 1.6.0 props 策略 | 运行时 prop「要么生效、要么警告」，不存在静默失效（见 4.1 表最后一列） |
+| 项               | 结论（React 版要求）                                                                                                                                                                             |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Q1 过滤范围      | 从**全部根节点**遍历，所有节点执行 `filterNodeMethod`；父节点不匹配但有可见后代时保持可见（element-ui 语义）                                                                                     |
+| Q2 左右树同 key  | **左右分表**（`nodesMap` / `leftNodesMap`）。`getNode` 右树优先、未命中回退左树；`defaultExpandedKeys` / `currentNodeKey` / `defaultCheckedKeys` / `setExpandedKeys` 按 key **同时作用于两棵树** |
+| Q3 源数据回写    | **复刻**：`insertChild` / `removeChild` / `moveNode` / 懒加载 `resolve` 同步修改用户源数据的 `children` 数组，作为正式行为写进 README                                                            |
+| Q4 原地变更      | 实现 `updateChildren` 增量重建（脏检查：同引用同长度则跳过本层，仅向下检查），复用子节点的 `expanded` / `leftExpanded` / `isCurrent` / `checked`                                                 |
+| Q5/Q8 动画       | `animate` / `animateName` / `animateDuration` 三个 prop 必须真实生效；展开/收起走 CSS 状态类过渡，**折叠子树仍保持挂载并占位**（根节点不位移）                                                   |
+| Q6 动画数量      | 6 组 `okr-*` 全部迁移                                                                                                                                                                            |
+| Q7 死代码        | `selectedKey` / `orkstyle` / `props.leftChildren` / `props.disabled`(原版) / `findNearestComponent` / `updateLeftLeafState` / `computNodeStyle` / `ondeClass` / `okrEventBus` —— **不移植**      |
+| Q9 双格式        | `"type": "module"` 下额外产出 `.cjs`，保证 `import` / `require` / `<script>` 三条路径都可用                                                                                                      |
+| 冻结数据         | 只读源数据下 `defineProperty` 降级到 WeakMap 兜底；回写类操作跳过并输出开发期警告，不抛错、不静默                                                                                                |
+| 1.6.0 props 策略 | 运行时 prop「要么生效、要么警告」，不存在静默失效（见 4.1 表最后一列）                                                                                                                           |
 
 ---
 
@@ -111,33 +111,33 @@ shared/api.ts              (546)       # API 表单一来源（playground / docs
 
 源项目靠 `watch(() => props.data, …, { deep })` 同时覆盖「引用变化」与「同引用原地变更」。React 只有前者天然成立：同引用变异不会触发重渲染，因此**根本进不了比较逻辑**。
 
-| 场景 | Vue | React 方案 |
-| --- | --- | --- |
-| `data` 引用变化 | `setData` → 引用不同 → `root.setData()` 全量重建 | 一致：effect 依赖 `data` 引用，走 `store.setData()` 全量重建；重建后按受控值恢复 `expandedKeys` / `currentKey` |
+| 场景                                           | Vue                                                | React 方案                                                                                                                                                                            |
+| ---------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data` 引用变化                                | `setData` → 引用不同 → `root.setData()` 全量重建   | 一致：effect 依赖 `data` 引用，走 `store.setData()` 全量重建；重建后按受控值恢复 `expandedKeys` / `currentKey`                                                                        |
 | 同引用、内部 push/splice，且宿主组件恰好重渲染 | deep watch → `updateChildren()` 增量、保留节点状态 | `deepWatch !== false` 时，每次 `OkrTree` 渲染做一次**结构脏检查**（复用 `updateChildren` 已有的「逐项同引用 + 长度一致」判据），命中差异则调用 `store.setData(同一引用)` 以走增量路径 |
-| 同引用内部变更、宿主组件不重渲染 | 同样不触发（Vue 也要求父组件持有响应式代理） | 无法感知。**新增命令式兜底 `handle.refreshData()`**：显式触发上述增量路径（等价 `store.setData(store.data)`），供 zustand/jotai/直接 mutate 的场景使用。文档必须写明 |
-| 超大数据量 | `deep-watch: false` 只响应引用变化 | `deepWatch` prop 保留同名同语义（创建期生效），`false` 时跳过每次渲染的脏检查 |
+| 同引用内部变更、宿主组件不重渲染               | 同样不触发（Vue 也要求父组件持有响应式代理）       | 无法感知。**新增命令式兜底 `handle.refreshData()`**：显式触发上述增量路径（等价 `store.setData(store.data)`），供 zustand/jotai/直接 mutate 的场景使用。文档必须写明                  |
+| 超大数据量                                     | `deep-watch: false` 只响应引用变化                 | `deepWatch` prop 保留同名同语义（创建期生效），`false` 时跳过每次渲染的脏检查                                                                                                         |
 
 这是本期唯一的**能力降级 + 新增 API** 组合，登记为 D7（第 8 节）。
 
 ### R3 Vue 机制 → React 机制对照表
 
-| Vue 机制 | 出现位置 | React 方案 |
-| --- | --- | --- |
-| `shallowReactive` 模型 | node / tree-store | R1：bump + `useSyncExternalStore` |
-| `provide` / `inject` | 树→递归节点、Group→树、Viewport→树 | 三个 Context：`OkrTreeContext` / `OkrTreeGroupContext` / `OkrTreeViewportContext`。**Context value 必须全程引用稳定**（一次创建、字段挂在可变对象上），否则任一状态变更会把所有节点连带重渲染、R1 的局部更新失效 |
-| 跨节点交互态（`focusedNode` / `draggingNode` / `dragOverNode` / `dragOverType`） | `ShallowRef` + 组件读取 | 存在 `OkrTreeContext` 的可变字段里；变更时**只 bump「上一个」与「下一个」受影响的节点**（漫游 tabindex、drop 指示类名），不得全树重渲染。这是 React 版最容易写出性能塌方的点，列为专门验收项 |
-| `defineExpose` + 模板 ref | 27 个方法 + `store` / `root` | `forwardRef` + `useImperativeHandle` → `OkrTreeHandle`；`store` / `root` 一并暴露（源项目公开了它们） |
-| `v-model:expanded-keys` / `v-model:current-key` / `v-model:zoom` / `v-model:offset` | 受控 | 成对的 `xxx` + `onXxxChange`；**prop 为 `undefined` = 非受控**（与源项目判定方式一致），需支持「传值但不传回调」的锁定态 |
-| `watch` prop → store 字段同步 | 运行时同步策略 | 每个可同步 prop 一个 `useEffect`；创建期快照类 prop（`nodeKey` / `direction` / `onlyBothTree`）变更后按源项目文案改写为「请为组件绑定 `key` 以重挂载实例」 |
-| 插槽 `#default` / `#expand-btn` / `#empty` / `#toolbar` | 渲染定制 | `renderNode` / `renderExpandBtn` / `empty` / `renderToolbar`（参数形状保持与插槽作用域一致），同时允许 `children` 作为函数形式的节点渲染器 |
-| `renderContent(h, node)` | 自定义内容 | 去掉 `h`：`renderContent(node) => ReactNode`（D1） |
-| `<transition>` + `TransitionProps` | 子容器挂载/卸载过渡 | 见 R7 |
-| 插件 `app.component(...)` | `VueOkrTreePlugin` | 移除（React 无全局注册），默认导出改为 `OkrTree` 组件本身（D6） |
-| `createTypedOkrTree<T>()` | 类型收窄 | 移除：React 泛型组件 `function OkrTree<T extends TreeNodeData>(props: OkrTreeProps<T>)` 原生达到同一效果（D5） |
-| `import { h } from 'vue'` | node-content | 不需要 |
-| `getCurrentInstance().vnode.props.onNodeContextmenu` | 「绑了才 preventDefault」 | `props.onNodeContextMenu !== undefined`，行为等价 |
-| `useSlots()` | 插槽存在性判定 | 回调 prop 存在性判定 |
+| Vue 机制                                                                            | 出现位置                           | React 方案                                                                                                                                                                                                       |
+| ----------------------------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `shallowReactive` 模型                                                              | node / tree-store                  | R1：bump + `useSyncExternalStore`                                                                                                                                                                                |
+| `provide` / `inject`                                                                | 树→递归节点、Group→树、Viewport→树 | 三个 Context：`OkrTreeContext` / `OkrTreeGroupContext` / `OkrTreeViewportContext`。**Context value 必须全程引用稳定**（一次创建、字段挂在可变对象上），否则任一状态变更会把所有节点连带重渲染、R1 的局部更新失效 |
+| 跨节点交互态（`focusedNode` / `draggingNode` / `dragOverNode` / `dragOverType`）    | `ShallowRef` + 组件读取            | 存在 `OkrTreeContext` 的可变字段里；变更时**只 bump「上一个」与「下一个」受影响的节点**（漫游 tabindex、drop 指示类名），不得全树重渲染。这是 React 版最容易写出性能塌方的点，列为专门验收项                     |
+| `defineExpose` + 模板 ref                                                           | 27 个方法 + `store` / `root`       | `forwardRef` + `useImperativeHandle` → `OkrTreeHandle`；`store` / `root` 一并暴露（源项目公开了它们）                                                                                                            |
+| `v-model:expanded-keys` / `v-model:current-key` / `v-model:zoom` / `v-model:offset` | 受控                               | 成对的 `xxx` + `onXxxChange`；**prop 为 `undefined` = 非受控**（与源项目判定方式一致），需支持「传值但不传回调」的锁定态                                                                                         |
+| `watch` prop → store 字段同步                                                       | 运行时同步策略                     | 每个可同步 prop 一个 `useEffect`；创建期快照类 prop（`nodeKey` / `direction` / `onlyBothTree`）变更后按源项目文案改写为「请为组件绑定 `key` 以重挂载实例」                                                       |
+| 插槽 `#default` / `#expand-btn` / `#empty` / `#toolbar`                             | 渲染定制                           | `renderNode` / `renderExpandBtn` / `empty` / `renderToolbar`（参数形状保持与插槽作用域一致），同时允许 `children` 作为函数形式的节点渲染器                                                                       |
+| `renderContent(h, node)`                                                            | 自定义内容                         | 去掉 `h`：`renderContent(node) => ReactNode`（D1）                                                                                                                                                               |
+| `<transition>` + `TransitionProps`                                                  | 子容器挂载/卸载过渡                | 见 R7                                                                                                                                                                                                            |
+| 插件 `app.component(...)`                                                           | `VueOkrTreePlugin`                 | 移除（React 无全局注册），默认导出改为 `OkrTree` 组件本身（D6）                                                                                                                                                  |
+| `createTypedOkrTree<T>()`                                                           | 类型收窄                           | 移除：React 泛型组件 `function OkrTree<T extends TreeNodeData>(props: OkrTreeProps<T>)` 原生达到同一效果（D5）                                                                                                   |
+| `import { h } from 'vue'`                                                           | node-content                       | 不需要                                                                                                                                                                                                           |
+| `getCurrentInstance().vnode.props.onNodeContextmenu`                                | 「绑了才 preventDefault」          | `props.onNodeContextMenu !== undefined`，行为等价                                                                                                                                                                |
+| `useSlots()`                                                                        | 插槽存在性判定                     | 回调 prop 存在性判定                                                                                                                                                                                             |
 
 ### R4 组件划分
 
@@ -168,20 +168,20 @@ src/
 
 `node` 一律是内部 `TreeNode` 实例（源数据在 `node.data`，文本在 `node.label`）——这一点对齐源项目而非 element-ui 惯例，**不得改为只传 data**。
 
-| Vue 事件 | React prop | 签名 |
-| --- | --- | --- |
-| `node-click` | `onNodeClick` | `(data, node)` |
-| `node-expand` | `onNodeExpand` | `(data, node)` |
-| `node-collapse` | `onNodeCollapse` | `(data, node)` |
-| `node-contextmenu` | `onNodeContextMenu` | `(event, data, node)`，仅当传入该回调时 `preventDefault` |
-| `update:expandedKeys` | `onExpandedKeysChange` | `(keys)` |
-| `update:currentKey` | `onCurrentKeyChange` | `(key \| null)` |
-| `check` | `onCheck` | `(data, { checkedNodes, checkedKeys, halfCheckedNodes, halfCheckedKeys })` |
-| `check-change` | `onCheckChange` | `(data, checked, indeterminate)` |
-| `node-drag-start` | `onNodeDragStart` | `(node, event)` |
-| `node-drag-enter/leave/over` | `onNodeDragEnter/Leave/Over` | `(draggingNode, dropNode, event)` |
-| `node-drag-end` | `onNodeDragEnd` | `(draggingNode, dropNode \| null, dropType \| null, event)` |
-| `node-drop` | `onNodeDrop` | `(draggingNode, dropNode, dropType, event)` |
+| Vue 事件                     | React prop                   | 签名                                                                       |
+| ---------------------------- | ---------------------------- | -------------------------------------------------------------------------- |
+| `node-click`                 | `onNodeClick`                | `(data, node)`                                                             |
+| `node-expand`                | `onNodeExpand`               | `(data, node)`                                                             |
+| `node-collapse`              | `onNodeCollapse`             | `(data, node)`                                                             |
+| `node-contextmenu`           | `onNodeContextMenu`          | `(event, data, node)`，仅当传入该回调时 `preventDefault`                   |
+| `update:expandedKeys`        | `onExpandedKeysChange`       | `(keys)`                                                                   |
+| `update:currentKey`          | `onCurrentKeyChange`         | `(key \| null)`                                                            |
+| `check`                      | `onCheck`                    | `(data, { checkedNodes, checkedKeys, halfCheckedNodes, halfCheckedKeys })` |
+| `check-change`               | `onCheckChange`              | `(data, checked, indeterminate)`                                           |
+| `node-drag-start`            | `onNodeDragStart`            | `(node, event)`                                                            |
+| `node-drag-enter/leave/over` | `onNodeDragEnter/Leave/Over` | `(draggingNode, dropNode, event)`                                          |
+| `node-drag-end`              | `onNodeDragEnd`              | `(draggingNode, dropNode \| null, dropType \| null, event)`                |
+| `node-drop`                  | `onNodeDrop`                 | `(draggingNode, dropNode, dropType, event)`                                |
 
 第三参数 `nodeComponent` 在 React 无对应概念，移除并登记为 D2；DOM 定位需求由 `handle.getNodeEl(data)` 满足。
 
@@ -222,6 +222,7 @@ src/
 - `exportImage`、`html-to-image` 动态 import、`scrollToNode` 均为客户端专属。
 - 组件文件加 `'use client'`（App Router 下可直接 import）。
 - 冒烟用例覆盖与源项目对齐：三套布局、OKR 左树、受控 props、`renderNode` / `empty`、`OkrTreeGroup` / `OkrTreeViewport` 包裹。
+- **实现约束（SSR 用例抓到的一条）**：受控初始值（`expandedKeys` / `currentKey`）必须在 store 创建期同步应用，不能只放 effect——effect 在服务端不执行，首屏渲染结果会与「受控」语义不符，客户端首帧也会闪一下非受控状态。创建期赋值不违反 R1 第 7 条，因为那时还没有订阅者。
 
 ### R9 开发期警告与错误
 
@@ -239,58 +240,58 @@ src/
 
 kebab-case → camelCase 的机械转换（`node-key`→`nodeKey`、`show-collapsable`→`showCollapsable`、`current-lable-class-name`→`currentLableClassName`）。**`currentLableClassName` 保留原拼写错误**，`showCollapsable` 同理。新增 React 侧的 `className` / `style`（透传到 `.org-chart-container`）。
 
-| prop | 说明 | 类型 | 默认值 | 运行时变更 |
-| --- | --- | --- | --- | --- |
-| `data` | 展示数据（数组，支持多根） | `TreeNodeData[]` | 必填 | 引用变化重建；`deepWatch` 下同引用走增量 |
-| `direction` | `vertical` / `horizontal` | string | `vertical` | ❌ 警告，需 `key` 重挂载 |
-| `onlyBothTree` | 飞书 OKR 双向展开，仅 `horizontal` 有效且必须给 `leftData` | boolean | `false` | ❌ 警告 |
-| `leftData` | 左子树数据 | `TreeNodeData[]` | — | 同步（deep） |
-| `labelWidth` / `labelHeight` | number→px；string→原样作 style | string/number | `auto` | ✅ |
-| `labelClassName` | 节点 className，`string` 或 `(node) => …`，参数是内部 TreeNode | Function/String | — | ✅ |
-| `currentLableClassName` | 选中节点 className，参数同上 | Function/String | — | ✅ |
-| `showCollapsable` | 显示 `+/-`；`false` 时**强制全部展开**（原版行为，保留） | boolean | `false` | ✅ |
-| `accordion` | 手风琴；只作用于**交互**展开（按钮 / 点击节点 / 键盘），`expandNode` 与受控 `expandedKeys` 不受互斥 | boolean | `false` | ✅ |
-| `expandOnClickNode` | 点卡片切换展开；叶子只选中不切换；OKR 根节点只切右侧 | boolean | `false` | ✅ |
-| `showCheckbox` | 复选框；关→开保留既有勾选 | boolean | `false` | ✅ |
-| `checkStrictly` | 父子不联动、无半选；切换后新交互按新模式，既有勾选不变 | boolean | `false` | ✅ |
-| `defaultCheckedKeys` | 初始勾选（需 `nodeKey`）；变更=先清空再应用 | array | — | ✅（`setDefaultCheckedKeys`） |
-| `draggable` | HTML5 DnD 换父级 | boolean | `false` | ✅ |
-| `allowDrag` | `(node) => boolean`，`false` 禁拖；disabled 恒不可拖 | Function | — | ✅ |
-| `allowDrop` | `(draggingNode, dropNode, type) => boolean`；跨左右树默认禁止，显式返回 `true` 放开 | Function | — | ✅ |
-| `connector` | `css`（伪元素）/ `svg`（覆盖层路径，布局零改动） | string | `css` | ✅ |
-| `connectorShape` | svg 模式形状：`curve` / `orthogonal` / `straight` | string | `curve` | ✅ |
-| `unstyled` | 去卡片外观（背景/边框/圆角/阴影含 hover），保留布局与连线；**刻意不动 padding/字号/颜色** | boolean | `false` | ✅ |
-| `showNodeNum` | 折叠时在圆盘内显示子节点数，**只计未被 filter 隐藏的可见子节点** | boolean | `false` | ✅ |
-| `defaultExpandAll` | 默认全展开 | boolean | `false` | ✅（影响后续新建节点，不追溯） |
-| `renderContent` | **React 版签名 `(node) => ReactNode`**（D1） | Function | — | — |
-| `nodeBtnContent` | 展开按钮内容渲染，同上 | Function | — | — |
-| `nodeComponent` | 以 `{ node, data }` 为 props 的组件；优先级 `renderNode` > `nodeComponent` > `renderContent` | ComponentType | — | ✅ |
-| `props` | 字段映射（见 4.2）；`children` 变更会按新映射增量重建 | object | 见 4.2 | ✅（deep） |
-| `nodeKey` | 唯一标识字段名 | string | — | ❌ 警告 |
-| `defaultExpandedKeys` | 默认展开 key 数组（需 `nodeKey`），OKR 下左右同时生效 | array | — | ✅（`setDefaultExpandedKeys`） |
-| `currentNodeKey` | 初始选中 key（单向） | string/number | — | ✅ |
-| `filterNodeMethod` | `(value, data, node) => boolean`，`false` 隐藏；`filter('')` 也要执行，需对空值返回 `true` 才能恢复全显 | Function | — | ✅ |
-| `animate` | 展开过渡动画；`prefers-reduced-motion: reduce` 时按关闭处理 | boolean | `false` | ✅ |
-| `animateName` | 6 个 `okr-*` 名之一（也允许自定义串） | string | `okr-zoom-in-center` | ✅ |
-| `animateDuration` | 时长 ms | number | `200` | ✅ |
-| `alignRoot` | OKR 根节点纯 CSS 居中（容器 50%），`false` 回退原版行为 | boolean | `true` | ✅ |
-| `theme` | `default`/`feishu`/`dark`/`auto`/`minimal`/`colorful` 或自定义名（自写 `.okr-theme-{name}`） | string | `default` | ✅ |
-| `expandedKeys` + `onExpandedKeysChange` | 受控展开集合（需 `nodeKey`）；未传 = 非受控 | array / fn | — | ✅ |
-| `currentKey` + `onCurrentKeyChange` | 受控选中（需 `nodeKey`），`null` = 无选中 | key/`null` / fn | — | ✅ |
-| `lazy` | 初始无 `children`（或空数组）视为未加载，首次展开触发 `load` | boolean | `false` | — |
-| `load` | `(node, resolve, reject?) => void`；`resolve(children)` 写入源数据 children 并展开；`reject`/抛错回折叠态可重试；`node.isLeftChild` 区分左树 | Function | — | — |
-| `deepWatch` | 见 R2；创建期生效 | boolean | `true` | ❌（创建期） |
+| prop                                    | 说明                                                                                                                                         | 类型             | 默认值               | 运行时变更                               |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- | -------------------- | ---------------------------------------- |
+| `data`                                  | 展示数据（数组，支持多根）                                                                                                                   | `TreeNodeData[]` | 必填                 | 引用变化重建；`deepWatch` 下同引用走增量 |
+| `direction`                             | `vertical` / `horizontal`                                                                                                                    | string           | `vertical`           | ❌ 警告，需 `key` 重挂载                 |
+| `onlyBothTree`                          | 飞书 OKR 双向展开，仅 `horizontal` 有效且必须给 `leftData`                                                                                   | boolean          | `false`              | ❌ 警告                                  |
+| `leftData`                              | 左子树数据                                                                                                                                   | `TreeNodeData[]` | —                    | 同步（deep）                             |
+| `labelWidth` / `labelHeight`            | number→px；string→原样作 style                                                                                                               | string/number    | `auto`               | ✅                                       |
+| `labelClassName`                        | 节点 className，`string` 或 `(node) => …`，参数是内部 TreeNode                                                                               | Function/String  | —                    | ✅                                       |
+| `currentLableClassName`                 | 选中节点 className，参数同上                                                                                                                 | Function/String  | —                    | ✅                                       |
+| `showCollapsable`                       | 显示 `+/-`；`false` 时**强制全部展开**（原版行为，保留）                                                                                     | boolean          | `false`              | ✅                                       |
+| `accordion`                             | 手风琴；只作用于**交互**展开（按钮 / 点击节点 / 键盘），`expandNode` 与受控 `expandedKeys` 不受互斥                                          | boolean          | `false`              | ✅                                       |
+| `expandOnClickNode`                     | 点卡片切换展开；叶子只选中不切换；OKR 根节点只切右侧                                                                                         | boolean          | `false`              | ✅                                       |
+| `showCheckbox`                          | 复选框；关→开保留既有勾选                                                                                                                    | boolean          | `false`              | ✅                                       |
+| `checkStrictly`                         | 父子不联动、无半选；切换后新交互按新模式，既有勾选不变                                                                                       | boolean          | `false`              | ✅                                       |
+| `defaultCheckedKeys`                    | 初始勾选（需 `nodeKey`）；变更=先清空再应用                                                                                                  | array            | —                    | ✅（`setDefaultCheckedKeys`）            |
+| `draggable`                             | HTML5 DnD 换父级                                                                                                                             | boolean          | `false`              | ✅                                       |
+| `allowDrag`                             | `(node) => boolean`，`false` 禁拖；disabled 恒不可拖                                                                                         | Function         | —                    | ✅                                       |
+| `allowDrop`                             | `(draggingNode, dropNode, type) => boolean`；跨左右树默认禁止，显式返回 `true` 放开                                                          | Function         | —                    | ✅                                       |
+| `connector`                             | `css`（伪元素）/ `svg`（覆盖层路径，布局零改动）                                                                                             | string           | `css`                | ✅                                       |
+| `connectorShape`                        | svg 模式形状：`curve` / `orthogonal` / `straight`                                                                                            | string           | `curve`              | ✅                                       |
+| `unstyled`                              | 去卡片外观（背景/边框/圆角/阴影含 hover），保留布局与连线；**刻意不动 padding/字号/颜色**                                                    | boolean          | `false`              | ✅                                       |
+| `showNodeNum`                           | 折叠时在圆盘内显示子节点数，**只计未被 filter 隐藏的可见子节点**                                                                             | boolean          | `false`              | ✅                                       |
+| `defaultExpandAll`                      | 默认全展开                                                                                                                                   | boolean          | `false`              | ✅（影响后续新建节点，不追溯）           |
+| `renderContent`                         | **React 版签名 `(node) => ReactNode`**（D1）                                                                                                 | Function         | —                    | —                                        |
+| `nodeBtnContent`                        | 展开按钮内容渲染，同上                                                                                                                       | Function         | —                    | —                                        |
+| `nodeComponent`                         | 以 `{ node, data }` 为 props 的组件；优先级 `renderNode` > `nodeComponent` > `renderContent`                                                 | ComponentType    | —                    | ✅                                       |
+| `props`                                 | 字段映射（见 4.2）；`children` 变更会按新映射增量重建                                                                                        | object           | 见 4.2               | ✅（deep）                               |
+| `nodeKey`                               | 唯一标识字段名                                                                                                                               | string           | —                    | ❌ 警告                                  |
+| `defaultExpandedKeys`                   | 默认展开 key 数组（需 `nodeKey`），OKR 下左右同时生效                                                                                        | array            | —                    | ✅（`setDefaultExpandedKeys`）           |
+| `currentNodeKey`                        | 初始选中 key（单向）                                                                                                                         | string/number    | —                    | ✅                                       |
+| `filterNodeMethod`                      | `(value, data, node) => boolean`，`false` 隐藏；`filter('')` 也要执行，需对空值返回 `true` 才能恢复全显                                      | Function         | —                    | ✅                                       |
+| `animate`                               | 展开过渡动画；`prefers-reduced-motion: reduce` 时按关闭处理                                                                                  | boolean          | `false`              | ✅                                       |
+| `animateName`                           | 6 个 `okr-*` 名之一（也允许自定义串）                                                                                                        | string           | `okr-zoom-in-center` | ✅                                       |
+| `animateDuration`                       | 时长 ms                                                                                                                                      | number           | `200`                | ✅                                       |
+| `alignRoot`                             | OKR 根节点纯 CSS 居中（容器 50%），`false` 回退原版行为                                                                                      | boolean          | `true`               | ✅                                       |
+| `theme`                                 | `default`/`feishu`/`dark`/`auto`/`minimal`/`colorful` 或自定义名（自写 `.okr-theme-{name}`）                                                 | string           | `default`            | ✅                                       |
+| `expandedKeys` + `onExpandedKeysChange` | 受控展开集合（需 `nodeKey`）；未传 = 非受控                                                                                                  | array / fn       | —                    | ✅                                       |
+| `currentKey` + `onCurrentKeyChange`     | 受控选中（需 `nodeKey`），`null` = 无选中                                                                                                    | key/`null` / fn  | —                    | ✅                                       |
+| `lazy`                                  | 初始无 `children`（或空数组）视为未加载，首次展开触发 `load`                                                                                 | boolean          | `false`              | —                                        |
+| `load`                                  | `(node, resolve, reject?) => void`；`resolve(children)` 写入源数据 children 并展开；`reject`/抛错回折叠态可重试；`node.isLeftChild` 区分左树 | Function         | —                    | —                                        |
+| `deepWatch`                             | 见 R2；创建期生效                                                                                                                            | boolean          | `true`               | ❌（创建期）                             |
 
 源项目另有 `renderContent`/`nodeBtnContent` 传入 `h` 的行为、`selectedKey` / `orkstyle` 等死 prop —— 前者见 D1，后者不移植（Q7）。
 
 ### 4.2 `props` 字段映射
 
-| 字段 | 说明 | 类型 | 默认 |
-| --- | --- | --- | --- |
-| `label` | 节点文本 | `string \| (data, node) => string` | `label` |
-| `children` | 子节点字段 | `string` | `children` |
+| 字段       | 说明                                                                          | 类型                                | 默认       |
+| ---------- | ----------------------------------------------------------------------------- | ----------------------------------- | ---------- |
+| `label`    | 节点文本                                                                      | `string \| (data, node) => string`  | `label`    |
+| `children` | 子节点字段                                                                    | `string`                            | `children` |
 | `disabled` | 禁用字段（**真实生效**：`is-disabled`、不选中、不触发 `onNodeClick`、不可拖） | `string \| (data, node) => boolean` | `disabled` |
-| `isLeaf` | 叶子字段（lazy 下未加载节点用它判定，标记则不显示按钮、不触发 load） | `string \| (data, node) => boolean` | — |
+| `isLeaf`   | 叶子字段（lazy 下未加载节点用它判定，标记则不显示按钮、不触发 load）          | `string \| (data, node) => boolean` | —          |
 
 未配置某字段时按 `data[prop]` 兜底读取（`getPropertyFromData` 的第三分支），保持一致。
 
@@ -319,14 +320,14 @@ kebab-case → camelCase 的机械转换（`node-key`→`nodeKey`、`show-collap
 
 ### 4.4 渲染定制
 
-| React prop | 对应插槽/prop | 参数 |
-| --- | --- | --- |
-| `renderNode`（或 `children` 函数） | `#default` | `{ node, data }` |
-| `renderExpandBtn` | `#expand-btn` | `{ node, data, expanded, side: 'left'\|'right', loading }`；`showNodeNum` 的折叠数字**优先于**该回调 |
-| `empty` | `#empty` | 无；`data` 为空数组时渲染在 `role=tree` 容器内 |
-| `renderContent` | `render-content` | `(node)` → ReactNode |
-| `nodeBtnContent` | `node-btn-content` | `(node)` → ReactNode |
-| `nodeComponent` | `node-component` | 组件，props `{ node, data }` |
+| React prop                         | 对应插槽/prop      | 参数                                                                                                 |
+| ---------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------- |
+| `renderNode`（或 `children` 函数） | `#default`         | `{ node, data }`                                                                                     |
+| `renderExpandBtn`                  | `#expand-btn`      | `{ node, data, expanded, side: 'left'\|'right', loading }`；`showNodeNum` 的折叠数字**优先于**该回调 |
+| `empty`                            | `#empty`           | 无；`data` 为空数组时渲染在 `role=tree` 容器内                                                       |
+| `renderContent`                    | `render-content`   | `(node)` → ReactNode                                                                                 |
+| `nodeBtnContent`                   | `node-btn-content` | `(node)` → ReactNode                                                                                 |
+| `nodeComponent`                    | `node-component`   | 组件，props `{ node, data }`                                                                         |
 
 节点内容优先级：`renderNode` > `nodeComponent` > `renderContent` > 默认 `node.label`。
 
@@ -361,20 +362,20 @@ kebab-case → camelCase 的机械转换（`node-key`→`nodeKey`、`show-collap
 
 ### 5.1 布局与几何
 
-| 量 | 值 |
-| --- | --- |
-| 层级间距 / 连接线长度 `--okr-gap-level` | 20px |
-| 兄弟间距（交叉轴）`--okr-gap-sibling` | 5px |
-| 水平模式卡片行距 `--okr-gap-node-y` | 10px |
-| 拐角圆角 `--okr-line-radius` | 5px |
-| 卡片 padding / 字号 / 圆角 / 阴影 | 10px / 16px / 0 / `0 1px 10px rgba(31,35,41,.08)`（hover `.14/.12`） |
-| 展开圆盘 | 20px，`border 1px`，`z-index:10`，hover `scale(1.15)`，`+/-` 由两条零尺寸伪元素边框构成（受 `--okr-line-width` 控制），居中 margin 含 `-1px` 修正 |
-| 折叠指示短线 | 水平 10px（**硬编码**，垂直方向 20px 走 `--okr-gap-level`） |
-| 左子树根 stub 三元组 | `width:12px` + `left:calc(100% - 11px)` + `height:10px`（**硬编码且相互耦合，源码注释禁止参数化**） |
-| 拖拽指示 | 2px 实线条，卡片外 4px，`border-radius:1px`，`z-index:11`；`inner` = 2px 虚线 `outline`，`outline-offset:-2px` |
-| 复选框 | 14×14、圆角 2px、右距 6px、`vertical-align:-2px`；勾 = 3×7 边框旋转 45°；半选 = 8px 横线 |
-| 焦点环 | 移到卡片上：`.org-chart-node:focus{outline:none}` + `:focus-visible > label > label-inner` 上 `2px solid #409eff`，`outline-offset:2px` |
-| 画布 | 高 420px、`touch-action:none`、`cursor:grab/grabbing`、`user-select:none`；工具栏右上 12px |
+| 量                                      | 值                                                                                                                                                |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 层级间距 / 连接线长度 `--okr-gap-level` | 20px                                                                                                                                              |
+| 兄弟间距（交叉轴）`--okr-gap-sibling`   | 5px                                                                                                                                               |
+| 水平模式卡片行距 `--okr-gap-node-y`     | 10px                                                                                                                                              |
+| 拐角圆角 `--okr-line-radius`            | 5px                                                                                                                                               |
+| 卡片 padding / 字号 / 圆角 / 阴影       | 10px / 16px / 0 / `0 1px 10px rgba(31,35,41,.08)`（hover `.14/.12`）                                                                              |
+| 展开圆盘                                | 20px，`border 1px`，`z-index:10`，hover `scale(1.15)`，`+/-` 由两条零尺寸伪元素边框构成（受 `--okr-line-width` 控制），居中 margin 含 `-1px` 修正 |
+| 折叠指示短线                            | 水平 10px（**硬编码**，垂直方向 20px 走 `--okr-gap-level`）                                                                                       |
+| 左子树根 stub 三元组                    | `width:12px` + `left:calc(100% - 11px)` + `height:10px`（**硬编码且相互耦合，源码注释禁止参数化**）                                               |
+| 拖拽指示                                | 2px 实线条，卡片外 4px，`border-radius:1px`，`z-index:11`；`inner` = 2px 虚线 `outline`，`outline-offset:-2px`                                    |
+| 复选框                                  | 14×14、圆角 2px、右距 6px、`vertical-align:-2px`；勾 = 3×7 边框旋转 45°；半选 = 8px 横线                                                          |
+| 焦点环                                  | 移到卡片上：`.org-chart-node:focus{outline:none}` + `:focus-visible > label > label-inner` 上 `2px solid #409eff`，`outline-offset:2px`           |
+| 画布                                    | 高 420px、`touch-action:none`、`cursor:grab/grabbing`、`user-select:none`；工具栏右上 12px                                                        |
 
 必须复刻的实现事实（改了就漂移）：
 
@@ -396,12 +397,12 @@ kebab-case → camelCase 的机械转换（`node-key`→`nodeKey`、`show-collap
 
 `default` 不加类、无内置选中样式（与 vue-okr-tree 逐像素一致，选中态交给 `currentLableClassName`）。其余按源项目变量包照抄：
 
-| 主题 | 覆写要点 |
-| --- | --- |
-| `feishu` | `--okr-line-color:#dee0e3`、圆角 8px、双层阴影、选中 `#3370ff`/`#fff` |
-| `dark` | 线 `#4c4d4f`、卡片 `#1d1e1f` + `1px solid #414243`、文字 `#cfd3dc`、按钮与数字色 `#a3a6ad`、阴影加深 |
-| `auto` | 选中态恒等于 dark；完整 dark 变量包在 `@media (prefers-color-scheme: dark)` 内，亮色模式等同 `default` |
-| `minimal` | 无阴影 + `1px solid #dcdfe6` + 圆角 4px，选中 `#ecf5ff` / `#409eff` + 同色边框 |
+| 主题       | 覆写要点                                                                                                                                                                                      |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `feishu`   | `--okr-line-color:#dee0e3`、圆角 8px、双层阴影、选中 `#3370ff`/`#fff`                                                                                                                         |
+| `dark`     | 线 `#4c4d4f`、卡片 `#1d1e1f` + `1px solid #414243`、文字 `#cfd3dc`、按钮与数字色 `#a3a6ad`、阴影加深                                                                                          |
+| `auto`     | 选中态恒等于 dark；完整 dark 变量包在 `@media (prefers-color-scheme: dark)` 内，亮色模式等同 `default`                                                                                        |
+| `minimal`  | 无阴影 + `1px solid #dcdfe6` + 圆角 4px，选中 `#ecf5ff` / `#409eff` + 同色边框                                                                                                                |
 | `colorful` | 唯一含非变量规则的主题：按 `.org-chart-node[data-level='1'..'5']` 逐级着色（`#3370ff`→`#eef3ff`），≥6 级回退透明；选中规则须排在同级着色之后且特异度不低（`.org-chart-node` + `.is-current`） |
 
 `data-level` 属性在**所有主题下**都输出（不只 colorful），左右两树的根同为 level 1 故着色一致。
@@ -428,32 +429,32 @@ kebab-case → camelCase 的机械转换（`node-key`→`nodeKey`、`show-collap
 
 源项目 Playground 是**单页平铺**：标题 → 31 个锚点导航 → 全局主题切换条（6 个按钮，`default` 不加类） → 24 张 Demo 卡片 → 6 张 API 表 → 回顶按钮。每张卡片 = `<h3>` 标题 + 一行描述 + 交互示例 + 语义说明 + 可复制源码块；事件类用例额外带 `EventLog`（`push(event, text)`，可限条数）。React 版逐一对齐（源码展示改用 fumadocs 内置 CodeBlock，见 6.3 第 2 点）。
 
-| # | 标题 | 演示内容 | 交互控件 |
-| --- | --- | --- | --- |
-| 1 | 基础用法 | 仅 `data`，默认 vertical | — |
-| 2 | 水平方向 | `direction="horizontal"` | — |
-| 3 | 节点是否可被展开 | `showCollapsable`；描述里写全键盘契约 | ± 按钮 |
-| 4 | 节点默认全部展开 | `defaultExpandAll`（需配合 showCollapsable） | — |
-| 5 | 某些节点默认展开 | `nodeKey` + `defaultExpandedKeys={[5]}`，祖先自动展开 | — |
-| 6 | 节点的样式 | `labelWidth` / `labelHeight`（数字=px、字符串=原样、0/undefined=auto）、`labelClassName`（串或函数）、`currentLableClassName` | 2 个 number input + 点选节点 |
-| 7 | 节点自定义内容 | 三种等价写法并列对比：`renderContent` / `nodeComponent` / `renderNode`，优先级说明 | 3 个模式按钮 |
-| 8 | 展开按钮自定义内容 | `nodeBtnContent`，用内置 `org-chart-node-btn-text` 类填满圆盘 | — |
-| 9 | 节点动画 | `animate` + `animateName`(6) + `animateDuration` | 6 个名字按钮 + 时长 input |
-| 10 | OKR 展示模式 | `onlyBothTree` + `leftData` + `alignRoot` + `OkrTreeGroup align` + `refresh()` 两树并排对比 | align 开关 |
-| 11 | OKR 自定义节点内容 | `renderContent` 内按 `node.isLeftChild` 分支；`labelClassName="no-padding"` | — |
-| 12 | OKR 显示节点数 | `showNodeNum` + `nodeBtnContent` 用 `node.childNodes.length` | 折叠展开 |
-| 13 | 节点过滤（不可展开） | `filterNodeMethod` + `filter(val)` + `currentLableClassName`；11 个按钮演示 `getNode`(按 key/按 data) / `setCurrentNode` / `setCurrentKey(null)` / `getCurrentNode` / `getCurrentKey` / `remove` / `append` / `insertBefore` / `insertAfter` / `updateKeyChildren`，体现源数据被回写 | 输入框 + 11 按钮 + EventLog(5) |
-| 14 | OKR 模式过滤 | 同上，`filter` 同时命中左右两树；左右可共用 id、`getNode` 右树优先 | 输入框 + 10 按钮 + EventLog |
-| 15 | 支持的事件（不可展开） | `onNodeClick` / `onNodeContextMenu`，说明「绑了才阻断默认菜单」 | EventLog |
-| 16 | 支持的事件（可展开） | 加 `onNodeExpand` / `onNodeCollapse`，用 `node.isLeftChild` 区分侧 | EventLog |
-| 17 | 受控状态与方法 | `expandedKeys`+`onExpandedKeysChange`、`currentKey`+`onCurrentKeyChange`、`renderExpandBtn({node,data,expanded,side})`、`expandAll`/`collapseAll`/`expandNode(5)`/`collapseNode(2)`/`scrollToNode(8)` | 实时读数 + 9 按钮 + 插槽开关 |
-| 18 | 懒加载子节点 | `lazy` + `load(node,resolve,reject)`，800ms 模拟；说明回写、只加载一次、失败可重试、`is-loading` 旋转、`props.isLeaf`、`showNodeNum` 未加载时不显示 | ± 按钮 + 请求计数 |
-| 19 | 画布组件 Viewport | `toolbar`、`wheelBehavior`、`--okr-viewport-height:480px`、`renderToolbar({zoom,zoomIn,zoomOut,reset,fit})`、`centerNode`、`exportImage({type,scale,background,toPng,toSvg})`（Demo 直接注入函数以避开动态导入） | 7 个按钮（含导出 PNG） |
-| 20 | 手风琴 | `accordion`，强调只作用于交互展开 | — |
-| 21 | 点击节点展开 | `expandOnClickNode`，叶子只选中、OKR 根只切右侧 | — |
-| 22 | 复选框 | `showCheckbox` / `checkStrictly` / `defaultCheckedKeys={[3,4]}`、`onCheck` / `onCheckChange`、`setCheckedKeys([7,8])` / `getCheckedKeys` / `getHalfCheckedKeys` / `isChecked` | 3 按钮 + EventLog |
-| 23 | 拖拽调整层级 | `draggable` / `allowDrag` / `allowDrop`、`DropType` 三分区、`moveNode(12,11,'inner')`、`--okr-drop-color`、自嵌套禁止、OKR 跨树默认禁止与放开 | EventLog |
-| 24 | SVG 连接线 | `connector` 双模式 + `connectorShape` 三形状（非 svg 时形状按钮 `disabled`），强调布局不变 | 2 + 3 按钮 |
+| #   | 标题                   | 演示内容                                                                                                                                                                                                                                                                             | 交互控件                       |
+| --- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------ |
+| 1   | 基础用法               | 仅 `data`，默认 vertical                                                                                                                                                                                                                                                             | —                              |
+| 2   | 水平方向               | `direction="horizontal"`                                                                                                                                                                                                                                                             | —                              |
+| 3   | 节点是否可被展开       | `showCollapsable`；描述里写全键盘契约                                                                                                                                                                                                                                                | ± 按钮                         |
+| 4   | 节点默认全部展开       | `defaultExpandAll`（需配合 showCollapsable）                                                                                                                                                                                                                                         | —                              |
+| 5   | 某些节点默认展开       | `nodeKey` + `defaultExpandedKeys={[5]}`，祖先自动展开                                                                                                                                                                                                                                | —                              |
+| 6   | 节点的样式             | `labelWidth` / `labelHeight`（数字=px、字符串=原样、0/undefined=auto）、`labelClassName`（串或函数）、`currentLableClassName`                                                                                                                                                        | 2 个 number input + 点选节点   |
+| 7   | 节点自定义内容         | 三种等价写法并列对比：`renderContent` / `nodeComponent` / `renderNode`，优先级说明                                                                                                                                                                                                   | 3 个模式按钮                   |
+| 8   | 展开按钮自定义内容     | `nodeBtnContent`，用内置 `org-chart-node-btn-text` 类填满圆盘                                                                                                                                                                                                                        | —                              |
+| 9   | 节点动画               | `animate` + `animateName`(6) + `animateDuration`                                                                                                                                                                                                                                     | 6 个名字按钮 + 时长 input      |
+| 10  | OKR 展示模式           | `onlyBothTree` + `leftData` + `alignRoot` + `OkrTreeGroup align` + `refresh()` 两树并排对比                                                                                                                                                                                          | align 开关                     |
+| 11  | OKR 自定义节点内容     | `renderContent` 内按 `node.isLeftChild` 分支；`labelClassName="no-padding"`                                                                                                                                                                                                          | —                              |
+| 12  | OKR 显示节点数         | `showNodeNum` + `nodeBtnContent` 用 `node.childNodes.length`                                                                                                                                                                                                                         | 折叠展开                       |
+| 13  | 节点过滤（不可展开）   | `filterNodeMethod` + `filter(val)` + `currentLableClassName`；11 个按钮演示 `getNode`(按 key/按 data) / `setCurrentNode` / `setCurrentKey(null)` / `getCurrentNode` / `getCurrentKey` / `remove` / `append` / `insertBefore` / `insertAfter` / `updateKeyChildren`，体现源数据被回写 | 输入框 + 11 按钮 + EventLog(5) |
+| 14  | OKR 模式过滤           | 同上，`filter` 同时命中左右两树；左右可共用 id、`getNode` 右树优先                                                                                                                                                                                                                   | 输入框 + 10 按钮 + EventLog    |
+| 15  | 支持的事件（不可展开） | `onNodeClick` / `onNodeContextMenu`，说明「绑了才阻断默认菜单」                                                                                                                                                                                                                      | EventLog                       |
+| 16  | 支持的事件（可展开）   | 加 `onNodeExpand` / `onNodeCollapse`，用 `node.isLeftChild` 区分侧                                                                                                                                                                                                                   | EventLog                       |
+| 17  | 受控状态与方法         | `expandedKeys`+`onExpandedKeysChange`、`currentKey`+`onCurrentKeyChange`、`renderExpandBtn({node,data,expanded,side})`、`expandAll`/`collapseAll`/`expandNode(5)`/`collapseNode(2)`/`scrollToNode(8)`                                                                                | 实时读数 + 9 按钮 + 插槽开关   |
+| 18  | 懒加载子节点           | `lazy` + `load(node,resolve,reject)`，800ms 模拟；说明回写、只加载一次、失败可重试、`is-loading` 旋转、`props.isLeaf`、`showNodeNum` 未加载时不显示                                                                                                                                  | ± 按钮 + 请求计数              |
+| 19  | 画布组件 Viewport      | `toolbar`、`wheelBehavior`、`--okr-viewport-height:480px`、`renderToolbar({zoom,zoomIn,zoomOut,reset,fit})`、`centerNode`、`exportImage({type,scale,background,toPng,toSvg})`（Demo 直接注入函数以避开动态导入）                                                                     | 7 个按钮（含导出 PNG）         |
+| 20  | 手风琴                 | `accordion`，强调只作用于交互展开                                                                                                                                                                                                                                                    | —                              |
+| 21  | 点击节点展开           | `expandOnClickNode`，叶子只选中、OKR 根只切右侧                                                                                                                                                                                                                                      | —                              |
+| 22  | 复选框                 | `showCheckbox` / `checkStrictly` / `defaultCheckedKeys={[3,4]}`、`onCheck` / `onCheckChange`、`setCheckedKeys([7,8])` / `getCheckedKeys` / `getHalfCheckedKeys` / `isChecked`                                                                                                        | 3 按钮 + EventLog              |
+| 23  | 拖拽调整层级           | `draggable` / `allowDrag` / `allowDrop`、`DropType` 三分区、`moveNode(12,11,'inner')`、`--okr-drop-color`、自嵌套禁止、OKR 跨树默认禁止与放开                                                                                                                                        | EventLog                       |
+| 24  | SVG 连接线             | `connector` 双模式 + `connectorShape` 三形状（非 svg 时形状按钮 `disabled`），强调布局不变                                                                                                                                                                                           | 2 + 3 按钮                     |
 
 注意用例顺序的文件名编号本身是错位的（`Base041/061/062/081` 插入式编号，展示顺序上 demo-8 是 `Base062`、demo-9 是 `Base061`）——按展示顺序复刻即可。
 
@@ -465,17 +466,17 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 
 运行时与框架依赖：
 
-| 依赖 | 锁定版本 | 说明 |
-| --- | --- | --- |
-| `next` | 16.2.6 | App Router；`(home)` 路由组放落地页、`docs/[[...slug]]` 放文档 |
-| `react` / `react-dom` | 19.2.6 | 文档站锁 19.x，与库的 peer 下限 18.2 互不干涉（见 11.1） |
-| `fumadocs-core` / `fumadocs-ui` | 16.15.7 | `RootProvider`（i18n `zh-CN` + theme）、`DocsLayout` / `DocsPage` / `DocsBody` / `DocsTitle` / `DocsDescription`、内置 `CodeBlock`（shiki） |
-| `fumadocs-mdx` | 15.4.0 | `source.config.ts` 的 `defineDocs({ dir: 'content' })`；`next.config.mjs` 用 `createMDX()` 包装 |
-| `tailwindcss` / `@tailwindcss/postcss` | 4.3.3 | `globals.css` 里 `@import "tailwindcss"` + fumadocs `neutral.css` / `preset.css` |
-| `next-themes` | 0.4.6 | 站级明暗切换（`attribute: "class"` + `enableSystem`） |
-| `lucide-react` | 0.545.0 | 图标 |
-| `ogl` | 1.0.11 | 首屏 WebGL 光效（`components/background/light-ray.tsx`） |
-| `theme-switch-animation` | 0.1.0 | 主题切换动画（参考站 theme-toggle 用） |
+| 依赖                                   | 锁定版本 | 说明                                                                                                                                        |
+| -------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `next`                                 | 16.2.6   | App Router；`(home)` 路由组放落地页、`docs/[[...slug]]` 放文档                                                                              |
+| `react` / `react-dom`                  | 19.2.6   | 文档站锁 19.x，与库的 peer 下限 18.2 互不干涉（见 11.1）                                                                                    |
+| `fumadocs-core` / `fumadocs-ui`        | 16.15.7  | `RootProvider`（i18n `zh-CN` + theme）、`DocsLayout` / `DocsPage` / `DocsBody` / `DocsTitle` / `DocsDescription`、内置 `CodeBlock`（shiki） |
+| `fumadocs-mdx`                         | 15.4.0   | `source.config.ts` 的 `defineDocs({ dir: 'content' })`；`next.config.mjs` 用 `createMDX()` 包装                                             |
+| `tailwindcss` / `@tailwindcss/postcss` | 4.3.3    | `globals.css` 里 `@import "tailwindcss"` + fumadocs `neutral.css` / `preset.css`                                                            |
+| `next-themes`                          | 0.4.6    | 站级明暗切换（`attribute: "class"` + `enableSystem`）                                                                                       |
+| `lucide-react`                         | 0.545.0  | 图标                                                                                                                                        |
+| `ogl`                                  | 1.0.11   | 首屏 WebGL 光效（`components/background/light-ray.tsx`）                                                                                    |
+| `theme-switch-animation`               | 0.1.0    | 主题切换动画（参考站 theme-toggle 用）                                                                                                      |
 
 开发依赖同样锁定：`typescript` 5.9.3、`@types/react` 19.2.2、`@types/react-dom` 19.2.2、`@types/node` 24.7.2、`@types/mdx` 2.0.14、`prettier` 3.9.6。
 
@@ -512,11 +513,11 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 
 这给 Next 站带来一个硬约束：**必须 `output: 'export'` 全静态导出**（默认产物目录 `out/`）。连带三处与参考站不同，实现时不要照抄过去：
 
-| 参考站有 | 静态导出下 | 本站做法 |
-| --- | --- | --- |
-| `app/api/search/route.ts`（Route Handler） | 不可用 | 用 fumadocs 自带的**静态搜索客户端**：`fumadocs-core/search/client/orama-static` 的 `oramaStaticClient({ from })`，`from` 指向构建期导出到 `public/` 的索引 JSON（默认值是 `/api/search`，改为静态路径即可）。**不需要额外引 Pagefind** |
-| `app/opengraph-image.tsx`（`ImageResponse`） | 不可用（需运行时） | 构建期预生成，或直接维护 `public/og.png` + `metadata.openGraph.images` |
-| Vercel 的 `trailingSlash` 默认行为 | — | `trailingSlash: true` 与 CF 的 `auto-trailing-slash` 对齐；无远程图片则 `images.unoptimized` |
+| 参考站有                                     | 静态导出下         | 本站做法                                                                                                                                                                                                                                |
+| -------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/api/search/route.ts`（Route Handler）   | 不可用             | 用 fumadocs 自带的**静态搜索客户端**：`fumadocs-core/search/client/orama-static` 的 `oramaStaticClient({ from })`，`from` 指向构建期导出到 `public/` 的索引 JSON（默认值是 `/api/search`，改为静态路径即可）。**不需要额外引 Pagefind** |
+| `app/opengraph-image.tsx`（`ImageResponse`） | 不可用（需运行时） | 构建期预生成，或直接维护 `public/og.png` + `metadata.openGraph.images`                                                                                                                                                                  |
+| Vercel 的 `trailingSlash` 默认行为           | —                  | `trailingSlash: true` 与 CF 的 `auto-trailing-slash` 对齐；无远程图片则 `images.unoptimized`                                                                                                                                            |
 
 `generateStaticParams` 已覆盖全部 `content/` 路由，`next build` 在 export 模式下不应留下任何动态路由——写成 CI 断言（产物里不得残留 server chunk 目录）。
 
@@ -530,41 +531,41 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 
 ## 7. 工程化需求
 
-| 项 | 要求 |
-| --- | --- |
-| 包名 | `react-okr-tree`（npm 空闲，已核实）。仓库为 pnpm workspace：`packages/react-okr-tree`（库）+ `apps/website`（Next.js + fumadocs 文档站，见 6.1） |
-| peer | `react >= 18.2.0`、`react-dom >= 18.2.0`（**建议下限 18.2 而非仅 19**，理由见 11.1）、`html-to-image ^1.11.0` **optional**（`peerDependenciesMeta`），且**绝不进 `dependencies`** |
-| 产物 | `dist/react-okr-tree.es.js` / `.cjs` / `.umd.js` + `dist/style.css` + `dist/index.d.ts` + `dist/index.d.cts`（`"type":"module"` 下 CJS 必须用 `.cjs` 才能 `require`）；`exports` 提供 `.` / `./style.css` / `./dist/style.css` / `./package.json`；`sideEffects` 标 `**/*.css`。**UMD 建议保留**（见 11.3），但需 external `react` / `react-dom` 并约定 globals，README 注明 CDN 场景无开发期警告 |
-| 构建 | Vite（lib 模式）+ `@vitejs/plugin-react` + `vite-plugin-dts`（配 `@microsoft/api-extractor` 打包为单文件 d.ts）+ 构建后脚本 `post-build.mjs`（生成 `index.d.cts`）+ `verify:dist.mjs`（jsdom 里挂载三种模式、断言产物清单与 `require()` 可用）；**不做源项目的「ESM 事后压缩」一步**——Vite 8 下 ESM 顶层导出名必须保留，用 Oxc 再跑一遍只省 0.5 kB gzip，却让 sourcemap 错位 |
-| 版本锁定 | **文档站严格锁到参考站版本号**（见 6.1），workspace 根 `.npmrc` 设 `save-exact=true`，禁止 `^` / `~`；库侧取当前最新（Vite 8.3.0 等）同样精确锁定，清单见 `development-plan.md` 附录 A；升级走独立 PR（Renovate 配置照抄源项目 `renovate.json`） |
-| 部署 | Cloudflare 纯静态资产 + `output: 'export'`，详见 6.5 |
-| 代码规范 | ESLint 9 + Prettier（配置沿用源项目取向：单引号、无分号、printWidth 100）；React hooks 规则必须开启（`react-hooks/exhaustive-deps` 不许关闭） |
-| 单测 | Vitest + jsdom + `@testing-library/react`；**逐条移植源项目 226 条用例**（components 16 个 spec / model 4 个 / ssr 1 个），模型层测试几乎可原样搬；`resetWarnings()` 测试钩子保留；覆盖率阈值 statements 80 / branches 75 / functions 80 / lines 80 |
-| 视觉回归 | Playwright + Chromium，基线需重新生成（源项目按平台各一套：`*-chromium-win32.png` 与 `*-chromium-linux.png`，覆盖 8 个布局/功能用例 + 6 套主题）；端口可用 `OKR_VISUAL_PORT` 覆盖（Windows 保留端口段会占用 4173）；含 `emulateMedia({media:'print'})` 计算样式断言、计算样式断言校验 `unstyled`（阴影被清掉且节点盒尺寸不变）、性能用例 |
-| CI | `verify`（lint / typecheck / test / build / verify:dist / publint / attw / size-limit）、`peer-matrix`（React 18.2 / 19.2）、`visual`、`release`（tag → 门禁 → `npm publish --provenance` → GitHub Release）；文档站加 `website-build`（`next build` 通过 + export 静态性断言：产物无 server chunk 残留、搜索索引已生成）与 `website-deploy`（Cloudflare，仅 main） |
-| 体积预算 | ESM gzip ≤ 20 kB、UMD ≤ 21 kB、`style.css` ≤ 4 kB（源项目为 19/19.5/4 kB，CSS 应完全一致） |
-| 性能基线 | 对齐源项目 `docs/perf.md` 的口径与脚本形态（2041 节点数据集；jsdom 首渲染 collapsed / expand-all、`expandAll`、`filter`+恢复、原地 push+pop、深层 label 改；真实 Chromium 首渲染 < 300 ms 门禁）。React 版预期在「局部更新」上更好，但**首渲染不得显著劣化**（建议门槛：与 Vue 版同数量级） |
-| 文档 | README 结构对齐源项目：安装 / 快速开始 / OKR 模式 / 自定义节点内容 / 通过 ref 调用方法 / 受控状态 / 懒加载 / 画布 / 组对齐 / 键盘与可访问性 / 泛型与类型 / 主题与样式定制（含变量一览、无样式模式、打印）/ API（生成段）/ 需要注意的行为（`nodeKey` 缺失时的 `$treeNodeId` 策略 + 冻结数据边界 + R2 的原地变更说明）/ 与 vue3-okr-tree 的差异 / 开发 / License。仅中文（双语 README 是源项目明确不做项）。文档站选型与结构见 6.1–6.5（24 个 Demo 直接作为站内可交互组件，不再有独立 playground） |
-| CHANGELOG | 遵循 semver，1.0.0 = 首次发布（React 复刻版） |
+| 项        | 要求                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 包名      | `react-okr-tree`（npm 空闲，已核实）。仓库为 pnpm workspace：`packages/react-okr-tree`（库）+ `apps/website`（Next.js + fumadocs 文档站，见 6.1）                                                                                                                                                                                                                                                                                                                                                |
+| peer      | `react >= 18.2.0`、`react-dom >= 18.2.0`（**建议下限 18.2 而非仅 19**，理由见 11.1）、`html-to-image ^1.11.0` **optional**（`peerDependenciesMeta`），且**绝不进 `dependencies`**                                                                                                                                                                                                                                                                                                                |
+| 产物      | `dist/react-okr-tree.es.js` / `.cjs` / `.umd.js` + `dist/style.css` + `dist/index.d.ts` + `dist/index.d.cts`（`"type":"module"` 下 CJS 必须用 `.cjs` 才能 `require`）；`exports` 提供 `.` / `./style.css` / `./dist/style.css` / `./package.json`；`sideEffects` 标 `**/*.css`。**UMD 建议保留**（见 11.3），但需 external `react` / `react-dom` 并约定 globals，README 注明 CDN 场景无开发期警告                                                                                                |
+| 构建      | Vite（lib 模式）+ `@vitejs/plugin-react` + `vite-plugin-dts`（配 `@microsoft/api-extractor` 打包为单文件 d.ts）+ 构建后脚本 `post-build.mjs`（生成 `index.d.cts`）+ `verify:dist.mjs`（jsdom 里挂载三种模式、断言产物清单与 `require()` 可用）；**不做源项目的「ESM 事后压缩」一步**——Vite 8 下 ESM 顶层导出名必须保留，用 Oxc 再跑一遍只省 0.5 kB gzip，却让 sourcemap 错位                                                                                                                     |
+| 版本锁定  | **文档站严格锁到参考站版本号**（见 6.1），workspace 根 `.npmrc` 设 `save-exact=true`，禁止 `^` / `~`；库侧取当前最新（Vite 8.3.0 等）同样精确锁定，清单见 `development-plan.md` 附录 A；升级走独立 PR（Renovate 配置照抄源项目 `renovate.json`）                                                                                                                                                                                                                                                 |
+| 部署      | Cloudflare 纯静态资产 + `output: 'export'`，详见 6.5                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 代码规范  | ESLint 9 + Prettier（配置沿用源项目取向：单引号、无分号、printWidth 100）；React hooks 规则必须开启（`react-hooks/exhaustive-deps` 不许关闭）                                                                                                                                                                                                                                                                                                                                                    |
+| 单测      | Vitest + jsdom + `@testing-library/react`；**逐条移植源项目 226 条用例**（components 16 个 spec / model 4 个 / ssr 1 个），模型层测试几乎可原样搬；`resetWarnings()` 测试钩子保留；覆盖率阈值 statements 80 / branches 75 / functions 80 / lines 80                                                                                                                                                                                                                                              |
+| 视觉回归  | Playwright + Chromium，基线需重新生成（源项目按平台各一套：`*-chromium-win32.png` 与 `*-chromium-linux.png`，覆盖 8 个布局/功能用例 + 6 套主题）；端口可用 `OKR_VISUAL_PORT` 覆盖（Windows 保留端口段会占用 4173）；含 `emulateMedia({media:'print'})` 计算样式断言、计算样式断言校验 `unstyled`（阴影被清掉且节点盒尺寸不变）、性能用例                                                                                                                                                         |
+| CI        | `verify`（lint / typecheck / test / build / verify:dist / publint / attw / size-limit）、`peer-matrix`（React 18.2 / 19.2）、`visual`、`release`（tag → 门禁 → `npm publish --provenance` → GitHub Release）；文档站加 `website-build`（`next build` 通过 + export 静态性断言：产物无 server chunk 残留、搜索索引已生成）与 `website-deploy`（Cloudflare，仅 main）                                                                                                                              |
+| 体积预算  | ESM gzip ≤ 20 kB、UMD ≤ 21 kB、`style.css` ≤ 4 kB（源项目为 19/19.5/4 kB，CSS 应完全一致）                                                                                                                                                                                                                                                                                                                                                                                                       |
+| 性能基线  | 对齐源项目 `docs/perf.md` 的口径与脚本形态（2041 节点数据集；jsdom 首渲染 collapsed / expand-all、`expandAll`、`filter`+恢复、原地 push+pop、深层 label 改；真实 Chromium 首渲染 < 300 ms 门禁）。React 版预期在「局部更新」上更好，但**首渲染不得显著劣化**（建议门槛：与 Vue 版同数量级）                                                                                                                                                                                                      |
+| 文档      | README 结构对齐源项目：安装 / 快速开始 / OKR 模式 / 自定义节点内容 / 通过 ref 调用方法 / 受控状态 / 懒加载 / 画布 / 组对齐 / 键盘与可访问性 / 泛型与类型 / 主题与样式定制（含变量一览、无样式模式、打印）/ API（生成段）/ 需要注意的行为（`nodeKey` 缺失时的 `$treeNodeId` 策略 + 冻结数据边界 + R2 的原地变更说明）/ 与 vue3-okr-tree 的差异 / 开发 / License。仅中文（双语 README 是源项目明确不做项）。文档站选型与结构见 6.1–6.5（24 个 Demo 直接作为站内可交互组件，不再有独立 playground） |
+| CHANGELOG | 遵循 semver，1.0.0 = 首次发布（React 复刻版）                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ---
 
 ## 8. 有意差异清单（验收以此为准）
 
-| 编号 | 差异 | 性质 |
-| --- | --- | --- |
-| D1 | `renderContent` / `nodeBtnContent` 不再接收 `h` 参数（React 无需框架注入创建函数），签名为 `(node) => ReactNode` | 框架强制 |
-| D2 | 事件回调去掉第三参数 `nodeComponent`（Vue 组件实例在 React 无对应概念）；DOM 定位由 `handle.getNodeEl()` 承担 | 框架强制 |
-| D3 | `v-model:expanded-keys` / `v-model:current-key` / `v-model:zoom` / `v-model:offset` 改为「值 + `onXxxChange`」成对 props；`undefined` 判定为非受控，语义不变 | 框架惯例 |
-| D4 | 插槽改为 render props（`renderNode` / `renderExpandBtn` / `empty` / `renderToolbar`），作用域参数形状保持一致；`children` 也可作为 `renderNode` 的函数形式 | 框架惯例 |
-| D5 | 移除 `createTypedOkrTree<T>()`：`OkrTree<T>` 泛型组件原生提供同等类型收窄 | 能力等价、API 减少 |
-| D6 | 移除 `VueOkrTreePlugin` / `app.use()` 式全局注册；默认导出改为 `OkrTree` 组件 | 框架强制 |
-| D7 | 同引用原地变更的自动感知降级为「渲染时脏检查 + 新增 `handle.refreshData()` 显式兜底」（R2） | 能力差异，需在 README 显著说明 |
-| D8 | 子容器挂载/卸载过渡允许简化实现（不引入 `react-transition-group`），但 R7 列出的两个语义必须保留；展开/收起状态过渡不受影响 | 降级（P2） |
-| D9 | `nodeKey` / `direction` / `onlyBothTree` 运行时变更同样不生效，警告文案改为提示「绑定 `key` 以重挂载」 | 措辞 |
-| D10 | 类名前缀、包名、错误前缀由 `vue3-okr-tree` 改为 `react-okr-tree`；CSS 类名本身不变 | 措辞 |
-| D11 | `onNodeContextMenu` 与六个拖拽回调的 `event` 参数是 **React 合成事件**（`ReactMouseEvent` / `ReactDragEvent`），不是源项目的原生 DOM 事件；需要原生事件时取 `event.nativeEvent`。`preventDefault` / `stopPropagation` 语义一致（合成事件会转调原生） | 框架强制 |
-| D12 | `renderContent` 等回调的返回值为 `ReactNode`，不再要求由组件提供的创建函数 | 同 D1 的表现形式 |
+| 编号 | 差异                                                                                                                                                                                                                                                 | 性质                           |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| D1   | `renderContent` / `nodeBtnContent` 不再接收 `h` 参数（React 无需框架注入创建函数），签名为 `(node) => ReactNode`                                                                                                                                     | 框架强制                       |
+| D2   | 事件回调去掉第三参数 `nodeComponent`（Vue 组件实例在 React 无对应概念）；DOM 定位由 `handle.getNodeEl()` 承担                                                                                                                                        | 框架强制                       |
+| D3   | `v-model:expanded-keys` / `v-model:current-key` / `v-model:zoom` / `v-model:offset` 改为「值 + `onXxxChange`」成对 props；`undefined` 判定为非受控，语义不变                                                                                         | 框架惯例                       |
+| D4   | 插槽改为 render props（`renderNode` / `renderExpandBtn` / `empty` / `renderToolbar`），作用域参数形状保持一致；`children` 也可作为 `renderNode` 的函数形式                                                                                           | 框架惯例                       |
+| D5   | 移除 `createTypedOkrTree<T>()`：`OkrTree<T>` 泛型组件原生提供同等类型收窄                                                                                                                                                                            | 能力等价、API 减少             |
+| D6   | 移除 `VueOkrTreePlugin` / `app.use()` 式全局注册；默认导出改为 `OkrTree` 组件                                                                                                                                                                        | 框架强制                       |
+| D7   | 同引用原地变更的自动感知降级为「渲染时脏检查 + 新增 `handle.refreshData()` 显式兜底」（R2）                                                                                                                                                          | 能力差异，需在 README 显著说明 |
+| D8   | 子容器挂载/卸载过渡允许简化实现（不引入 `react-transition-group`），但 R7 列出的两个语义必须保留；展开/收起状态过渡不受影响                                                                                                                          | 降级（P2）                     |
+| D9   | `nodeKey` / `direction` / `onlyBothTree` 运行时变更同样不生效，警告文案改为提示「绑定 `key` 以重挂载」                                                                                                                                               | 措辞                           |
+| D10  | 类名前缀、包名、错误前缀由 `vue3-okr-tree` 改为 `react-okr-tree`；CSS 类名本身不变                                                                                                                                                                   | 措辞                           |
+| D11  | `onNodeContextMenu` 与六个拖拽回调的 `event` 参数是 **React 合成事件**（`ReactMouseEvent` / `ReactDragEvent`），不是源项目的原生 DOM 事件；需要原生事件时取 `event.nativeEvent`。`preventDefault` / `stopPropagation` 语义一致（合成事件会转调原生） | 框架强制                       |
+| D12  | `renderContent` 等回调的返回值为 `ReactNode`，不再要求由组件提供的创建函数                                                                                                                                                                           | 同 D1 的表现形式               |
 
 除此之外，任何与源项目行为不一致的地方都视为缺陷。若实现中发现源项目行为自相矛盾（例：`renderExpandBtn` 与 `nodeBtnContent` 的优先顺序在 4.4 与源项目代码之间），以**源代码为准**并在本文档回写说明。
 

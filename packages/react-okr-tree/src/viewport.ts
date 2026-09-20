@@ -65,9 +65,19 @@ export interface ExportImageOptions {
  * 也不应被打包进库产物。
  * 说明符经变量传递（打包器无法静态分析），否则构建工具会把仓库内的可选依赖
  * 解析并内联成额外 chunk，随包发布。
+ *
+ * 三条 ignore 注释缺一不可：`@vite-ignore` 管 Vite/Rollup，而消费者用 Next 16 的 Turbopack 时
+ * 它只认 `webpackIgnore` / `turbopackIgnore`——少了就变成构建期 "Module not found"，
+ * 库本身能发出去但下游装不上（文档站就是第一个撞上的消费者）。
  */
 const HTML_TO_IMAGE = 'html-to-image'
-const dynamicImport = (specifier: string): Promise<any> => import(/* @vite-ignore */ specifier)
+const dynamicImport = (specifier: string): Promise<any> =>
+  import(
+    /* @vite-ignore */
+    /* webpackIgnore: true */
+    /* turbopackIgnore: true */
+    specifier
+  )
 
 /**
  * 动态加载 html-to-image；未安装 / 不可解析时抛出带修复指引的错误。

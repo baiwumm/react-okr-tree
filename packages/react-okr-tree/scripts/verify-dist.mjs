@@ -167,6 +167,33 @@ assert(cjs.NODE_KEY === '$treeNodeId', 'require() 可拿到 NODE_KEY')
 const umdSource = readFileSync(distUmd, 'utf8')
 assert(/factory\(exports, React\)/.test(umdSource) || /React/.test(umdSource), 'UMD 外部化 react')
 
+/**
+ * optional peer（html-to-image）在产物里要同时满足三件事，缺一都会在下游炸：
+ * 1. 说明符经变量传递，不出现静态 import/require —— 否则 Vite/Rollup 会把可选依赖
+ *    内联成额外 chunk，或让没装它的消费者连加载都过不了；
+ * 2. ESM 产物保留三家打包器的 ignore 注释 —— Next 16 的 Turbopack 只认
+ *    `webpackIgnore` / `turbopackIgnore`，只有 `@vite-ignore` 时它会在**构建期**
+ *    直接报 Module not found（文档站是第一个撞上的真实消费者）；
+ * 3. CJS / UMD 同理不得出现静态 require。
+ */
+const esSource = readFileSync(distEs, 'utf8')
+assert(
+  /@vite-ignore/.test(esSource) &&
+    /webpackIgnore:\s*true/.test(esSource) &&
+    /turbopackIgnore:\s*true/.test(esSource),
+  'ESM 保留可选 peer 的动态导入与三家 ignore 注释'
+)
+for (const [name, src] of [
+  ['es', esSource],
+  ['cjs', readFileSync(distCjs, 'utf8')],
+  ['umd', umdSource],
+]) {
+  assert(
+    !/(?:require|import)\(\s*(["`'])html-to-image\1/.test(src),
+    `${name} 未静态引入可选 peer（说明符走变量）`
+  )
+}
+
 if (failures.length) {
   console.error(`[verify:dist] ${failures.length} 项失败`)
   process.exit(1)

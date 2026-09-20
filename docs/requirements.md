@@ -521,7 +521,7 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 
 `generateStaticParams` 已覆盖全部 `content/` 路由，`next build` 在 export 模式下不应留下任何动态路由——写成 CI 断言（产物里不得残留 server chunk 目录）。
 
-**反方案与取舍**：若坚持保留 fumadocs 原生的 `/api/search`，就要引入 `@opennextjs/cloudflare`（Workers 运行时 + `compatibility_flags` + 绑定），部署链路明显重于源项目的静态资产模式，而 okr-tree 文档站并不需要任何服务端能力。因此建议按静态导出落地，搜索质量交给 Pagefind（对 MDX 文档站足够）。
+**反方案与取舍**：若坚持保留 fumadocs 原生的 `/api/search`，就要引入 `@opennextjs/cloudflare`（Workers 运行时 + `compatibility_flags` + 绑定），部署链路明显重于源项目的静态资产模式，而 okr-tree 文档站并不需要任何服务端能力。因此建议按静态导出落地，搜索交给 fumadocs 的静态客户端（见下方 spike 结论）。
 
 **spike 结论（阶段 0.2，2026-09-20）**：从 `fumadocs-ui@16.15.7` / `fumadocs-core@16.15.7` 的产物清单核实——搜索侧确实提供了面向无服务端场景的静态客户端 `search/client/orama-static`（`oramaStaticClient` + `StaticOptions`，`from` 默认 `/api/search`，可指向构建期导出的静态索引）与 `search/client/flexsearch-static`，因此**静态导出与站内搜索不冲突**，且不必额外引入 Pagefind。其余部分（`DocsLayout` / TOC / 侧栏树）是纯构建期能力。**注意这是包产物层面的核实，不是运行时验证**：真正的门禁在阶段 7 的 `website-build`（`next build` + `output:'export'` 跑通 + 浏览器里搜得到结果），届时把结果回写到这里。
 
@@ -598,7 +598,7 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 
 13. `dist/react-okr-tree.es.js` / `.cjs` / `.umd.js` / `style.css` / `index.d.ts` / `index.d.cts` 齐备；`import 'react-okr-tree'` + `import 'react-okr-tree/dist/style.css'`、`require('react-okr-tree')`、`<script>` UMD 三条路径均可用；`publint` 与 `attw` 无错误；size-limit 达标。
 14. 单测等价移植（≥ 226 条、阈值达标）、视觉回归与 CI 各 job 全绿。
-15. 文档站 `next build` 在 `output: 'export'` 下通过（无动态路由残留、`out/` 全静态、Pagefind 索引生成、sitemap / robots / og 齐备），`wrangler deploy --dry-run` 通过；亮色与 `.dark` 两态下 Demo 无样式串味，fumadocs 排版（`--color-fd-*`）与 `--okr-*` 互不影响。
+15. 文档站 `next build` 在 `output: 'export'` 下通过（无动态路由残留、`out/` 全静态、静态搜索索引生成且浏览器里搜得到结果、sitemap / robots / og 齐备），`wrangler deploy --dry-run` 通过；亮色与 `.dark` 两态下 Demo 无样式串味，fumadocs 排版（`--color-fd-*`）与 `--okr-*` 互不影响。
 
 ---
 

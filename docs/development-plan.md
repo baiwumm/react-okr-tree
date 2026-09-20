@@ -66,18 +66,22 @@
 
 ## 阶段 6：组合件、外观与可访问性
 
-> 实现全部落地；6 个 spec 的移植由下表右侧的条数收口。6.6 记一处移植中补出的真实缺口。
+> 实现与 6 个 spec（61 条）全部落地，本阶段共 25 文件 244 条测试。6.6 记一处移植中补出的真实缺口。
 
-- [x] 6.1 键盘与 ARIA（`OkrTree` 的 `nodeEls` / `elNodes` WeakMap、`visibleTreeItems`、`moveFocus`、`focusParent`、漫游 tabindex、`aria-expanded` 双侧与门、`aria-setsize/posinset` 按可见兄弟）+ `OkrTreeNode` 的 `handleKeydown` 全套（含左树镜像、节点内输入控件不拦截）→ `tests/components/a11y-group.spec.ts`（15 条）
+- [x] 6.1 键盘与 ARIA（`OkrTree` 的 `nodeEls` / `elNodes` WeakMap、`visibleTreeItems`、`moveFocus`、`focusParent`、漫游 tabindex、`aria-expanded` 双侧与门、`aria-setsize/posinset` 按可见兄弟）+ `OkrTreeNode` 的 `handleKeydown` 全套（含左树镜像、节点内输入控件不拦截）→ `tests/components/a11y-group.spec.tsx`（15 条）
+  - **移植中补出的两个缺陷**：React 的 `onFocus` 由会冒泡的 `focusin` 映射而来，祖先 treeitem 会抢走后代的焦点归属（`handleFocus` 现按 `target === currentTarget` 限定，等价源项目的不冒泡 `focus`）；以及「无焦点节点时由首个根节点持有 0」这条兜底规则的持有者未被通知，转移后有两个节点同时可 Tab 进入。
 - [x] 6.2 焦点环样式与 `--okr-focus-*`（`:focus-visible > label > label-inner`）
 - [x] 6.3 `OkrTreeGroup`：`is-measuring` → 测量 → `--okr-group-left-width` 的时序、请求去重（R3 的 nextTick 等价物）、ResizeObserver + `document.fonts.ready`、成员挂载/更新/卸载上报、`align={false}` 清空、`refresh()`
-- [x] ⭐ 6.4 `OkrTreeViewport`
-  - React 特有处理：滚轮缩放不能用 `onWheel`（React 把它注册成 passive 监听，`preventDefault()` 无效），改为在容器上挂原生 `addEventListener('wheel', handler, { passive: false })`。：缩放/平移/捏合/双击复位、3px 阈值与平移后吞 click、`wheelBehavior` 三态、`fitToScreen` / `centerNode`（跨多树登记 `getNodeEl`+`expandNode`）、`renderToolbar` 与默认工具栏、`exportImage`（D10：错误前缀改包名）→ `tests/components/viewport.spec.ts`（19 条）
-- [x] 6.5 主题：6 套变量包（`colorful` 的 `data-level` 着色 + 选中规则顺序）、自定义主题名 + 开发期警告 → `tests/components/theme.spec.ts`（6 条）
-- [x] ⭐ 6.6 SVG 连接线
-  - **移植中补出的缺口**：源项目靠 `onUpdated` 保证「任何节点状态变化都重绘」，而 React 下展开单个节点不会重渲染 `OkrTree`（这正是 R1 局部更新的目的），ResizeObserver 又只在树根盒尺寸真的变化时才回调。因此接上 `store.subscribeMutation()` 作为 `onUpdated` 的等价物——否则连接线会停在旧路径上。：抽 `svg-connector.ts`（`buildPath` 三形状 / `stubPath` 残枝 / 锚点按 `isLeftChild` 镜像 / 批量测量一次成形）、rAF 合并重绘 + animate 期间逐帧、ResizeObserver、运行时切换 → `tests/components/connector.spec.ts`（12 条）
-- [x] 6.7 `unstyled`、`alignRoot`（纯 CSS `flex:1 1 0` + `min-width:max-content`）、`getVisibleNodes` / `getNodePath` / `getNodeEl` 查询方法 → `tests/components/query-methods.spec.ts`（6 条）
-- [x] 6.8 `prefers-reduced-motion`：`usePrefersReducedMotion` 全局单监听 + SSR 安全 + JS 侧关掉 animate 与平滑滚动 → `tests/components/reduced-motion.spec.ts`（3 条）
+- [x] ⭐ 6.4 `OkrTreeViewport`：缩放/平移/捏合/双击复位、3px 阈值与平移后吞 click、`wheelBehavior` 三态、`fitToScreen` / `centerNode`（跨多树登记 `getNodeEl`+`expandNode`）、`renderToolbar` 与默认工具栏、`exportImage`（D10：错误前缀改包名）→ `tests/components/viewport.spec.tsx`（19 条）
+  - React 特有处理：滚轮缩放不能用 `onWheel`（React 把它注册成 passive 监听，`preventDefault()` 无效），改为在容器上挂原生 `addEventListener('wheel', handler, { passive: false })`。
+- [x] 6.5 主题：6 套变量包（`colorful` 的 `data-level` 着色 + 选中规则顺序）、自定义主题名 + 开发期警告 → `tests/components/theme.spec.tsx`（6 条）
+- [x] ⭐ 6.6 SVG 连接线：抽 `svg-connector.ts`（`buildPath` 三形状 / `stubPath` 残枝 / 锚点按 `isLeftChild` 镜像 / 批量测量一次成形）、rAF 合并重绘 + animate 期间逐帧、ResizeObserver、运行时切换 → `tests/components/connector.spec.tsx`（12 条）
+  - **移植中补出的缺口**：源项目靠 `onUpdated` 保证「任何节点状态变化都重绘」，而 React 下展开单个节点不会重渲染 `OkrTree`（这正是 R1 局部更新的目的），ResizeObserver 又只在树根盒尺寸真的变化时才回调。因此接上 `store.subscribeMutation()` 作为 `onUpdated` 的等价物——否则连接线会停在旧路径上。
+  - 反向的 React 特有缺陷：「渲染后 effect 排帧重绘 + `setEdges` 无条件换新引用」构成 排帧→重绘→重渲染→再排帧 的稳态死循环（Vue 直接写 DOM，没有这条回路）。改为 `sameEdges` 逐项比对 `d`、未变则保持原引用；connector 第 2 条以「连排三帧后 rAF 队列必须为空」守住它。
+  - 源项目 shape 三用例未推进帧，`paths` 为空时 `every()` 恒真；移植后先 flush 再断言路径条数与精确 `d`，同一断言由空转变为真实。
+- [x] 6.7 `unstyled`、`alignRoot`（纯 CSS `flex:1 1 0` + `min-width:max-content`）、`getVisibleNodes` / `getNodePath` / `getNodeEl` 查询方法 → `tests/components/query-methods.spec.tsx`（6 条）
+- [x] 6.8 `prefers-reduced-motion`：`usePrefersReducedMotion` 全局单监听 + SSR 安全 + JS 侧关掉 animate 与平滑滚动 → `tests/components/reduced-motion.spec.tsx`（3 条）
+- [x] 6.9 兄弟节点 React key（`cx.reactKey`）：`nodeKey` 已配置但数据缺该字段时，同层 key 全为 `undefined`，React 无法区分兄弟会误复用子树；回退到 `TreeNode` 自增 id。由 prop-sync 的 stderr 警告发现（源项目的 `:key="getNodeKey(child)"` 无此风险）。
 
 ## 阶段 7：文档站基建（Next.js + fumadocs）
 
@@ -85,7 +89,7 @@
 - [ ] 7.2 照搬参考站基建：`lib/{site,source,i18n}.ts`、`app/layout.tsx`（`RootProvider` + zh-CN + next-themes class 策略）、`app/docs/layout.tsx`（`DocsLayout` + Logo nav + GitHub icon link）、`not-found` / `sitemap` / `robots`、静态 `public/og.png`（替代 `opengraph-image.tsx`）、Maple Mono CN 子集字体、`scripts/with-memory-cap.mjs`
 - [ ] 7.3 落地页：`Navbar` / `Hero`（含 `LightRays`，参数照参考站收着用）/ `Features`（7 张卡）/ `Stacks`→布局展示位 / `Cta` / `Faq` / `Footer`
 - [ ] ⭐ 7.4 MDX 组件白名单：`getMDXComponents()` 注册 `Cards` / `Callout` / `Steps` / `Tabs` + 本站新增的 `<DemoBlock>` / `<EventLog>` / `<ThemeSwitcher>` / `<ApiTable>`（6.3 第 1 点：demo 组件全部 `'use client'`）
-- [ ] 7.5 搜索：Pagefind 构建后索引 `out/`，接入 fumadocs 静态搜索
+- [ ] 7.5 搜索：构建期导出静态 Orama 索引 + `oramaStaticClient`（0.2 结论：静态导出下不需要 Pagefind）
 - [ ] 7.6 `content/` 骨架与 `meta.json` 分组（`start` / `guide` / `theme` / `api` / `migration` / `changelog`）；`guide/typed` 改为「泛型与类型推导」（D5）
 
 ## 阶段 8：24 个 Demo 用例
@@ -119,7 +123,7 @@
 | M1     | 阶段 1–3 | workspace 两包打通；模型层单测全绿（含 Q1–Q4）；样式与 DOM 契约就位           |
 | M2     | 阶段 4–5 | 三套布局可渲染可交互，组件与结构比对测试通过，局部更新断言进 CI               |
 | M3     | 阶段 6   | Group / Viewport / 主题 / 连接线 / a11y / 懒加载全部对齐并有测试              |
-| M4     | 阶段 7–8 | 文档站可浏览、24 个 Demo 可交互、静态导出与 Pagefind 生效                     |
+| M4     | 阶段 7–8 | 文档站可浏览、24 个 Demo 可交互、静态导出与站内搜索生效                       |
 | M5     | 阶段 9   | 达到 requirements 第 9 节全部验收标准，可发 `1.0.0`                           |
 
 ## 附录 A：版本锁定清单

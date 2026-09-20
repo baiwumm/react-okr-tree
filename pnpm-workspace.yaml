@@ -2,6 +2,13 @@ packages:
   - 'packages/*'
   - 'apps/*'
 
-# pnpm 供应链策略：esbuild 需要 postinstall 下载平台二进制（vite/vitest 依赖）
+# pnpm 供应链策略：需要 postinstall 的二进制白名单
+# - esbuild：vite / vitest 的平台二进制
+# - @tailwindcss/oxide：文档站 Tailwind 4 的原生扩展引擎
+# - sharp：next@16 的可选依赖（图片优化）。本站静态导出走 images.unoptimized，
+#   但 pnpm 11 的 verify-deps-before-run 会把「有被忽略的构建脚本」当作安装失败，
+#   故与参考站一致放行（参考站 apps/website/pnpm-workspace.yaml 同款三项）。
 allowBuilds:
   esbuild: true
+  '@tailwindcss/oxide': true
+  sharp: true

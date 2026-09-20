@@ -12,9 +12,9 @@ import { resetWarnings } from '../../src/model/util'
  * 源项目这 6 条用例本身也没有一条读取 computed style。
  *
  * 逐主题的变量包效果（feishu 圆角与双层阴影、dark 卡片配色、auto 的 prefers-color-scheme、
- * colorful 按 data-level 着色、unstyled 中和卡片外观）要真实级联才算得出来，
- * 而 jsdom 不套用样式表（vitest 配置 css: false）——那部分归阶段 9.2 的视觉回归，
- * 不在这里以注入 dist/style.css 的方式伪造（注入后 jsdom 仍不解析 var()，见该阶段的说明）。
+ * colorful 按 data-level 着色、unstyled 中和卡片外观）要真实级联才算得出来，而 jsdom 不套用
+ * 样式表（vitest 配置 css: false），即便手工注入 dist/style.css 也拿不到 var() 解析后的值，
+ * 断言它等于伪造覆盖。那部分归阶段 9.2 的视觉回归（requirements 9.2 第 7 条，同一份 CSS）。
  */
 
 const data = [

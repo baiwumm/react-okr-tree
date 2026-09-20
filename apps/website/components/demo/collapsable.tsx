@@ -46,7 +46,7 @@ export function CollapsableDemo() {
               on ? 'bg-fd-accent text-fd-accent-foreground' : 'text-fd-muted-foreground'
             }`}
           >
-            {name}={on}
+            {`${name}=${on}`}
           </button>
         ))}
       </div>

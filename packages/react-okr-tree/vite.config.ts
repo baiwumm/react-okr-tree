@@ -64,7 +64,14 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: [r('./tests/setup.ts')],
-    include: ['tests/**/*.spec.{ts,tsx}'],
+    // 按目录白名单收，不用 tests/**：tests/visual 下是 Playwright 规格，
+    // 通配进来会让 vitest 把 test.describe 当自己的 API 跑（源项目同样用白名单）。
+    include: [
+      'tests/*.spec.{ts,tsx}',
+      'tests/model/**/*.spec.{ts,tsx}',
+      'tests/components/**/*.spec.{ts,tsx}',
+      'tests/ssr/**/*.spec.{ts,tsx}',
+    ],
     css: false,
     coverage: {
       provider: 'v8',

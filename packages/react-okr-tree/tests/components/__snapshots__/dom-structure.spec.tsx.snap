@@ -1,0 +1,108 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`DOM 结构快照 > OKR 双向模式 1`] = `
+"<div class="org-chart-container">
+  <div class="org-chart-node-children horizontal show-collapsable one-branch" role="tree">
+    <div aria-expanded="true" aria-level="1" aria-posinset="1" aria-selected="false" aria-setsize="1" class="org-chart-node only-both-tree-node align-root" data-level="1" role="treeitem" tabindex="0">
+      <div class="org-chart-node-left-children" role="group">
+        <div aria-level="2" aria-posinset="1" aria-selected="false" aria-setsize="1" class="org-chart-node is-leaf is-left-child-node" data-level="2" role="treeitem" tabindex="-1">
+          <div class="org-chart-node-label">
+            <div class="org-chart-node-label-inner">L</div>
+          </div>
+        </div>
+      </div>
+      <div class="org-chart-node-label is-root-label">
+        <div aria-hidden="true" class="org-chart-node-left-btn expanded"></div>
+        <div class="org-chart-node-label-inner">Root</div>
+        <div aria-hidden="true" class="org-chart-node-btn expanded"></div>
+      </div>
+      <div class="org-chart-node-children" role="group">
+        <div aria-expanded="true" aria-level="2" aria-posinset="1" aria-selected="false" aria-setsize="2" class="org-chart-node" data-level="2" role="treeitem" tabindex="-1">
+          <div class="org-chart-node-label">
+            <div class="org-chart-node-label-inner">B</div>
+            <div aria-hidden="true" class="org-chart-node-btn expanded"></div>
+          </div>
+          <div class="org-chart-node-children" role="group">
+            <div aria-level="3" aria-posinset="1" aria-selected="false" aria-setsize="1" class="org-chart-node is-leaf" data-level="3" role="treeitem" tabindex="-1">
+              <div class="org-chart-node-label">
+                <div class="org-chart-node-label-inner">C</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div aria-level="2" aria-posinset="2" aria-selected="false" aria-setsize="2" class="org-chart-node is-leaf" data-level="2" role="treeitem" tabindex="-1">
+          <div class="org-chart-node-label">
+            <div class="org-chart-node-label-inner">D</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>"
+`;
+
+exports[`DOM 结构快照 > 垂直模式 1`] = `
+"<div class="org-chart-container">
+  <div class="org-chart-node-children vertical show-collapsable one-branch" role="tree">
+    <div aria-expanded="false" aria-level="1" aria-posinset="1" aria-selected="false" aria-setsize="1" class="org-chart-node collapsed" data-level="1" role="treeitem" tabindex="0">
+      <div class="org-chart-node-label is-root-label is-not-left-child">
+        <div class="org-chart-node-label-inner">Root</div>
+        <div aria-hidden="true" class="org-chart-node-btn"></div>
+      </div>
+      <div class="org-chart-node-children is-hidden" role="group">
+        <div aria-expanded="false" aria-level="2" aria-posinset="1" aria-selected="false" aria-setsize="2" class="org-chart-node collapsed" data-level="2" role="treeitem" tabindex="-1">
+          <div class="org-chart-node-label">
+            <div class="org-chart-node-label-inner">B</div>
+            <div aria-hidden="true" class="org-chart-node-btn"></div>
+          </div>
+          <div class="org-chart-node-children is-hidden" role="group">
+            <div aria-level="3" aria-posinset="1" aria-selected="false" aria-setsize="1" class="org-chart-node collapsed is-leaf" data-level="3" role="treeitem" tabindex="-1">
+              <div class="org-chart-node-label">
+                <div class="org-chart-node-label-inner">C</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div aria-level="2" aria-posinset="2" aria-selected="false" aria-setsize="2" class="org-chart-node collapsed is-leaf" data-level="2" role="treeitem" tabindex="-1">
+          <div class="org-chart-node-label">
+            <div class="org-chart-node-label-inner">D</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>"
+`;
+
+exports[`DOM 结构快照 > 水平模式 1`] = `
+"<div class="org-chart-container">
+  <div class="org-chart-node-children horizontal show-collapsable one-branch" role="tree">
+    <div aria-expanded="false" aria-level="1" aria-posinset="1" aria-selected="false" aria-setsize="1" class="org-chart-node collapsed" data-level="1" role="treeitem" tabindex="0">
+      <div class="org-chart-node-label is-root-label is-not-left-child">
+        <div class="org-chart-node-label-inner">Root</div>
+        <div aria-hidden="true" class="org-chart-node-btn"></div>
+      </div>
+      <div class="org-chart-node-children is-hidden" role="group">
+        <div aria-expanded="false" aria-level="2" aria-posinset="1" aria-selected="false" aria-setsize="2" class="org-chart-node collapsed" data-level="2" role="treeitem" tabindex="-1">
+          <div class="org-chart-node-label">
+            <div class="org-chart-node-label-inner">B</div>
+            <div aria-hidden="true" class="org-chart-node-btn"></div>
+          </div>
+          <div class="org-chart-node-children is-hidden" role="group">
+            <div aria-level="3" aria-posinset="1" aria-selected="false" aria-setsize="1" class="org-chart-node collapsed is-leaf" data-level="3" role="treeitem" tabindex="-1">
+              <div class="org-chart-node-label">
+                <div class="org-chart-node-label-inner">C</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div aria-level="2" aria-posinset="2" aria-selected="false" aria-setsize="2" class="org-chart-node collapsed is-leaf" data-level="2" role="treeitem" tabindex="-1">
+          <div class="org-chart-node-label">
+            <div class="org-chart-node-label-inner">D</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>"
+`;

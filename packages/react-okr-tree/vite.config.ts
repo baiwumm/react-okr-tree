@@ -44,6 +44,9 @@ export default defineConfig({
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
+          // UMD 走 CDN 时 JSX runtime 也得有全局名，否则构建会自己猜一个
+          'react/jsx-runtime': 'ReactJSXRuntime',
+          'react/jsx-dev-runtime': 'ReactJSXDevRuntime',
         },
       },
     },

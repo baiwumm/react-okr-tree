@@ -535,7 +535,7 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 | 包名 | `react-okr-tree`（npm 空闲，已核实）。仓库为 pnpm workspace：`packages/react-okr-tree`（库）+ `apps/website`（Next.js + fumadocs 文档站，见 6.1） |
 | peer | `react >= 18.2.0`、`react-dom >= 18.2.0`（**建议下限 18.2 而非仅 19**，理由见 11.1）、`html-to-image ^1.11.0` **optional**（`peerDependenciesMeta`），且**绝不进 `dependencies`** |
 | 产物 | `dist/react-okr-tree.es.js` / `.cjs` / `.umd.js` + `dist/style.css` + `dist/index.d.ts` + `dist/index.d.cts`（`"type":"module"` 下 CJS 必须用 `.cjs` 才能 `require`）；`exports` 提供 `.` / `./style.css` / `./dist/style.css` / `./package.json`；`sideEffects` 标 `**/*.css`。**UMD 建议保留**（见 11.3），但需 external `react` / `react-dom` 并约定 globals，README 注明 CDN 场景无开发期警告 |
-| 构建 | Vite（lib 模式）+ `@vitejs/plugin-react` + `vite-plugin-dts`（打包为单文件 d.ts）+ 构建后校验脚本 `verify:dist`；ESM 产物需确认经过压缩（源项目踩过多格式构建下 `es` 不压缩导致 gzip 偏高 40% 的坑） |
+| 构建 | Vite（lib 模式）+ `@vitejs/plugin-react` + `vite-plugin-dts`（配 `@microsoft/api-extractor` 打包为单文件 d.ts）+ 构建后脚本 `post-build.mjs`（生成 `index.d.cts`）+ `verify:dist.mjs`（jsdom 里挂载三种模式、断言产物清单与 `require()` 可用）；**不做源项目的「ESM 事后压缩」一步**——Vite 8 下 ESM 顶层导出名必须保留，用 Oxc 再跑一遍只省 0.5 kB gzip，却让 sourcemap 错位 |
 | 版本锁定 | **文档站严格锁到参考站版本号**（见 6.1），workspace 根 `.npmrc` 设 `save-exact=true`，禁止 `^` / `~`；库侧取当前最新（Vite 8.3.0 等）同样精确锁定，清单见 `development-plan.md` 附录 A；升级走独立 PR（Renovate 配置照抄源项目 `renovate.json`） |
 | 部署 | Cloudflare 纯静态资产 + `output: 'export'`，详见 6.5 |
 | 代码规范 | ESLint 9 + Prettier（配置沿用源项目取向：单引号、无分号、printWidth 100）；React hooks 规则必须开启（`react-hooks/exhaustive-deps` 不许关闭） |
@@ -563,6 +563,8 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 | D8 | 子容器挂载/卸载过渡允许简化实现（不引入 `react-transition-group`），但 R7 列出的两个语义必须保留；展开/收起状态过渡不受影响 | 降级（P2） |
 | D9 | `nodeKey` / `direction` / `onlyBothTree` 运行时变更同样不生效，警告文案改为提示「绑定 `key` 以重挂载」 | 措辞 |
 | D10 | 类名前缀、包名、错误前缀由 `vue3-okr-tree` 改为 `react-okr-tree`；CSS 类名本身不变 | 措辞 |
+| D11 | `onNodeContextMenu` 与六个拖拽回调的 `event` 参数是 **React 合成事件**（`ReactMouseEvent` / `ReactDragEvent`），不是源项目的原生 DOM 事件；需要原生事件时取 `event.nativeEvent`。`preventDefault` / `stopPropagation` 语义一致（合成事件会转调原生） | 框架强制 |
+| D12 | `renderContent` 等回调的返回值为 `ReactNode`，不再要求由组件提供的创建函数 | 同 D1 的表现形式 |
 
 除此之外，任何与源项目行为不一致的地方都视为缺陷。若实现中发现源项目行为自相矛盾（例：`renderExpandBtn` 与 `nodeBtnContent` 的优先顺序在 4.4 与源项目代码之间），以**源代码为准**并在本文档回写说明。
 

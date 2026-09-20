@@ -42,14 +42,17 @@
 
 ## 阶段 4：视图层核心
 
-- [ ] ⭐ 4.1 `context.ts` + `hooks/use-node-version.ts`：三个 Context 的 value 一次创建、引用永久稳定（R3）；`useSyncExternalStore` 绑定 R1，SSR 走 0.2 的常量 `getServerSnapshot`
-- [ ] ⭐ 4.2 `OkrTreeNode.tsx`：递归渲染 + 左右子树容器 + 展开圆盘（`showNodeNum` 计数只算可见子节点）+ `renderExpandBtn` / `nodeBtnContent` 优先级 + 折叠态内联样式（`visibility` / 延迟 `height:0;overflow:hidden`，R7）+ `is-hidden` / `is-animated` / `okr-anim-*` 状态类
-- [ ] ⭐ 4.3 `OkrTree.tsx`：全部 props（4.1 表）、`store` 创建（不可变配置快照）、`useImperativeHandle` 暴露 27 方法 + `store` / `root`、回调事件映射（4.3 / 4.5）、抛错文案（R9）、运行时 prop 同步 effects（1.6.0 策略：能同步的同步、不能的警告）
-- [ ] 4.4 渲染定制：`renderNode` > `nodeComponent` > `renderContent` > `node.label`；`renderContent(node)` 无 `h`（D1）；`empty`
-- [ ] 4.5 选中态与样式计算：`labelClassName` / `currentLableClassName`（函数入参是 TreeNode）、`is-current` 双处、`is-disabled`、`data-level`、`theme` 类映射（`default` 不加类）
-- [ ] 4.6 事件：`onNodeClick` / `onNodeExpand` / `onNodeCollapse`；`onNodeContextMenu` 存在才 `preventDefault`（R3）；回调去掉 `nodeComponent`（D2）
-- [ ] ⭐ 4.7 组件单测（对应 `tests/components/{okr-tree,interaction,prop-sync,frozen-data,transition-robustness}.spec.ts`）：三套布局渲染、展开收起与事件、`filter()`、选中态、受控与非受控、抛错文案；**加一条 DOM 结构比对测试**（4 的产物 vs 3.4 fixture，允许差异白名单：React 注入的属性）
-- [ ] 4.8 局部更新回归测试落地（0.1 的断言固化成常规用例，进 CI）
+- [x] ⭐ 4.1 `context.ts` + `hooks/use-node-version.ts`：三个 Context 的 value 一次创建、引用永久稳定（R3）；`useSyncExternalStore` 绑定 R1，SSR 走常量 `getServerSnapshot`。落地补充：**渲染配置（labelWidth / renderNode / showCollapsable …）放在 `configRef` 里而不是 context value**，否则回调换身份就整树重渲染；改这些 prop 时由 `store.bumpAll()` 显式通知。
+- [x] ⭐ 4.2 `OkrTreeNode.tsx`：递归渲染 + 左右子树容器 + 展开圆盘（`showNodeNum` 计数只算可见子节点）+ `renderExpandBtn` / `nodeBtnContent` 优先级 + 折叠态内联样式（`visibility` / 延迟 `height:0;overflow:hidden`，R7）+ `is-hidden` / `is-animated` / `okr-anim-*` 状态类。`aria-setsize/posinset` 由父节点算好作 props 下传（避免订阅旧父节点）。
+- [x] ⭐ 4.3 `OkrTree.tsx`：全部 props、`store` 创建、`useImperativeHandle` 暴露 27 方法 + `store` / `root` + `refreshData()`、回调事件映射、抛错文案、运行时 prop 同步 effects。
+  - 移植过程中修掉两个真 bug：① `TreeStore` 构造器的选项拷贝会把 `undefined` 覆盖到类字段默认值上（源项目靠 Vue prop default 挡住了，React 必须跳过 `undefined`）；② R2 的「每次渲染扫描」不能无脑调 `store.setData`——它会连带 `setLeftData` 整棵重建左树、把左子树的过滤结果冲掉，改为先跑只读脏检查 `store.isStructureDirty()`。
+- [x] 4.4 渲染定制：`renderNode` > `nodeComponent` > `renderContent` > `node.label`；`renderContent(node)` 无 `h`（D1）；`empty`
+- [x] 4.5 选中态与样式计算：`labelClassName` / `currentLableClassName`、`is-current` 双处、`is-disabled`、`data-level`、`theme` 类映射（`default` 不加类）
+- [x] 4.6 事件：`onNodeClick` / `onNodeExpand` / `onNodeCollapse`；`onNodeContextMenu` 存在才 `preventDefault`；回调去掉 `nodeComponent`（D2）。**新增 D11：事件参数是 React 合成事件**，原生事件取 `event.nativeEvent`。
+- [x] ⭐ 4.7 组件单测：`tests/components/{okr-tree,interaction,prop-sync,frozen-data,transition-robustness}.spec.tsx` 共 48 条（源项目同序 47 条 + 1 条渲染定制优先级）。
+  - DOM 结构：`dom-structure.spec.tsx` 先锁**本实现**的三套布局快照（结构属性归一化后 `toMatchSnapshot`）；与 vue3-okr-tree 的**跨实现比对**挪到 9.2（那时用 Playwright 起源项目 playground 静态产物取真实 DOM，比在本仓库里造第二套渲染更省事）。
+- [x] 4.8 局部更新回归测试：`local-update.spec.tsx` 用「只有被点节点的版本前进 + 单次突变通知」做判据（等价于只有一个组件重渲染），另覆盖键盘漫游只 bump 新旧两个焦点节点。
+  - 顺带一个教训：断言别去 deep-equal `TreeNode` 实例，失败时打印 300 个嵌套对象的 diff 能把一条用例拖到 11 秒。
 
 ## 阶段 5：交互与数据进阶
 

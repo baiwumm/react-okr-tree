@@ -367,6 +367,31 @@ export class TreeNode implements Subscribable {
     this.refreshCheckedUpward()
   }
 
+  /**
+   * 只读版脏检查：源数据 children 与本层 childNodes 是否已经不一致（含逐层向下）。
+   *
+   * React 版需要它来决定「这次渲染到底要不要走 setData」——setData 会连带 setLeftData
+   * 整棵重建左树，若无脑每帧调用，左子树的过滤 / 展开结果会被反复冲掉。
+   * 判据与 updateChildren 完全一致，保证两者不会一个说变了、另一个说没变。
+   */
+  isStructureDirty(): boolean {
+    const store = this.store
+    const childrenKey = (store.props && store.props.children) || 'children'
+    let source: any[]
+    if (this.level === 0) {
+      source = Array.isArray(this._data) ? this._data : []
+    } else {
+      source = (this._data && this._data[childrenKey]) || []
+    }
+    const nodes = this._childNodes
+    if (nodes.length !== source.length) return true
+    for (let i = 0; i < nodes.length; i++) {
+      if (nodes[i].data !== source[i]) return true
+      if (nodes[i].isStructureDirty()) return true
+    }
+    return false
+  }
+
   insertChild(
     child: TreeNodeOptions | TreeNode,
     index?: number | null,

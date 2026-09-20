@@ -1,3 +1,5 @@
+export { OkrTree } from './OkrTree'
+export type { OkrTreeHandle, OkrTreeProps } from './OkrTree'
 export { TreeNode, createNode, resetNodeIdSeed } from './model/node'
 export { TreeStore, DEFAULT_PROPS } from './model/tree-store'
 export type { TreeStoreOptions } from './model/tree-store'

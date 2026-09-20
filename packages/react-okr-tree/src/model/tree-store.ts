@@ -120,7 +120,11 @@ export class TreeStore {
   constructor(options: TreeStoreOptions) {
     for (const option in options) {
       if (Object.prototype.hasOwnProperty.call(options, option)) {
-        ;(this as any)[option] = (options as any)[option]
+        const value = (options as any)[option]
+        // 源项目靠 Vue 的 prop default 保证传进来的永远是值；React 这边未传的 prop 是 undefined，
+        // 直接拷贝会把类字段上的默认值（direction / animateName / animateDuration …）冲掉。
+        if (value === undefined) continue
+        ;(this as any)[option] = value
       }
     }
     this.props = { ...DEFAULT_PROPS, ...(options.props || {}) }
@@ -147,6 +151,18 @@ export class TreeStore {
 
   notifyMutation(): void {
     this.mutation.notify()
+  }
+
+  /**
+   * 逐节点通知。
+   *
+   * 只用于「改了会影响所有节点渲染的树级配置」——源项目这些字段挂在 shallowReactive 的
+   * store 上，改一处所有读它的组件自动重渲染；React 版没有这层，得显式通知。
+   * 单个节点的展开 / 勾选 / 选中一类交互**不走这里**（那是 R1 局部更新的前提）。
+   */
+  bumpAll(): void {
+    this.root.notify()
+    this.forEachNode(node => node.notify())
   }
 
   filter(value: any, childName: ChildName = 'childNodes') {
@@ -230,6 +246,13 @@ export class TreeStore {
     if (nodeKey !== undefined && map[nodeKey] === node) {
       delete map[nodeKey]
     }
+  }
+
+  /** 右树 + OKR 左树的只读脏检查（见 TreeNode.isStructureDirty） */
+  isStructureDirty(): boolean {
+    if (this.root.isStructureDirty()) return true
+    if (this.isLeftChilds && this.isLeftChilds.isStructureDirty()) return true
+    return false
   }
 
   setData(newVal: TreeNodeData[]) {

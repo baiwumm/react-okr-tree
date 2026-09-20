@@ -17,7 +17,7 @@ import {
 import './styles/style.css'
 import { OkrTreeNode } from './OkrTreeNode'
 import { CLS, HIDDEN_ANCESTOR_SELECTOR, STATE, TREEITEM_SELECTOR, themeClass } from './dom-contract'
-import { cx, cxState } from './cx'
+import { cx, cxState, reactKey } from './cx'
 import {
   OkrTreeProvider,
   useOkrTreeGroupContext,
@@ -240,6 +240,11 @@ function sameItems(a?: TreeNodeData[], b?: TreeNodeData[]): boolean {
   return a.every((item, i) => item === b[i])
 }
 
+/** 两批路径是否等价：边 id 按序生成，故 d 逐项相同即为同一批路径 */
+function sameEdges(a: ConnectorEdge[], b: ConnectorEdge[]): boolean {
+  return a.length === b.length && a.every((edge, i) => edge.d === b[i].d)
+}
+
 function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
   props: OkrTreeProps<T>,
   ref: ForwardedRef<OkrTreeHandle>
@@ -400,14 +405,18 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
   )
 
   // ---- 键盘可访问性：漫游 tabindex 与焦点移动 ----
-  const setFocusedNode = useCallback((node: TreeNode | null) => {
-    const prev = focusedRef.current
-    if (prev === node) return
-    focusedRef.current = node
-    // 只 bump 上一个与下一个持有者：tabIndex 变了的那两个
-    if (prev) prev.notify()
-    if (node) node.notify()
-  }, [])
+  const setFocusedNode = useCallback(
+    (node: TreeNode | null) => {
+      const prev = focusedRef.current
+      if (prev === node) return
+      focusedRef.current = node
+      // 只 bump tabIndex 变了的那几个：上一个持有者、新持有者，
+      // 以及「尚无焦点节点时按兜底规则持有 0」的第一个根节点——
+      // 漏掉它会让两个 treeitem 同时可 Tab 进入（漫游 tabindex 要求全局唯一）。
+      for (const n of new Set([prev, node, store.root.childNodes[0]])) n?.notify()
+    },
+    [store]
+  )
 
   /** 当前可见的 treeitem（文档顺序），排除处于收起容器中的节点 */
   const visibleTreeItems = useCallback((): HTMLElement[] => {
@@ -523,17 +532,21 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
     if (propsRef.current.connector !== 'svg') return
     const baseEl = orgChartRoot.current
     if (!baseEl) {
-      setEdges([])
+      setEdges(prev => (prev.length ? [] : prev))
       return
     }
     const base = baseEl.getBoundingClientRect()
-    setEdges(
-      computeEdges(
-        store,
-        collectCardRects(store, nodeEls, base),
-        propsRef.current.connectorShape ?? 'curve'
-      )
+    const next = computeEdges(
+      store,
+      collectCardRects(store, nodeEls, base),
+      propsRef.current.connectorShape ?? 'curve'
     )
+    /**
+     * 稳态短路：路径逐字未变时保持原数组引用。
+     * 渲染后的 effect 每次提交都会排一帧重绘，若无条件换引用就会「重绘 → 重渲染 → 再排帧」
+     * 永不停止（源项目 onUpdated 直接写 DOM，没有这条回路）。
+     */
+    setEdges(prev => (sameEdges(prev, next) ? prev : next))
   }, [store, nodeEls])
 
   const rafRef = useRef(0)
@@ -980,7 +993,7 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
           {isEmpty && props.empty ? <div className={CLS.empty}>{props.empty}</div> : null}
           {root.childNodes.map(child => (
             <OkrTreeNode
-              key={getNodeKey(nodeKey, child.data) as string | number}
+              key={reactKey(nodeKey, child)}
               node={child}
               ariaSetSize={topLevel.length}
               ariaPosInSet={topLevel.indexOf(child) + 1}

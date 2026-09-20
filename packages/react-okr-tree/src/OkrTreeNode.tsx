@@ -4,18 +4,18 @@ import {
   useRef,
   type CSSProperties,
   type DragEvent,
+  type FocusEvent,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
 } from 'react'
 import { CLS, STATE, animClass } from './dom-contract'
-import { cx, cxState } from './cx'
+import { cx, cxState, reactKey } from './cx'
 import { useOkrTreeContext } from './context'
 import { useNodeVersion } from './hooks/use-node-version'
 import { usePrefersReducedMotion } from './hooks/use-reduced-motion'
 import { useDelayedCollapse } from './hooks/use-delayed-collapse'
 import { renderExpandBtnContent, renderNodeContent } from './node-content'
-import { getNodeKey } from './model/util'
 import type { TreeNode } from './model/node'
 import type { DropType } from './types'
 
@@ -220,7 +220,13 @@ function OkrTreeNodeComponent({
     ctx.emit('check-change', node.data, current[0], current[1])
   })
 
-  function handleFocus(): void {
+  /**
+   * React 的 onFocus 由 focusin 映射而来，而 focusin 会冒泡：后代 treeitem 或节点内控件
+   * 被聚焦时，祖先节点的 onFocus 同样会触发。少了这层判定，漫游 tabindex 会被祖先抢回去
+   * （源项目 @focus 绑的是不冒泡的原生 focus 事件，天然只有自身触发）。
+   */
+  function handleFocus(event: FocusEvent<HTMLDivElement>): void {
+    if (event.target !== event.currentTarget) return
     ctx.setFocusedNode(node)
   }
 
@@ -454,7 +460,7 @@ function OkrTreeNodeComponent({
     const visible = list.filter(child => child.visible)
     return list.map(child => (
       <OkrTreeNode
-        key={getNodeKey(cfg.nodeKey, child.data) as string | number}
+        key={reactKey(cfg.nodeKey, child)}
         node={child}
         isLeftChildNode={asLeft}
         ariaSetSize={visible.length}

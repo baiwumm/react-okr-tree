@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { join, normalize } from 'node:path'
+import { basename, join, normalize } from 'node:path'
 import { highlight } from 'fumadocs-core/highlight'
 import { CodeBlock, Pre } from 'fumadocs-ui/components/codeblock'
 import type { ReactNode } from 'react'
@@ -31,10 +31,21 @@ function readDemoSource(file: string): string {
   return readFileSync(join(process.cwd(), rel), 'utf8')
 }
 
+/**
+ * 锚点 id：没显式给 `id` 时用 `file` 的文件名（basic.tsx → #demo-basic）。
+ * 文档站的深链与 Playwright 的视觉基线都靠它定位单个 demo，所以规则要稳定：
+ * 文件名即契约（见 development-plan 阶段 8 的契约表），不需要在 24 处 MDX 里各写一遍 id。
+ */
+function anchorOf(id?: string, file?: string) {
+  const raw = id ?? (file ? basename(file, '.tsx') : undefined)
+  return raw ? `demo-${raw}` : undefined
+}
+
 export async function DemoBlock({
   title,
   description,
   file,
+  id,
   lang = 'tsx',
   children,
 }: {
@@ -42,6 +53,8 @@ export async function DemoBlock({
   description?: string
   /** 相对文档站根目录的 demo 源文件路径，例如 components/demo/basic.tsx */
   file?: string
+  /** 覆盖锚点 id（默认可由 file 推出）；两个都给也不报错，但只有 id 参与推导 */
+  id?: string
   lang?: string
   children: ReactNode
 }) {
@@ -62,7 +75,7 @@ export async function DemoBlock({
     : undefined
 
   return (
-    <div className="my-6 overflow-hidden rounded-xl border border-fd-border">
+    <div id={anchorOf(id, file)} className="my-6 scroll-mt-16 overflow-hidden rounded-xl border border-fd-border">
       <div className="overflow-x-auto p-4">{children}</div>
       {title || description || file ? (
         <div className="border-t border-fd-border px-4 py-3">

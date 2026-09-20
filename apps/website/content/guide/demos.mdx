@@ -1,0 +1,148 @@
+---
+title: Demo 总览
+description: 24 个可交互用例，逐条对应源项目 playground 的演示场景；源码由构建期读取真实组件文件生成。
+---
+
+import { AccordionDemo } from '@/components/demo/accordion'
+import { AnimationDemo } from '@/components/demo/animation'
+import { BasicDemo } from '@/components/demo/basic'
+import { CheckboxDemo } from '@/components/demo/checkbox'
+import { CollapsableDemo } from '@/components/demo/collapsable'
+import { ConnectorDemo } from '@/components/demo/connector'
+import { ContentModesDemo } from '@/components/demo/content-modes'
+import { ControlledDemo } from '@/components/demo/controlled'
+import { DefaultExpandedKeysDemo } from '@/components/demo/default-expanded-keys'
+import { DraggableDemo } from '@/components/demo/draggable'
+import { EventsDemo } from '@/components/demo/events'
+import { EventsOkrDemo } from '@/components/demo/events-okr'
+import { ExpandAllDemo } from '@/components/demo/expand-all'
+import { ExpandBtnDemo } from '@/components/demo/expand-btn'
+import { FilterDemo } from '@/components/demo/filter'
+import { FilterOkrDemo } from '@/components/demo/filter-okr'
+import { HorizontalDemo } from '@/components/demo/horizontal'
+import { LazyDemo } from '@/components/demo/lazy'
+import { NodeClickDemo } from '@/components/demo/node-click'
+import { NodeStyleDemo } from '@/components/demo/node-style'
+import { OkrContentDemo } from '@/components/demo/okr-content'
+import { OkrGroupDemo } from '@/components/demo/okr-group'
+import { OkrNodeNumDemo } from '@/components/demo/okr-node-num'
+import { ViewportDemo } from '@/components/demo/viewport'
+
+这 24 个用例与源项目 `playground/components/demos/` 一一对应（编号见[开发计划](/docs/start/repo)的阶段 8 契约表），
+用来做「特性是否对齐」的人工核对。每个用例下面折叠的源码**就是这一块正在跑的组件文件本身**：
+`<DemoBlock>` 在构建期用 `readFileSync` 读它，再用 shiki 高亮成 HTML，所以文档里的代码与页面里
+跑着的代码不会各写一份再漂移，浏览器也不为此背一个 shiki。
+
+数据全部来自 `components/demo/data.ts` 的工厂函数——每次调用返回新副本。原因在
+[数据变更与源数据回写](/docs/guide/data)：`append` / `remove` 这类方法会写回你传进来的源数据，
+多个用例共用一份会互相污染。
+
+## 布局与展开
+
+<DemoBlock title="基础用法（垂直）" description="只传 <code>data</code>，默认 <code>direction=&quot;vertical&quot;</code>。" file="components/demo/basic.tsx">
+  <BasicDemo />
+</DemoBlock>
+
+<DemoBlock title="水平方向" description="<code>direction=&quot;horizontal&quot;</code>：同层节点竖排成一列，整体向右生长，这是组织架构图常用的形态。" file="components/demo/horizontal.tsx">
+  <HorizontalDemo />
+</DemoBlock>
+
+<DemoBlock title="是否可展开" description="<code>showCollapsable</code> 打开圆盘才有收起动作；不打开时组件强制全部展开（原版既有行为）。" file="components/demo/collapsable.tsx">
+  <CollapsableDemo />
+</DemoBlock>
+
+<DemoBlock title="默认全部展开" description="<code>defaultExpandAll</code>。需要一进来就全展开时用它，不要挂载后再调 <code>expandAll()</code>——后者要走一次整树重渲染。" file="components/demo/expand-all.tsx">
+  <ExpandAllDemo />
+</DemoBlock>
+
+<DemoBlock title="指定默认展开的节点" description="<code>nodeKey</code> + <code>defaultExpandedKeys</code>：命中节点的祖先链自动展开。" file="components/demo/default-expanded-keys.tsx">
+  <DefaultExpandedKeysDemo />
+</DemoBlock>
+
+<DemoBlock title="节点尺寸与类名" description="<code>labelWidth</code> / <code>labelHeight</code>（number 走 px，string 原样）、<code>labelClassName</code> 与 <code>currentLableClassName</code>（后者是原版拼写，刻意保留）。" file="components/demo/node-style.tsx">
+  <NodeStyleDemo />
+</DemoBlock>
+
+## 节点内容定制
+
+<DemoBlock title="三种内容写法对比" description="优先级 <code>renderNode</code> &gt; <code>nodeComponent</code> &gt; <code>renderContent</code> &gt; 内置 <code>node.label</code>。React 版的 <code>renderContent</code> 只收 <code>(node)</code>，没有 Vue 的 <code>h</code>。" file="components/demo/content-modes.tsx">
+  <ContentModesDemo />
+</DemoBlock>
+
+<DemoBlock title="展开按钮内容" description="<code>renderExpandBtn</code>（旧名 <code>nodeBtnContent</code> 仍在）；<code>showNodeNum</code> 折叠时优先显示数字。" file="components/demo/expand-btn.tsx">
+  <ExpandBtnDemo />
+</DemoBlock>
+
+<DemoBlock title="展开动画" description="<code>animate</code> + <code>animateName</code> 六个方向 + <code>animateDuration</code>；系统开启「减弱动态效果」时自动按关闭处理。" file="components/demo/animation.tsx">
+  <AnimationDemo />
+</DemoBlock>
+
+## OKR 模式
+
+<DemoBlock title="OKR 双树与根对齐" description="两棵 <code>onlyBothTree</code> 的树并排，外面套 <code>OkrTreeGroup</code> 让左右子树宽度取组内最宽者；<code>alignRoot</code> 保证根节点水平坐标不随展开跳位。" file="components/demo/okr-group.tsx">
+  <OkrGroupDemo />
+</DemoBlock>
+
+<DemoBlock title="OKR 下的自定义内容" description="同一份 <code>renderContent</code> 里用 <code>node.isLeftChild</code> 分侧渲染——左树是同一组件的完整镜像，不是另一套 API。" file="components/demo/okr-content.tsx">
+  <OkrContentDemo />
+</DemoBlock>
+
+<DemoBlock title="OKR 折叠计数" description="<code>showNodeNum</code> 在左右两侧圆盘上分别显示可见子节点数（被 <code>filter</code> 隐藏的不计）。" file="components/demo/okr-node-num.tsx">
+  <OkrNodeNumDemo />
+</DemoBlock>
+
+## 状态、数据与画布
+
+<DemoBlock title="受控状态与 ref 方法" description="<code>expandedKeys</code> / <code>currentKey</code> 成对 props 即受控；ref 上的方法入参普遍接受 key / data 对象 / TreeNode 三种形态。原地改数据后要宿主重渲染或调 <code>refreshData()</code>。" file="components/demo/controlled.tsx">
+  <ControlledDemo />
+</DemoBlock>
+
+<DemoBlock title="懒加载子节点" description="<code>lazy</code> + <code>load(node, resolve, reject)</code>；失败分支与重试、<code>isLeaf</code> 判定。" file="components/demo/lazy.tsx">
+  <LazyDemo />
+</DemoBlock>
+
+<DemoBlock title="画布缩放与平移" description="<code>OkrTreeViewport</code> 包住树：滚轮/捏合/拖拽、<code>fitToScreen</code>、<code>centerNode</code>、<code>exportImage</code>（可选依赖 <code>html-to-image</code> 以注入函数的方式使用）。" file="components/demo/viewport.tsx">
+  <ViewportDemo />
+</DemoBlock>
+
+## 过滤
+
+<DemoBlock title="过滤" description="输入即 <code>handle.filter(value)</code>；<strong>清空输入等于恢复全显</strong>（<code>filterNodeMethod</code> 里 <code>!value</code> 直接返回 <code>true</code>），多根数据也要一起恢复。" file="components/demo/filter.tsx">
+  <FilterDemo />
+</DemoBlock>
+
+<DemoBlock title="OKR 模式过滤" description="一次 <code>filter()</code> 同时作用于左右两棵树，两侧都命中的关键词会一起留下。" file="components/demo/filter-okr.tsx">
+  <FilterOkrDemo />
+</DemoBlock>
+
+## 事件
+
+<DemoBlock title="事件回调" description="14 个事件都是 <code>onXxx</code> 回调 prop。<code>onNodeContextMenu</code> 只有在你传了它的时候才会 <code>preventDefault</code> 掉浏览器原生菜单。" file="components/demo/events.tsx">
+  <EventsDemo />
+</DemoBlock>
+
+<DemoBlock title="OKR 模式事件" description="左右两棵树走同一批回调；左树节点的 <code>node.isLeftChild</code> 为 <code>true</code>。" file="components/demo/events-okr.tsx">
+  <EventsOkrDemo />
+</DemoBlock>
+
+## 交互
+
+<DemoBlock title="手风琴" description="<code>accordion</code> 展开一个自动收起同级；只约束交互展开，<code>expandAll()</code> 这类整体操作不受影响。" file="components/demo/accordion.tsx">
+  <AccordionDemo />
+</DemoBlock>
+
+<DemoBlock title="点击节点展开" description="<code>expandOnClickNode</code>：点卡片切展开态，选中与勾选照旧。" file="components/demo/node-click.tsx">
+  <NodeClickDemo />
+</DemoBlock>
+
+<DemoBlock title="复选框" description="<code>showCheckbox</code> + <code>checkStrictly</code>（父子联动 vs 各自独立）、半选态，以及 <code>getCheckedKeys</code> / <code>setCheckedKeys</code> 的取与设。" file="components/demo/checkbox.tsx">
+  <CheckboxDemo />
+</DemoBlock>
+
+<DemoBlock title="拖拽排序" description="<code>draggable</code> + <code>allowDrag</code> / <code>allowDrop</code> 谓词；卡片上/中/下三段分别是 prev / inner / next，禁止放进自身子树。" file="components/demo/draggable.tsx">
+  <DraggableDemo />
+</DemoBlock>
+
+<DemoBlock title="SVG 连接线" description="<code>connector=&quot;svg&quot;</code> 换成覆盖层路径，布局零改动；三种形状在收起子树时会跟着重绘。" file="components/demo/connector.tsx">
+  <ConnectorDemo />
+</DemoBlock>

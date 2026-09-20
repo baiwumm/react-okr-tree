@@ -1,0 +1,152 @@
+---
+title: 画布缩放：OkrTreeViewport
+description: 缩放与平移的交互契约、受控 zoom / offset、工具栏定制与 exportImage 导出 PNG / SVG。
+---
+
+大树在固定视口里放不下时，用 `<OkrTreeViewport>` 把树包起来就有缩放与平移。它只做外层变换（`transform: translate() scale()`），不侵入树本体，也不改变树的任何 API——里面的 `OkrTree` / `OkrTreeGroup` 照常配置。
+
+```tsx
+'use client'
+
+import { useMemo, useRef } from 'react'
+import {
+  OkrTree,
+  OkrTreeViewport,
+  type OkrTreeViewportHandle,
+  type TreeNodeData,
+} from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+export default function App() {
+  const vp = useRef<OkrTreeViewportHandle>(null)
+  const data = useMemo<TreeNodeData[]>(
+    () => [
+      {
+        id: 1,
+        label: '总部',
+        children: [
+          { id: 2, label: '研发部', children: [{ id: 5, label: '前端组' }] },
+          { id: 3, label: '销售部' },
+        ],
+      },
+    ],
+    []
+  )
+
+  return (
+    <>
+      <button type="button" onClick={() => void vp.current?.exportImage({ type: 'png', scale: 2 })}>
+        导出 PNG
+      </button>
+      <button type="button" onClick={() => void vp.current?.centerNode(5)}>
+        居中到 id=5
+      </button>
+      <OkrTreeViewport ref={vp} toolbar minZoom={0.2} maxZoom={4} style={{ height: 480 }}>
+        <OkrTree data={data} nodeKey="id" direction="horizontal" showCollapsable />
+      </OkrTreeViewport>
+    </>
+  )
+}
+```
+
+## props
+
+| prop                               | 说明                                                                                                    | 默认值      |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------- |
+| `minZoom` / `maxZoom`              | 缩放范围，所有缩放路径都受钳制                                                                          | `0.2` / `4` |
+| `zoomStep`                         | 每次 `zoomIn` / `zoomOut` / 滚轮一格的缩放系数（乘除，不是加减）                                        | `1.2`       |
+| `zoom` + `onZoomChange`            | 受控缩放；未传 `zoom` 时内部维护。与树的受控策略一致：判据是 `undefined`，只传值不传回调即锁定          | —           |
+| `offset` + `onOffsetChange`        | 受控平移偏移 `{ x, y }`                                                                                 | —           |
+| `wheelBehavior`                    | `ctrl-zoom`（默认，按住 Ctrl / ⌘ 才缩放，不劫持页面滚动）/ `zoom`（滚轮始终缩放）/ `scroll`（从不缩放） | `ctrl-zoom` |
+| `toolbar`                          | 显示内置工具栏                                                                                          | `false`     |
+| `renderToolbar`                    | 自定义工具栏内容（对应源项目 `#toolbar` 插槽）；**给了它就一定显示工具栏区域**，不必再开 `toolbar`      | —           |
+| `children` / `className` / `style` | 画布内容；根容器类名与样式（高度用 `--okr-viewport-height` 或 `style={{ height }}` 设）                 | —           |
+
+## 方法
+
+| 方法                        | 说明                                                                                                     |
+| --------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `zoomIn()` / `zoomOut()`    | 以视口中心为锚放大 / 缩小（受 `minZoom` / `maxZoom` 钳制）                                               |
+| `reset()`                   | 复位到缩放 1、偏移 0；双击画布同样触发                                                                   |
+| `fitToScreen(padding?)`     | 适应窗口：内容完整可见并居中，`padding` 默认 `20`（四周各留 20px）                                       |
+| `centerNode(data)`          | 先展开目标节点的祖先，再把视口中心对准它。参数接受 key / data 对象 / `TreeNode`，返回 `Promise<boolean>` |
+| `exportImage(options?)`     | 导出画布内容为 PNG / SVG 并触发下载，返回 dataURL                                                        |
+| `getZoom()` / `getOffset()` | 读当前缩放与偏移                                                                                         |
+
+## 交互契约
+
+这几条是实测出来的行为，改任何一条都会让人觉得「不像一个画布」：
+
+- **滚轮缩放以指针为锚点**，不是以视口中心——光标指着哪个节点，缩放后它还在原地。
+- **拖拽平移有 3px 阈值**：位移没超过 3px 不算平移；一旦判定为平移，结束时**吞掉随后那一次 click**，否则拖完抬手就会误触 `onNodeClick`。
+- **双击复位**（缩放 1、偏移 0）。
+- **触控双指捏合**用 Pointer Events 统一处理（鼠标与触控同一条路径）：第二指点下时从平移切到捏合，抬起回落单指时重新锚定平移起点，不会跳一下。
+- `wheelBehavior="scroll"` 时**完全不 `preventDefault`**，滚轮交还给页面——嵌入式展示场景需要这个，别让用户在画布上滚不动页面。
+- 平移过程中根容器带 `is-panning` 类（`cursor: grabbing`），`touch-action: none` 保证移动端手势不被浏览器吃掉。
+
+## 工具栏
+
+内置工具栏内容依次是 `−` / `{percent}%` / `＋` / `重置` / `适应窗口`，两个缩放按钮带 `aria-label="缩小"` / `"放大"`，工具栏区域自己 `stopPropagation` 双击——在工具栏上连点不会触发画布复位。
+
+自定义用 `renderToolbar`，作用域参数是 `{ zoom, zoomIn, zoomOut, reset, fit }`：
+
+```tsx
+<OkrTreeViewport
+  renderToolbar={({ zoom, zoomIn, zoomOut, reset, fit }) => (
+    <div style={{ display: 'flex', gap: 8 }}>
+      <button type="button" onClick={zoomOut}>
+        −
+      </button>
+      <span>{Math.round(zoom * 100)}%</span>
+      <button type="button" onClick={zoomIn}>
+        ＋
+      </button>
+      <button type="button" onClick={reset}>
+        重置
+      </button>
+      <button type="button" onClick={() => fit(40)}>
+        适应窗口
+      </button>
+    </div>
+  )}
+>
+  <OkrTree data={data} nodeKey="id" direction="horizontal" />
+</OkrTreeViewport>
+```
+
+`zoom` 是每次渲染时的当前值，直接读就行，不需要 `useState`——受控与否由外层 `zoom` / `onZoomChange` 决定。
+
+## 导出图片
+
+`exportImage({ type, scale, background, toPng, toSvg })`：
+
+| 选项              | 说明                                                            | 默认    |
+| ----------------- | --------------------------------------------------------------- | ------- |
+| `type`            | `'png' \| 'svg'`                                                | `'png'` |
+| `scale`           | 像素密度，映射为 html-to-image 的 `pixelRatio`                  | `2`     |
+| `background`      | 背景色，映射为 `backgroundColor`（透明就不传）                  | —       |
+| `toPng` / `toSvg` | 直接传入渲染函数，签名与 html-to-image 一致；传了就不再动态导入 | —       |
+
+导出成功后会建一个 `<a download="okr-tree-{时间戳}.{png|svg}">` 触发下载，Promise 以 dataURL 结束。画布还没挂载就调用会抛 `exportImage: 画布尚未挂载`。
+
+<Callout type="warn" title="html-to-image 是可选 peer，不在 dependencies 里">
+
+默认路径是运行时动态 `import('html-to-image')`。没装它时 `exportImage()` 抛带安装指引的错（`npm i html-to-image`）。需要导出能力才装，`^1.11.0`。
+
+某些打包器 / module federation 场景下按裸包名动态导入解析不可靠，此时用 `toPng` / `toSvg` 把函数传进来，绕开动态导入：
+
+```tsx
+import { toPng } from 'html-to-image'
+
+vp.current?.exportImage({ type: 'png', scale: 2, toPng })
+```
+
+</Callout>
+
+`centerNode` 依赖树注册的 `getNodeEl` 与 `expandNode`（通过 Context 登记），所以一个画布里放多棵树也能定位；`exportImage` 截的是画布内容层，`OkrTreeGroup` 放在画布内也能整组导出。
+
+## 相关变量
+
+画布外观另有 6 个变量，全部可写在任意祖先：`--okr-viewport-height`（默认 `420px`）、`--okr-viewport-bg`、`--okr-viewport-border`、`--okr-viewport-radius`（默认 `4px`）、`--okr-viewport-toolbar-bg`、`--okr-viewport-toolbar-shadow`。见[主题与样式定制](/docs/theme)。
+
+`clampZoom` / `computeFit` / `renderToDataUrl` / `loadHtmlToImage` 这几个内部纯函数也从包入口导出（源项目同样如此），需要自己实现「缩放读数条」或换一套下载交互时可以直接用。

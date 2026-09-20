@@ -1,0 +1,108 @@
+---
+title: 仓库与本地开发
+description: pnpm workspace 两包结构、库与文档站各自的目录、本地开发命令、文档站与 Demo 的关系。
+---
+
+## 两包结构
+
+仓库是 pnpm workspace（`pnpm-workspace.yaml`：`packages/*` + `apps/*`），只有两个包：
+
+| 包                       | 位置                      | 角色                                                                   |
+| ------------------------ | ------------------------- | ---------------------------------------------------------------------- |
+| `react-okr-tree`         | `packages/react-okr-tree` | 组件库，唯一发布物                                                     |
+| `react-okr-tree-website` | `apps/website`            | Next.js + fumadocs 文档站，`private`，同时承担源项目 Playground 的职责 |
+
+工具链版本全部精确锁定（workspace 根 `.npmrc` 设 `save-exact=true`，不用 `^` / `~`）：Node `>= 20.19.0`、`pnpm@11.24.0`、文档站 `next@16.2.6` + `fumadocs-core/ui@16.15.7` + `tailwindcss@4.3.3`、库侧 `vite@8.3.0` + `vitest@5.0.1` + `@playwright/test@1.63.0`。`typescript` 锁 `5.9.3` 是硬约束——`typescript-eslint@8.70` 的 peer 要求 `< 6.1.0`。
+
+```text
+packages/react-okr-tree/
+├─ src/
+│  ├─ OkrTree.tsx            # 树容器：props、store 创建与同步、OkrTreeHandle、SVG 连接线、键盘焦点
+│  ├─ OkrTreeNode.tsx        # 递归节点：左右子树、展开按钮、复选框、拖拽、ARIA、过渡
+│  ├─ OkrTreeGroup.tsx       # 跨实例根对齐容器
+│  ├─ OkrTreeViewport.tsx    # 画布：缩放 / 平移 / 居中 / 导出
+│  ├─ model/                 # tree-store.ts / node.ts / util.ts + notifier.ts（纯 TS，不 import react）
+│  ├─ hooks/                 # use-node-version（订阅）/ use-reduced-motion / use-delayed-collapse
+│  ├─ styles/                # style.css（含 6 套主题、连接线、打印）+ transition.css（6 组动画）
+│  ├─ context.ts             # 三个 Context 契约（树 / Group / Viewport）
+│  ├─ dom-contract.ts        # 类名与选择器常量：DOM 结构是契约，不是实现细节
+│  ├─ node-content.tsx       # 节点内容渲染优先级
+│  ├─ svg-connector.ts       # 连接线路径生成的纯函数
+│  ├─ viewport.ts            # clampZoom / computeFit / renderToDataUrl / loadHtmlToImage
+│  ├─ index.ts               # 导出面
+│  └─ types.ts               # 公共类型
+├─ shared/api.ts             # API 表单一来源（库、文档站、README 三处消费）
+├─ dev/                      # 库侧开发 harness（视觉核对 + Playwright 基线），不是发布物
+├─ tests/                    # components / model / ssr 三类用例 + api-surface 防漂移测试
+└─ scripts/                  # post-build.mjs（生成 index.d.cts）、verify-dist.mjs（产物挂载冒烟）
+
+apps/website/
+├─ app/
+│  ├─ (home)/                # 落地页
+│  ├─ docs/[[...slug]]       # 文档区（渲染 content/ 下的 MDX）
+│  ├─ api/search             # force-static 的搜索索引，构建期导出为静态文件
+│  └─ sitemap.ts / robots.ts
+├─ content/                  # 文档正文（你正在看的这些页面）
+├─ components/{landing,docs,demo,background}
+├─ lib/                      # site.ts（站点元信息单一来源）/ source.ts / i18n.ts / version.ts
+├─ mdx-components.tsx        # MDX 组件白名单
+├─ scripts/                  # with-memory-cap.mjs、verify-export.mjs（静态性 + 死链检查）
+└─ source.config.ts          # fumadocs-mdx：docs 目录为 content/
+```
+
+## 关键设计：三份真源
+
+| 真源           | 位置                                      | 谁在消费                                                                                                                       |
+| -------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| API 表         | `packages/react-okr-tree/shared/api.ts`   | 文档站 `<ApiTable>`、`tests/api-surface.spec.tsx`（断言表格与 `OkrTreeHandle` 不漂移）、README 的 API 段落                     |
+| 样式           | `src/styles/style.css` + `transition.css` | 与源项目逐字相同的两份 CSS，diff 仅限包名注释；库版本由 `dist/style.css` 单文件产出                                            |
+| DOM 类名与结构 | `src/dom-contract.ts`                     | `OkrTreeGroup` 的测量选择器、`getVisibleNodes` 的可见性判定、SVG 连接线的卡片定位都按类名查询，因此 DOM 结构是对外契约的一部分 |
+
+`shared/api.ts` 放在**包内**而不是仓库根：vitest 的 transform 不加载本包以外的文件，而防漂移测试必须能 import 它。文档站用相对路径跨包引用（`next.config.mjs` 里把 Turbopack 的 `root` 放开到仓库根）。
+
+## 本地开发
+
+```bash
+pnpm install
+```
+
+在仓库根执行的命令都是 `--filter` 转发：
+
+| 命令                           | 作用                                                                                                                                                                             |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                     | 库的开发 harness（Vite，端口 5199），引用 `src/` 源码，带主题切换条                                                                                                              |
+| `pnpm test`                    | Vitest + jsdom：模型层单测 + 组件冒烟                                                                                                                                            |
+| `pnpm test:coverage`           | 覆盖率（阈值 statements 80 / branches 75 / functions 80 / lines 80）                                                                                                             |
+| `pnpm typecheck` / `pnpm lint` | `tsc --noEmit` / ESLint 9（`react-hooks/exhaustive-deps` 常开，不许关）                                                                                                          |
+| `pnpm build`                   | 库构建 → `dist/`（三格式 + `style.css` + 单文件 d.ts，`post-build.mjs` 补 `.d.cts`）                                                                                             |
+| `pnpm verify:dist`             | 产物层断言（不跑浏览器）：三格式清单齐备、`require()` 拿得到组件与 `NODE_KEY`、默认导出与具名同一引用、首行 `'use client'` 收尾正确、可选 peer 未被静态引入、CSS 无全局 reset 等 |
+| `pnpm build:check`             | `build` + `verify:dist`                                                                                                                                                          |
+| `pnpm verify:package`          | `publint` + `attw --pack`                                                                                                                                                        |
+| `pnpm size`                    | size-limit 体积预算（ESM gzip ≤ 20 kB、UMD ≤ 21 kB、CSS ≤ 4 kB）                                                                                                                 |
+| `pnpm bench`                   | 2000 节点性能基准（jsdom，先 `build`）                                                                                                                                           |
+| `pnpm test:visual`             | Playwright 视觉回归（先 `build`；端口默认 4173，被系统保留时用 `OKR_VISUAL_PORT` 覆盖）                                                                                          |
+| `pnpm dev:website`             | **先构建库**，再起文档站 dev server                                                                                                                                              |
+| `pnpm build:website`           | **先构建库**，再 `next build`（`output: 'export'` → `out/`）                                                                                                                     |
+| `pnpm typecheck:website`       | 文档站 `tsc --noEmit`                                                                                                                                                            |
+| `pnpm format`                  | 库 + 文档站一起 Prettier                                                                                                                                                         |
+
+<Callout title="改了库源码为什么文档站没变">
+
+文档站通过 workspace 依赖引用的是 `react-okr-tree` 的**构建产物**，不是 `src/`。改完库要重新 `pnpm build`（`pnpm dev:website` 已把这一步放在前面），否则站上跑的还是旧 dist。
+
+</Callout>
+
+## 文档站与 Demo 的关系
+
+源项目是 VitePress 文档站 + 独立 Vite Playground 两套栈，靠 `docs:build:full` 把 Playground 产物并进 `/playground/` 子路径。统一到 Next 之后这层负担消失：**文档站就是 Playground**。
+
+- 24 个 Demo 用例是 `components/demo/` 下的客户端组件，直接嵌进[指南](/docs/guide)各页，不另开站点。
+- demo 组件各自 `import 'react-okr-tree/style.css'`，样式随用例引入；文档正文只允许使用 `mdx-components.tsx` 白名单里的组件。
+- `packages/react-okr-tree/dev/` 那套 harness 保留，但只服务两件事：库自身的视觉核对，以及 Playwright 基线的截图源。它不是发布物，也不承担 Demo 展示职责。
+- 部署是 Cloudflare 的纯静态资产链路，因此 `next.config.mjs` 必须 `output: 'export'`。连带两个后果：搜索索引走 `force-static` 导出成 `out/api/search`（浏览器里取回后本地搜），`scripts/verify-export.mjs` 在 CI 里断言产物**真的全静态**、站内链接**真的能落到文件上**、sitemap 覆盖每个文档页。
+
+## 相关文档
+
+- 库的 API 与行为：[API](/docs/api)
+- 与 Vue 版的差异清单：[从 vue3-okr-tree 迁移](/docs/migration)
+- 需求与决策依据：仓库 `docs/requirements.md`（R1–R9 架构决策、D1–D12 有意差异）

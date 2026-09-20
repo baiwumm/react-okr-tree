@@ -1,0 +1,43 @@
+---
+title: 更新日志
+description: react-okr-tree 版本记录。1.0.0 为 React 复刻版首次发布。
+---
+
+本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。仓库根的 `CHANGELOG.md` 是真源，本页同步展示。
+
+## 1.0.0
+
+React 复刻版首次发布，特性对齐 `vue3-okr-tree` v1.13.0 累积的全部能力（1.0.0 → 1.13.0）。
+
+### 新增
+
+- **三种布局**：`vertical`（float + 伪元素连接线轨）、`horizontal`（flex + 左侧连接线）、OKR 双向（`onlyBothTree` + `leftData`，根节点左右各挂一棵完整子树，左树是独立的第二棵树）。`alignRoot` 内建根对齐，展开 / 收起不改变 OKR 根节点水平坐标。
+- **42 个 props / 14 个回调 / 28 个 ref 方法**，与源项目逐项对齐，含默认值、抛错文案与时机、边界行为（`nodeKey` 缺失时哪些方法静默、`showCollapsable=false` 强制全展开、`filter('')` 空值恢复、受控锁定态、OKR 左右分表与同 key 双侧生效）。
+- **渲染定制**：`renderNode`（或 `children` 传函数）/ `nodeComponent` / `renderContent` 三选一，`renderExpandBtn` / `nodeBtnContent` 两选一，加 `empty`；优先级与源项目一致且不可调整。
+- **交互**：点击选中、右键菜单（绑了才 `preventDefault`）、展开收起、`accordion` 手风琴、`expandOnClickNode`、复选框（父子联动 + 半选 + `checkStrictly`）、HTML5 拖拽换父级（`prev` / `inner` / `next` 三分区、`allowDrag` / `allowDrop`、跨左右树默认禁止）。
+- **数据**：全树过滤（父随可见后代）、增删改同步回写源数据、`updateKeyChildren`、`lazy` + `load` 懒加载、`deepWatch` 开关与渲染时结构脏检查增量重建。
+- **状态**：非受控（`defaultExpandedKeys` / `currentNodeKey` / `defaultCheckedKeys` / `defaultExpandAll`）与受控（`expandedKeys` / `currentKey` + `onExpandedKeysChange` / `onCurrentKeyChange`）双模。
+- **外观**：6 套内置主题（`default` / `feishu` / `dark` / `auto` / `minimal` / `colorful`）、27 个 `--okr-*` 外观变量（画布另有 6 个）、`unstyled` 无样式模式、6 组 `okr-*` 展开动画、CSS / SVG 双连接线模式（SVG 三形状）、`@media print` 打印样式、`prefers-reduced-motion` 三处降级。
+- **组合件**：`OkrTreeGroup`（跨实例根对齐，替代源项目文档里「业务层手动量 DOM」）、`OkrTreeViewport`（滚轮以指针为锚缩放、3px 阈值平移、双击复位、双指捏合、`fitToScreen` / `centerNode` / `exportImage`）。
+- **可访问性**：完整 WAI-ARIA tree（`role` / `aria-level` / `aria-expanded` / `aria-selected` / `aria-checked` / `aria-setsize` / `aria-posinset`）、漫游 tabindex、方向键在 OKR 左树按视觉方位镜像。
+- **查询辅助**：`getVisibleNodes()` / `getNodePath()` / `getNodeEl()` / `getCheckedKeys()` 等。
+- **`handle.refreshData()`**：React 版新增，同引用原地变更而宿主未重渲染时的显式兜底（见下「差异」D7）。
+
+### 差异
+
+框架范式导致的有意差异共 12 条（D1–D12），逐条列在[从 vue3-okr-tree 迁移](/docs/migration)。其中只有 D7 属于能力降级：Vue 的 `deep watch` 能接住「同引用原地变更」，React 只能在渲染时脏检查 + 显式 `refreshData()`。其余均为等价的语法转换。
+
+源项目对 Vue 2 原版缺陷的修复结论（Q1–Q9 + 冻结数据兼容 + 运行时 prop「要么生效、要么警告」）全部继承，未回退。
+
+### 工程
+
+- 产物：`dist/react-okr-tree.es.js` / `.cjs` / `.umd.js` + `dist/style.css` + 单文件 `index.d.ts` / `index.d.cts`；`exports` 提供 `.` / `./style.css` / `./dist/style.css` / `./package.json`，`sideEffects` 标 `**/*.css`。
+- peer：`react >= 18.2.0`、`react-dom >= 18.2.0`（取 18.2 而非仅 19，是为了让存量 18.x 中后台项目能用）；`html-to-image ^1.11.0` 为可选 peer，不进 `dependencies`。
+- 样式表 `style.css` / `transition.css` 与源项目逐字平移（diff 仅限包名注释）——连接线的几何取值多处相互咬合，任何「用 React 方式重写样式」都会产生亚像素漂移。
+- 测试：模型层 + 组件 + SSR 用例移植；`tests/api-surface.spec.tsx` 断言 API 表与真实 `OkrTreeHandle` 不漂移。
+- 文档站：Next.js 16 + fumadocs 16，`output: 'export'` 全静态导出，站内搜索走构建期导出的静态索引；同时承担源项目 Playground 的职责（不再有独立的并站构建脚本）。
+- 体积预算：ESM gzip ≤ 20 kB、UMD ≤ 21 kB、`style.css` ≤ 4 kB。
+
+### 已知不做
+
+与源项目决策一致：虚拟滚动、`direction` 的反向布局、垂直模式下的 OKR 双向、Devtools 集成、双语 README，以及源项目从未生效的死代码（`selectedKey` / `orkstyle` / `props.leftChildren` 等）。

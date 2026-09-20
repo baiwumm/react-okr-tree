@@ -1,0 +1,150 @@
+---
+title: 从 vue3-okr-tree 迁移
+description: Vue 3 版到 React 版的命名规则与 D1–D12 有意差异逐条说明。
+---
+
+`react-okr-tree` 是 `vue3-okr-tree`（v1.13.0）的 React 移植：42 个 props、14 个回调、28 个 ref 方法**一一对应**，默认值、抛错文案与时机、DOM 类名与结构、两份样式表全部逐字对齐。差异只来自框架范式，共 12 条，编号 D1–D12，全部列在本页。
+
+## 迁移三步
+
+<Steps>
+
+<Step title="换包名与样式路径">
+
+`vue3-okr-tree` → `react-okr-tree`，样式 `vue3-okr-tree/dist/style.css` → `react-okr-tree/style.css`（或 `react-okr-tree/dist/style.css`，同一文件）。CSS 类名一个都没改（`--okr-*` 变量、`.org-chart-container`、`org-chart-node-btn-text` 等全部原样），你自己写过的覆盖样式不用动。
+
+</Step>
+
+<Step title="按命名规则机械改写 props 与回调">
+
+kebab-case → camelCase、`@event` → `onXxx`、`#slot` → render prop、`v-model:x` → `x` + `onXxxChange`。对照表见下一节。
+
+</Step>
+
+<Step title="把模板 ref 换成 useImperativeHandle 的 handle">
+
+`ref="tree"` + `this.$refs.tree.filter(v)` 这种写法必须改写：用 `useRef<OkrTreeHandle>(null)`（或 `createRef`）拿 handle，再调 `handle.filter(v)`。源项目 `defineExpose` 的 27 个方法全在 handle 上，另加 React 版的 `refreshData()`，以及同样公开的 `store` / `root`。
+
+</Step>
+
+</Steps>
+
+## 命名规则
+
+| Vue 版                                                     | React 版                                                    | 规则                                                 |
+| ---------------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------- |
+| `node-key`、`show-collapsable`、`current-lable-class-name` | `nodeKey`、`showCollapsable`、`currentLableClassName`       | kebab-case → camelCase；两处原版拼写错误**照抄保留** |
+| `@node-click`、`@update:expandedKeys`                      | `onNodeClick`、`onExpandedKeysChange`                       | 事件 → `onXxx` 回调 prop                             |
+| `v-model:expanded-keys="keys"`                             | `expandedKeys={keys}` + `onExpandedKeysChange={setKeys}`    | 传了值即受控，判据是 `undefined`                     |
+| `#default="{ node, data }"`                                | `renderNode={({ node, data }) => …}` 或 `children` 传函数   | 插槽 → render props，作用域参数形状不变              |
+| `#expand-btn` / `#empty` / `#toolbar`                      | `renderExpandBtn` / `empty` / `renderToolbar`               | 同上                                                 |
+| `render-content` / `node-btn-content`（`(h, node)`）       | `renderContent` / `nodeBtnContent`（`(node) => ReactNode`） | 去掉 `h`（D1 / D12）                                 |
+| `node-component`                                           | `nodeComponent`（`ComponentType`）                          | 概念一致                                             |
+| `<vue-okr-tree>` / `<okr-tree>` 全局注册                   | `import { OkrTree } from 'react-okr-tree'`                  | 无全局注册（D6）                                     |
+| `createTypedOkrTree<Dept>()`                               | `<OkrTree<Dept> … />`（组件本身即泛型）                     | 移除辅助函数（D5）                                   |
+| 新增                                                       | `className` / `style` / `children`                          | React 侧新增，透传到 `.org-chart-container`          |
+
+## 有意差异（D1–D12）
+
+| 编号 | 差异                                                                                                                                                         | 性质               |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| D1   | `renderContent` / `nodeBtnContent` 不再接收 `h` 参数，签名为 `(node) => ReactNode`                                                                           | 框架强制           |
+| D2   | 事件回调去掉第三个参数 `nodeComponent`（Vue 组件实例在 React 无对应概念）；DOM 定位由 `handle.getNodeEl()` 承担                                              | 框架强制           |
+| D3   | `v-model:expanded-keys` / `v-model:current-key` / `v-model:zoom` / `v-model:offset` 改为「值 + `onXxxChange`」成对 props；`undefined` 判定为非受控，语义不变 | 框架惯例           |
+| D4   | 插槽改为 render props（`renderNode` / `renderExpandBtn` / `empty` / `renderToolbar`），作用域参数形状保持一致；`children` 也可作为 `renderNode` 的函数形式   | 框架惯例           |
+| D5   | 移除 `createTypedOkrTree<T>()`：`OkrTree<T>` 泛型组件原生提供同等收窄                                                                                        | 能力等价、API 减少 |
+| D6   | 移除 `VueOkrTreePlugin` / `app.use()` 式全局注册；默认导出改为 `OkrTree` 组件                                                                                | 框架强制           |
+| D7   | 同引用原地变更的自动感知降级为「渲染时脏检查 + `handle.refreshData()` 显式兜底」                                                                             | **能力差异**       |
+| D8   | 子容器挂载 / 卸载过渡允许简化实现（不引入 `react-transition-group`），但两个语义必须保留（见下）                                                             | 降级（P2）         |
+| D9   | `nodeKey` / `direction` / `onlyBothTree` 运行时变更同样不生效，警告文案改为提示「绑定 `key` 以重挂载实例」                                                   | 措辞               |
+| D10  | 类名前缀、包名、错误前缀由 `vue3-okr-tree` 改为 `react-okr-tree`；**CSS 类名本身不变**                                                                       | 措辞               |
+| D11  | `onNodeContextMenu` 与六个拖拽回调的 `event` 是 React 合成事件，不是原生 DOM 事件；需要原生事件时取 `event.nativeEvent`                                      | 框架强制           |
+| D12  | `renderContent` 等回调的返回值为 `ReactNode`，不再要求由组件提供的创建函数                                                                                   | D1 的表现形式      |
+
+### D1 / D12：自定义内容不再要 `h`
+
+```tsx
+// Vue：h 由组件从 vue 导入后传进来
+function renderContent(h, node) {
+  return h('div', { class: ['diy', node.isCurrent && 'is-current'] }, [h('div', node.data.label)])
+}
+```
+
+```tsx
+// React：直接返回 JSX，入参仍是内部 TreeNode
+import type { TreeNode } from 'react-okr-tree'
+
+const renderContent = (node: TreeNode) => (
+  <div className={`diy${node.isCurrent ? ' is-current' : ''}`}>
+    <div>{node.data.label}</div>
+  </div>
+)
+```
+
+`node` 的含义没变：内部 `TreeNode` 实例，源数据在 `node.data`，文本在 `node.label`，另有 `isCurrent` / `expanded` / `leftExpanded` / `isLeftChild` / `level` / `childNodes` 等访问器。
+
+### D3：受控
+
+Vue 的一行 `v-model` 在 React 里是两行，且**只传值不传回调是合法的锁定态**（含义与源项目一致：宿主拿不到回写，交互结果会在下一次受控值应用时被拉回）：
+
+```tsx
+'use client'
+
+import { useMemo, useState } from 'react'
+import { OkrTree, type TreeKey, type TreeNodeData } from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+export default function App() {
+  const rows = useMemo<TreeNodeData[]>(() => [{ id: 1, label: '总部', children: [{ id: 2, label: '研发部' }] }], [])
+  const [expandedKeys, setExpandedKeys] = useState<TreeKey[]>([1])
+
+  return (
+    <OkrTree
+      data={rows}
+      nodeKey="id"
+      showCollapsable
+      expandedKeys={expandedKeys}
+      onExpandedKeysChange={setExpandedKeys}
+    />
+  )
+}
+```
+
+### D7：原地变更（唯一的能力降级）
+
+源项目的 `watch(() => props.data, …, { deep })` 同时覆盖「引用变化」和「同引用原地 push/splice」。React 里同引用变异不会触发重渲染，因此进不了比较逻辑。React 版把判定改成**每次组件渲染后做一次结构脏检查**（判据与源项目的 `updateChildren` 完全一致：逐项同引用 + 长度一致），并新增 `handle.refreshData()` 作为宿主没重渲染时的显式兜底。
+
+迁移时最容易踩的是这一条：源项目示例里 `data.value.children.push(...)` + deep watch 就能生效，React 下要么换引用，要么在 `push` 之后调一次 `refreshData()`。细节与代码见[数据变更与源数据回写](/docs/guide/data)。
+
+### D8：过渡的两套机制
+
+展开 / 收起的**状态过渡**（`animate` / `animateName` / `animateDuration`，走 CSS 状态类）与源项目完全一致。变的是子容器的挂载 / 卸载过渡：源项目用 Vue 的 `<transition>`，React 侧换成同构的「延迟卸载」实现，但保留两个语义——
+
+1. `animate` 关闭时卸载**同步完成、不依赖 `requestAnimationFrame`**（后台标签页里 rAF 被节流，依赖它会让卸载挂起）。
+2. `height: auto → 0` 不可插值，因此收起时先只置 `visibility: hidden` 保持 `animateDuration` 毫秒，再补 `height: 0; overflow: hidden`——避免幻影滚动条与下方节点跳位。
+
+另外「折叠的子树仍然挂载在 DOM 中」这一条也照旧：所以 `getVisibleNodes()` 的返回值不等于 DOM 里的节点数，而 OKR 根节点也因此不会因展开收起而位移。
+
+## 没有移植的东西
+
+源项目里这些声明从未生效，React 版**不移植**（这是源项目自己的 Q7 结论，不是 React 侧的删减）：`selectedKey`、`orkstyle`、`props.leftChildren`、原版声明未用的 `props.disabled`、`findNearestComponent`、`updateLeftLeafState`、`computNodeStyle`、`ondeClass`、`okrEventBus`。
+
+导出面移除三项：`VueOkrTreePlugin`、`VueOkrTree` 别名、`createTypedOkrTree`。其余导出（`OkrTreeGroup`、`OkrTreeViewport`、`TreeNode`、`TreeStore`、`createNode`、`NODE_KEY`、`getNodeKey`、`markNodeData`、`clampZoom`、`computeFit`、`renderToDataUrl`、`loadHtmlToImage` 与全部类型）一一对应。
+
+源项目修掉的 Vue 2 原版缺陷，React 版**直接继承修复结果**，不回退：全树过滤且父随可见后代、OKR 左右分表（`getNode` 右树优先、同 key 同时作用两棵树）、三个动画 prop 真实生效、`props.disabled` 真实禁用、样式全部限定在 `.org-chart-container` 内、`align-root` 内建。
+
+<Callout type="warn" title="DOM 类名是契约，不是实现细节">
+
+`OkrTreeGroup` 的测量选择器、`getVisibleNodes()` 的可见性判定、SVG 连接线的卡片定位都按类名与结构查询 DOM，因此渲染出的层级、标签、类名、`role` / `aria-*` / `data-level` 与源项目完全一致（包括 `collapsed` 类在非 OKR 模式下永久存在、`role="tree"` 容器自带一条连接线这类已知怪癖）。若你基于源项目写过依赖 DOM 的样式或脚本，迁移后应当完全不用改。
+
+</Callout>
+
+## 迁移检查清单
+
+- 全仓搜索 `vue-okr-tree` / `vue3-okr-tree` 的 import 与样式路径。
+- 搜索 `ref="`、`this.$refs`、`getCurrentInstance` —— 这些必须换成 handle。
+- 搜索 `@node-` / `@check` / `@update:` 模板监听，换成 `onXxx` props。
+- 搜索 `<template #`，换成对应 render prop；同时确认没有同时传 `renderNode` 与 `renderContent`（优先级：`renderNode` > `nodeComponent` > `renderContent` > 默认文本）。
+- 搜索对 `data` 的原地 `push` / `splice`，改为换引用或补 `refreshData()`。
+- 若依赖右键菜单定制：确认 `onNodeContextMenu` 有传（只有传了才 `preventDefault`），并把用到的原生事件字段改走 `event.nativeEvent`。
+- 用了 `exportImage()` 的话，把 `html-to-image` 装进项目依赖（它是可选 peer，不在 `dependencies` 里）。

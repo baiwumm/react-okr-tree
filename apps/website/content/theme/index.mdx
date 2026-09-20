@@ -1,0 +1,136 @@
+---
+title: 主题与样式定制
+description: 6 套内置主题、27 个 --okr-* 外观变量一览、自定义主题、unstyled 无样式模式与打印样式。
+---
+
+组件所有可定制的外观取值都通过 CSS 变量暴露，并且**只在消费点写内联回退值**（`var(--okr-line-color, #ccc)`），容器上从不声明默认值。这件事决定了三条能力：
+
+- 不传 `theme` 时外观与 `vue3-okr-tree` 逐像素一致——样式表是同一份，diff 仅限包名注释。
+- 变量可以写在组件根容器、**任意祖先元素**、`:root`，甚至内联 `style={{ '--okr-line-color': 'red' }}`。类放哪儿都行，因为没有任何一处「先声明了默认值、后面就改不动」。
+- 卡片外观与主题选中态用 `:where()` 声明（特异度 0），所以你通过 `labelClassName` / `currentLableClassName` 传进去的单个类名**始终能覆盖**主题。
+
+## 内置主题
+
+```tsx
+'use client'
+
+import { OkrTree, type TreeNodeData } from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+export default function App({ data }: { data: TreeNodeData[] }) {
+  return <OkrTree data={data} theme="feishu" showCollapsable />
+}
+```
+
+| 主题       | 定位                                           | 覆写了什么                                                                                                             |
+| ---------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `default`  | 与 vue-okr-tree 一致：灰线、白卡、直角、轻阴影 | 不加任何类，也**没有内置选中样式**——选中态交给你用 `currentLableClassName` 自定义                                      |
+| `feishu`   | 飞书 OKR 观感                                  | `--okr-line-color: #dee0e3`、圆角 8px、双层阴影、选中 `#3370ff` / `#fff`                                               |
+| `dark`     | 暗色页面                                       | 线 `#4c4d4f`、卡片 `#1d1e1f` + `1px solid #414243`、文字 `#cfd3dc`、按钮与数字色 `#a3a6ad`、阴影加深                   |
+| `auto`     | 跟随系统                                       | 选中态恒等于 `dark`；完整的 `dark` 变量包写在 `@media (prefers-color-scheme: dark)` 里，亮色模式下等同 `default`       |
+| `minimal`  | 演示 / 打印                                    | 无阴影 + `1px solid #dcdfe6` + 圆角 4px，选中 `#ecf5ff` / `#409eff` 且同色边框                                         |
+| `colorful` | 按层级着色，适合组织架构展示                   | 基础取值同 `feishu`，另按 `.org-chart-node[data-level='1'..'5']` 逐级着色（`#3370ff` → `#eef3ff`），6 级及以上回退透明 |
+
+`data-level` 属性在**所有主题下**都输出，不只是 `colorful`；OKR 左右两棵树的根同为 `level 1`，所以两侧着色一致。`colorful` 是唯一含非变量规则的主题，其选中规则排在同级着色之后且特异度不低（`.org-chart-node` + `.is-current`），保证选中还能看出来。
+
+传不在这六套里的名字是允许的（用于挂你自己的 `.okr-theme-{name}` 类），只是开发期会输出一条提示，避免拼错主题名时毫无视觉变化却查不到原因。
+
+<Callout type="warn" title={'theme="auto" 跟随的是系统，不是站点主题类'}>
+
+`auto` 走 `@media (prefers-color-scheme: dark)` 媒体查询。如果你的站点用 `.dark` 类切换明暗（Next + next-themes 的常见做法），**站级切换不会改变媒体查询**，`auto` 就看起来「没生效」。这两种情况分开处理：
+
+- 想跟随系统：`theme="auto"`。
+- 想跟随站点：在站级主题容器上自己覆盖 `--okr-*` 变量（`.dark { --okr-node-bg: …; }`），或按当前主题给组件传 `theme="dark"` / `theme="default"`。变量能写在任意祖先，所以这条路不需要组件配合。
+
+</Callout>
+
+## 自定义主题 / 覆盖变量
+
+```css
+/* 方式一：自定义主题名，配合 theme="brand" */
+.okr-theme-brand {
+  --okr-line-color: #409eff;
+  --okr-node-radius: 8px;
+  --okr-current-bg: #409eff;
+  --okr-current-color: #fff;
+}
+/* 选中态用 :where() 保持零特异度，用户的 currentLableClassName 仍能覆盖 */
+.okr-theme-brand :where(.org-chart-node-label-inner.is-current) {
+  --okr-node-bg: var(--okr-current-bg);
+  --okr-node-color: var(--okr-current-color);
+}
+
+/* 方式二：在任意祖先上直接覆盖若干变量（可叠加在内置主题之上） */
+.my-page {
+  --okr-gap-level: 32px;
+  --okr-node-font-size: 14px;
+}
+```
+
+React 侧写内联变量记得加引号：`<div style={{ '--okr-line-color': '#409eff' } as CSSProperties}>`。
+
+## 变量一览
+
+「回退值」一列是 CSS 里 `var()` 的第二个参数。**同一变量在不同使用点的回退值可以不同**（组件不声明默认值，只在用它的地方兜底），下面逐项列全。
+
+| 变量                      | 说明                              | 回退值                                                            |
+| ------------------------- | --------------------------------- | ----------------------------------------------------------------- |
+| `--okr-line-color`        | 连接线颜色                        | `#ccc`（复选框边框 `#c0c4cc`、画布工具栏边框 `#e0e0e0`）          |
+| `--okr-line-width`        | 连接线宽度                        | `1px`                                                             |
+| `--okr-line-radius`       | 兄弟连线拐角圆角                  | `5px`                                                             |
+| `--okr-gap-level`         | 层级间距 / 连接线长度             | `20px`                                                            |
+| `--okr-gap-sibling`       | 兄弟节点交叉轴间距                | `5px`                                                             |
+| `--okr-gap-node-y`        | 水平模式下节点纵向间距            | `10px`                                                            |
+| `--okr-node-bg`           | 节点背景                          | `transparent`（复选框填充 `#fff`）                                |
+| `--okr-node-color`        | 节点文字颜色                      | `inherit`（工具栏按钮 `#333`）                                    |
+| `--okr-node-border`       | 节点边框                          | `none`                                                            |
+| `--okr-node-radius`       | 节点圆角                          | `0`                                                               |
+| `--okr-node-padding`      | 节点内边距                        | `10px`                                                            |
+| `--okr-node-font-size`    | 节点字号                          | `16px`                                                            |
+| `--okr-node-shadow`       | 节点阴影                          | `0 1px 10px rgba(31, 35, 41, .08)`                                |
+| `--okr-node-shadow-hover` | 节点 hover 阴影                   | `0 1px 14px rgba(31, 35, 41, .12)`                                |
+| `--okr-btn-size`          | 展开圆盘直径                      | `20px`                                                            |
+| `--okr-btn-bg`            | 展开圆盘背景                      | `#fff`                                                            |
+| `--okr-btn-shadow`        | 展开圆盘阴影                      | `0 0 2px rgba(0, 0, 0, .15)`                                      |
+| `--okr-btn-sign-color`    | 圆盘内 `+/-` 颜色                 | 取 `--okr-line-color`（再回退 `#ccc`）                            |
+| `--okr-btn-text-color`    | 圆盘内子节点数字颜色              | `#909090`                                                         |
+| `--okr-current-bg`        | 选中背景（仅主题内生效）          | `#3370ff`                                                         |
+| `--okr-current-color`     | 选中文字（仅主题内生效）          | `#fff`                                                            |
+| `--okr-disabled-opacity`  | 禁用节点透明度                    | `0.6`                                                             |
+| `--okr-drop-color`        | 拖拽放置指示线 / `inner` 描边颜色 | 取 `--okr-current-bg`（再回退 `#3370ff`）                         |
+| `--okr-focus-color`       | 键盘焦点环颜色                    | `#409eff`                                                         |
+| `--okr-focus-width`       | 键盘焦点环宽度                    | `2px`                                                             |
+| `--okr-anim-duration`     | 展开 / 收起过渡时长               | `200ms`，由 `animateDuration` prop 写成内联值                     |
+| `--okr-anim-easing`       | 过渡缓动                          | `cubic-bezier(.55, 0, .1, 1)`，`okr-fade-in-linear` 下为 `linear` |
+
+画布组件 `OkrTreeViewport` 另有一组：`--okr-viewport-height`（`420px`）、`--okr-viewport-bg`（`transparent`）、`--okr-viewport-border`（`none`）、`--okr-viewport-radius`（`4px`）、`--okr-viewport-toolbar-bg`（`rgba(255, 255, 255, .94)`）、`--okr-viewport-toolbar-shadow`（`0 2px 8px rgba(0, 0, 0, .08)`）。
+
+`--okr-group-left-width` 由 `OkrTreeGroup` 运行时测量写入，**不是给用户改的**，见[组对齐](/docs/guide/group)。
+
+几个改不动的东西：连接线的部分几何值是硬编码且相互咬合的（如 OKR 左子树根 stub 的 `width: 12px` / `left: calc(100% - 11px)` / `height: 10px` 三元组、水平模式折叠指示短线 `10px`）。它们被参数化的任何尝试都会产生亚像素漂移，源码注释里也明确写了不要动。层级与间距请用 `--okr-gap-*` 表达。
+
+## 无样式模式
+
+`unstyled` 只去掉卡片外观（背景 / 边框 / 圆角 / 阴影，含 hover 态），布局与连接线原样保留，供 Tailwind 或自有设计系统接管。它**刻意不动** `padding`、`font-size`、`color`：改 `padding` 会移动节点盒、牵动连接线的伪元素几何。这三项继续用 `--okr-node-padding` / `--okr-node-font-size` / `--okr-node-color`，或直接用 `labelClassName`。
+
+```tsx
+<OkrTree data={data} unstyled labelClassName="rounded-lg border bg-white px-4 py-2 shadow-sm" />
+```
+
+<Callout type="info" title="为什么样式是手写 CSS 而不是接 Tailwind">
+
+连接线是伪元素上的像素级几何（`::before` / `::after` 的边框与偏移量彼此咬合），工具类表达不了；而 Preflight 会重新引入全局样式污染——那正是原版 `* { margin: 0; padding: 0 }` 被诟病的地方。组件本体没有全局 reset：只有 `.org-chart-container` 自身与 5 个指定类的 `margin/padding: 0`，加容器内的 `box-sizing: border-box`。文档站这类消费方可以随意用 Tailwind，组件不行。
+
+</Callout>
+
+`.okr-unstyled` 那组规则用了 5 个类才压过后面的 4 类方向专属规则（同特异度时后者胜），这是照抄源项目的结果，别「优化」。
+
+## 打印
+
+`@media print` 下自动隐藏 `+/-` 圆盘与画布工具栏（纸上点不动的交互件），并去掉卡片与画布的 `box-shadow`（部分打印引擎会把阴影渲染成灰块、也费墨），两处都是 `!important`。
+
+折叠的子树按屏幕原样输出——想让整棵树都印出来，先调 `handle.expandAll()`。需要图片版请用画布组件的 [`exportImage()`](/docs/guide/viewport)。
+
+## 减弱动效
+
+`prefers-reduced-motion: reduce` 时，两份 CSS 各自按类名枚举清零 `duration` / `delay`，JS 侧同时去掉动画类与内联时长。细节见[键盘导航与可访问性](/docs/guide/keyboard)。

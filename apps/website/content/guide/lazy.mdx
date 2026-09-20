@@ -1,0 +1,64 @@
+---
+title: 懒加载子节点
+description: lazy 与 load 的取数契约：未加载判定、展开驱动、失败重试、isLeaf、加载中状态与左右树区分。
+---
+
+数据量大时（几千节点的组织架构）初始只给顶层，子级在**首次展开时**通过 `load` 异步获取。开两件事即可：`lazy` + `load`。
+
+```tsx
+'use client'
+
+import { useMemo, useState } from 'react'
+import { OkrTree, type TreeNode, type TreeNodeData } from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+async function fetchChildren(id: number): Promise<TreeNodeData[]> {
+  const res = await fetch(`/api/depts?parent=${id}`)
+  return res.json()
+}
+
+export default function App() {
+  const data = useMemo<TreeNodeData[]>(() => [{ id: 1, label: '总部' }], [])
+
+  function loadNode(
+    node: TreeNode,
+    resolve: (children: TreeNodeData[]) => void,
+    reject?: () => void
+  ) {
+    // node 是内部 TreeNode：源数据在 node.data，node.isLeftChild 区分 OKR 左树
+    fetchChildren(node.data.id)
+      .then(resolve)
+      .catch(() => reject?.())
+  }
+
+  return (
+    <OkrTree
+      data={data}
+      nodeKey="id"
+      showCollapsable
+      lazy
+      load={loadNode}
+      props={{ isLeaf: (item: TreeNodeData) => item.leaf === true }}
+    />
+  )
+}
+```
+
+`lazy` 而没有 `load`、或有 `load` 而 `lazy` 为 `false`，都会各输出一条开发期警告——这两种组合下请求永远不会发出，不警告的话很难查。
+
+## 行为约定
+
+- **未加载判定**：初始 `data` 里没有 `children` 字段、或 `children` 为空数组的节点视为未加载。未指定 `props.isLeaf` 时，未加载节点默认**视为有子节点**（会显示展开圆盘并触发请求）。
+- **resolve 后回写源数据**：`resolve(children)` 把子节点写进源数据的 `children` 数组（与 `append` 同一套回写语义，见[数据变更](/docs/guide/data)），标记为已加载并展开，之后不再重复请求。冻结数据下这一步会被跳过并发出开发期警告。
+- **展开驱动**：点 `+/-`、`expandAll()` / `expandNode()` / `scrollToNode()`、`defaultExpandedKeys`、受控 `expandedKeys` 命中未加载节点时，都会先 `load`、完成后再展开。受控模式下，加载完成后新的展开集合会通过 `onExpandedKeysChange` 报给宿主。
+- **失败与重试**：`reject()` 或 `load` 抛错时节点回到折叠态、清掉加载中标记，下次展开重新请求。
+- **叶子节点**：`props: { isLeaf: 'leaf' }` 或用函数形式指定。标记为叶子的未加载节点不显示圆盘、不触发请求。
+- **加载中状态**：圆盘带 `is-loading` 类（内置旋转指示），`renderExpandBtn` 的作用域里有 `loading: boolean` 可自绘；`showNodeNum` 在未加载时不显示数字。
+- **过滤**：`filter` 不会触发未加载节点的 `load`——子树内容未知，无法判定。懒加载场景下的搜索请交给服务端。
+- **OKR 左树**：`load` 收到的 `node.isLeftChild === true` 表示左树节点，可按侧返回不同数据。左子树的数据一般由 `leftData` 前置给定，不需要懒加载。
+
+## 与 data 变更检测的配合
+
+`resolve(children)` 走的是与 `append` 完全相同的 `insertChild` 路径：**源数据的 `children` 与内部 `childNodes` 在同一步里一起更新**，两者始终逐项对应。所以之后宿主重渲染时，渲染时的结构脏检查不会把这批子节点误判成「外部又改了数据」而重建一次——懒加载与 [R2 的变更检测](/docs/guide/data)互不打架。
+
+真正需要留意的是另一头：如果你的数据来自不可变状态库，`resolve` 会**原地改动一个你当作不可变的对象**（能改成功，只要它没被 `Object.freeze`）。这类项目里更一致的做法是 `load` 只负责取数、把结果写进上层状态，再换 `data` 引用让组件重建；`lazy` 留给「确实无法预先拿到子级」的场合。

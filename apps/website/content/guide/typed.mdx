@@ -1,0 +1,170 @@
+---
+title: 泛型与类型推导
+description: OkrTree 是泛型组件，T 覆盖哪些位置、不覆盖哪些位置，以及公共类型导出清单。
+---
+
+源项目需要一个 `createTypedOkrTree<T>()` 辅助函数来做类型收窄。React 不需要：`OkrTree` 本身就是泛型组件，直接用。
+
+```tsx
+import { OkrTree } from 'react-okr-tree'
+import type { OkrTreeHandle, TreeNodeData } from 'react-okr-tree'
+```
+
+```tsx
+'use client'
+
+import { useMemo } from 'react'
+import { OkrTree, type TreeNode } from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+interface Dept {
+  id: number
+  label: string
+  leader?: string
+  children?: Dept[]
+}
+
+export default function App() {
+  const depts = useMemo<Dept[]>(
+    () => [
+      {
+        id: 1,
+        label: '产品研发部',
+        leader: '张三',
+        children: [{ id: 2, label: '前端组', leader: '李四' }],
+      },
+    ],
+    []
+  )
+
+  return (
+    <OkrTree
+      data={depts}
+      nodeKey="id"
+      showCollapsable
+      onNodeClick={(data, node: TreeNode) => {
+        // data 是 Dept：由 data 的泛型参数推出来，不用标注
+        console.log(data.leader, node.level)
+      }}
+    />
+  )
+}
+```
+
+约束是 `T extends TreeNodeData`，而 `TreeNodeData` 就是 `Record<string, any>`——你的数据形状只要是个对象类型就满足，`interface` 与 `type` 都可以。`data` 传空数组字面量、或推断结果不是你想要的类型时，可以显式实例化：`<OkrTree<Dept> data={rows} />`。
+
+## T 覆盖哪些位置
+
+| 位置                                                                                                                 | 是否带 T                                             |
+| -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `data` / `leftData`                                                                                                  | ✅ `T[]`                                             |
+| `onNodeClick` / `onNodeExpand` / `onNodeCollapse` / `onNodeContextMenu` / `onCheck` / `onCheckChange` 的 `data` 参数 | ✅ `T`                                               |
+| 渲染作用域：`renderNode` / `children`（函数形式）的 `{ node, data }`                                                 | ❌ `data` 为 `TreeNodeData`（`Record<string, any>`） |
+| `nodeComponent` 的 props                                                                                             | ❌ `{ node: TreeNode; data: TreeNodeData }`          |
+| `props` 字段映射里的 `label` / `disabled` / `isLeaf` 函数                                                            | ❌ 参数是 `TreeNodeData`                             |
+| `labelClassName` / `currentLableClassName`                                                                           | ❌ 入参是内部 `TreeNode`                             |
+| `OkrTreeHandle` 的各方法入参与返回                                                                                   | ❌ 一律 `TreeNodeData` / `TreeNode`                  |
+
+后两类不是遗漏，而是模型决定的：`TreeNode` 是**可变的外部 store 实例**，`node.data` 存的是你传进来的对象引用。要让 `node` 也带上 `T`，得把整个 `TreeNode` / `TreeStore` 泛型化并一路透传，而它们同时是 `handle.store` 公开的能力，代价不成比例。所以收窄停在边界上：**你递给组件的数据是 `T`，组件回给你的节点实例走 `node.data`，需要时断言一次。**
+
+```tsx
+<OkrTree
+  data={depts}
+  nodeKey="id"
+  renderNode={({ node }) => {
+    const dept = node.data as Dept
+    return (
+      <span>
+        {dept.label}
+        {dept.leader ? <small>（{dept.leader}）</small> : null}
+      </span>
+    )
+  }}
+/>
+```
+
+## 用 nodeComponent 时怎么处理类型
+
+`nodeComponent` 接的是 `ComponentType<NodeComponentProps>`，props 里的 `data` 是 `TreeNodeData`。最省事的写法是照这个签名声明、在函数体里断言一次：
+
+```tsx
+'use client'
+
+import type { ComponentType } from 'react'
+import { OkrTree, type NodeComponentProps } from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+interface Dept {
+  id: number
+  label: string
+  leader?: string
+}
+
+function DeptCard({ node, data }: NodeComponentProps) {
+  const dept = data as Dept
+  return (
+    <span className={node.isLeftChild ? 'is-left' : undefined}>
+      {dept.label}
+      {dept.leader ? <small>（{dept.leader}）</small> : null}
+    </span>
+  )
+}
+
+export default function App({ rows }: { rows: Dept[] }) {
+  return <OkrTree data={rows} nodeKey="id" nodeComponent={DeptCard} />
+}
+```
+
+<Callout type="warn" title="别把组件签名写成只吃 Dept">
+
+`data: Dept` 这种更严格的写法在 `strictFunctionTypes` 下过不了类型检查——参数是逆变的，`NodeComponentProps` 不能赋给 `{ data: Dept }`（`Record<string, any>` 不满足 `Dept` 的必填属性）。如果确实想让组件保持窄签名，就在挂载处断言：`nodeComponent={DeptCard as ComponentType<NodeComponentProps>}`。运行时传给它的本来就是你那批 `Dept` 对象，断言只是补上类型系统看不到的一环。
+
+</Callout>
+
+## 导出的类型
+
+从包入口一次性导出，不需要深路径 import：
+
+| 类别            | 名字                                                                                                                                                                                                         |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| props 与 handle | `OkrTreeProps`、`OkrTreeHandle`、`OkrTreeGroupProps`、`OkrTreeGroupHandle`、`OkrTreeViewportProps`、`OkrTreeViewportHandle`、`ViewportToolbarScope`                                                          |
+| 数据与 key      | `TreeNodeData`、`TreeKey`（`string \| number`）、`TreeDirection`、`TreeOptionProps`                                                                                                                          |
+| 回调与渲染      | `TreeLoadFunction`、`FilterNodeMethod`、`RenderContentFunction`、`NodeBtnContentFunction`、`LabelClassName`、`ExpandBtnScope`、`NodeComponent`、`NodeComponentProps`、`TreeCheckInfo`、`ScrollToNodeOptions` |
+| 外观            | `AnimateName`、`TreeTheme`、`ConnectorMode`、`ConnectorShape`、`BUILT_IN_THEMES`（值）                                                                                                                       |
+| 画布            | `ExportImageOptions`、`ViewportOffset`、`ViewportWheelBehavior`、`ViewportTreeApi`                                                                                                                           |
+| 模型            | `TreeNode`（类）、`TreeStore`（类）、`TreeStoreOptions`、`Subscribable`                                                                                                                                      |
+
+同时导出的值有：`OkrTree`、`OkrTreeGroup`、`OkrTreeViewport`、`TreeNode`、`TreeStore`、`createNode`、`NODE_KEY`、`getNodeKey`、`markNodeData`、`warn`、`resetWarnings`、`clampZoom`、`computeFit`、`renderToDataUrl`、`loadHtmlToImage`、`DEFAULT_PROPS`、`BUILT_IN_THEMES`、`resetNodeIdSeed`。
+
+`NODE_KEY` 是写在源数据上的那个不可枚举字段名（`'$treeNodeId'`），做数据持久化或调试时会用到，见[数据变更](/docs/guide/data)。
+
+## ref 的类型
+
+组件是 `forwardRef` 实现的（peer 下限 18.2 需要它；React 19 里 `ref` 已是普通 prop，但库仍走这条路以兼容 18）。类型上就是一个可选 prop：
+
+```tsx
+'use client'
+
+import { createRef, useRef, type RefObject } from 'react'
+import { OkrTree, type OkrTreeHandle } from 'react-okr-tree'
+
+const persistent = useRef<OkrTreeHandle>(null)
+const oneShot: RefObject<OkrTreeHandle | null> = createRef<OkrTreeHandle>()
+
+export default function App({ data }: { data: object[] }) {
+  return (
+    <>
+      <OkrTree ref={persistent} data={data} />
+      <OkrTree ref={oneShot} data={data} />
+    </>
+  )
+}
+```
+
+两种都可以：`useRef` 是组件内常规选择；`createRef` 适合在组件外持有（例如你自己封装一个命令式工具）。`OkrTreeGroup` / `OkrTreeViewport` 同理，各自的 handle 是 `OkrTreeGroupHandle` / `OkrTreeViewportHandle`。
+
+<Callout type="info" title="d.ts 是单文件产物">
+
+发布物里是 `dist/index.d.ts`（ESM）与内容完全一致的 `dist/index.d.cts`（CJS），由 `vite-plugin-dts` + api-extractor 打包，不含任何指向 `src/` 的相对路径。`require()` 路径也能拿到类型。
+
+</Callout>

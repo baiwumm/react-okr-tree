@@ -1,0 +1,112 @@
+---
+title: 多棵树根对齐：OkrTreeGroup
+description: 跨实例根对齐的测量机制、align 与 refresh()、何时需要手动重新测量。
+---
+
+`alignRoot`（默认 `true`）让**每棵树自己的**根节点在自身容器内水平居中。多棵 OKR 树并排对比时，如果容器宽度装不下最深的那一侧，各棵树「各自居中」出来的水平坐标就不一致——原版 README 里只能靠业务层手动量 DOM 来对齐。`<OkrTreeGroup>` 把这件事收到组件里：测量组内所有左子树容器的最大自然宽度并统一设置，让各棵树的根节点落在同一条竖线上，并自动响应成员的挂载、更新与尺寸变化。
+
+```tsx
+'use client'
+
+import { useMemo } from 'react'
+import { OkrTree, OkrTreeGroup, type TreeNodeData } from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+export default function App() {
+  const left = useMemo<TreeNodeData[]>(
+    () => [{ id: 1, label: '目标 A', children: [{ id: 11, label: 'KR1' }] }],
+    []
+  )
+  const right = useMemo<TreeNodeData[]>(
+    () => [
+      {
+        id: 2,
+        label: '目标 B',
+        children: [
+          { id: 21, label: 'KR1 长一点的关键结果' },
+          { id: 22, label: 'KR2' },
+        ],
+      },
+    ],
+    []
+  )
+  const leftA = useMemo<TreeNodeData[]>(() => [{ id: 3, label: '历史进展' }], [])
+  const leftB = useMemo<TreeNodeData[]>(
+    () => [{ id: 4, label: '历史进展（更长的标题）', children: [{ id: 41, label: 'Q2 KR3' }] }],
+    []
+  )
+
+  return (
+    <OkrTreeGroup>
+      <OkrTree data={left} leftData={leftA} onlyBothTree direction="horizontal" nodeKey="id" />
+      <OkrTree data={right} leftData={leftB} onlyBothTree direction="horizontal" nodeKey="id" />
+    </OkrTreeGroup>
+  )
+}
+```
+
+<Callout type="info" title="成员树要开着 alignRoot">
+
+`OkrTreeGroup` 是在 `alignRoot` 的居中机制之上做统一宽度的，成员树传 `alignRoot={false}` 时组内对齐没有意义。`alignRoot` 默认 `true`，通常不需要额外写。
+
+</Callout>
+
+## props 与方法
+
+| 名称        | 类型                         | 说明                                                                    |
+| ----------- | ---------------------------- | ----------------------------------------------------------------------- |
+| `align`     | prop，boolean，默认 `true`   | `false` 时各树独立排布，并**清除**已写入的宽度与 `is-measured` 类       |
+| `children`  | —                            | 放若干 `<OkrTree onlyBothTree />`；`className` / `style` 透传到组根容器 |
+| `refresh()` | 方法（`OkrTreeGroupHandle`） | 手动触发一次重新测量                                                    |
+
+## 测量机制
+
+三步，都在 DOM 契约里，值得知道以便排查：
+
+1. 给组容器临时加 `is-measuring` 类，让左子树容器按 `flex: 0 0 auto; width: max-content` 排布——此时读到的是「不受挤压的自然宽度」。
+2. 对组内每个左子树容器取 `Math.ceil(getBoundingClientRect().width)`，求最大值。
+3. 移除 `is-measuring`，在组根容器上写内联 `--okr-group-left-width: Npx` 并加 `is-measured` 类；左容器改为按这个统一宽度排布。
+
+组根容器是 `div.okr-tree-group`。`--okr-group-left-width` 由组件运行时写入，**不是给你改的**——手动设它会让测量结果与显示值不一致。
+
+## 什么时候会自动重测
+
+- 成员树挂载、更新（展开收起、数据变化、过滤）时——树通过 Context 向所在组登记，渲染后请求一次测量。
+- 组容器自身的 `ResizeObserver`（容器宽度变化）。
+- `document.fonts.ready`——Web 字体落地后文本宽度会变，这是最容易漏的一次。
+- `align` 从 `false` 变回 `true`。
+
+请求是**按帧去重**的（`requestAnimationFrame` + 一个 pending 标记）：同一帧内的多次请求只测一次。源项目用 `nextTick`，React 侧对应换成 rAF（D8 一类的机制替换，语义不变）。
+
+外部因素改变了节点尺寸而组件察觉不到时，才需要手动调：
+
+```tsx
+'use client'
+
+import { useRef, type ReactNode } from 'react'
+import { OkrTreeGroup, type OkrTreeGroupHandle } from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+export default function Demo({ children }: { children: ReactNode }) {
+  const group = useRef<OkrTreeGroupHandle>(null)
+
+  return (
+    <>
+      <button type="button" onClick={() => group.current?.refresh()}>
+        重新对齐
+      </button>
+      <OkrTreeGroup ref={group}>{children}</OkrTreeGroup>
+    </>
+  )
+}
+```
+
+典型场景：节点内容里有异步加载完才撑开的图片、宿主在组外用 CSS 改了卡片 padding / 字号、或者切换了会改变字体度量的主题。
+
+## 与画布组合
+
+`OkrTreeGroup` 可以放进 `<OkrTreeViewport>` 里，缩放平移作用于整组（见[画布缩放](/docs/guide/viewport)）；导出时截的是画布内容层，多棵树一起出图。
+
+## SSR 说明
+
+测量只在客户端 effect 里发生，服务端渲染出的组容器不带 `is-measured` 与内联宽度。因此首屏（SSR HTML）里各棵树的根位置可能不同，挂载完成后一帧内被校正对齐——这与 `alignRoot` 的纯 CSS 居中不冲突，后者是构建在 CSS 上的、服务端就成立。

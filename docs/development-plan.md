@@ -102,7 +102,9 @@
 - [x] 7.5 搜索：构建期导出静态 Orama 索引 + `staticClient`（0.2 结论：静态导出下不需要 Pagefind）
   - 实现比预想更省：`app/api/search/route.ts` 里 `createFromSource(source).staticGET` 配 `export const dynamic = 'force-static'`，`next build` 就把索引当静态文件写到 `out/api/search`；前端 `RootProvider search={{ options: { type: 'static', api: '/api/search' } }}`。零额外构建步骤、零额外依赖。
   - 运行时验证方式：本机没有可用浏览器环境（见 7.3），改为用**同一份 `staticClient`** 对导出的 `out/api/search` 做取回-加载-检索往返，命中与 `<mark>` 高亮正常。0.2 遗留的「包产物核实 ≠ 运行时验证」到此收口；浏览器里的那一遍归 9.2。
-- [ ] 7.6 `content/` 骨架与 `meta.json` 分组（`start` / `guide` / `theme` / `api` / `migration` / `changelog`）；`guide/typed` 改为「泛型与类型推导」（D5）；`guide/data` 是 React 新增页（R2 数据变更检测 + Q3 回写 + 冻结数据边界）
+- [x] 7.6 `content/` 骨架与 `meta.json` 分组（`start` / `guide` / `theme` / `api` / `migration` / `changelog`）；`guide/typed` 改为「泛型与类型推导」（D5）；`guide/data` 是 React 新增页（R2 数据变更检测 + Q3 回写 + 冻结数据边界）
+  - 落地 22 个文件、15 条 `/docs/*` 路由；`verify:export` 断言死链为 0、sitemap 覆盖全部 15 页。
+  - 内容与 D6/R8 的补齐有先后：agent 写作时产物还没有 `'use client'`，所以 `start/index.mdx` 那段「发布产物里没有 'use client'」与 `repo.mdx` 里对 `verify:dist` 的描述（说它在 jsdom 挂载产物）在提交前已按最终实现改回；默认导出也补了一句。
 - [x] 7.7（新增，原记在 9.5）静态导出真实性门禁：`scripts/verify-export.mjs` —— 无服务端残留 / 站内零死链 / 索引与资产齐备 / sitemap 覆盖每个文档页。写它的理由：部署是纯静态资产，「构建通过」≠「可部署」。落地当天就抓到页脚 7 个指向未创建页面的死链。
 
 ## 阶段 8：24 个 Demo 用例
@@ -121,6 +123,10 @@
 - [ ] ⭐ 9.1 逐项对照验收（requirements 9.1–9.4）：R1–R9 各条、D1–D10 各条、Q1–Q9 与 2.3 继承结论逐条打钩并记录证据（测试文件名）
 - [ ] 9.2 视觉回归基线：Playwright 截文档站 Demo 路由，win32 + linux 两套基线；含 print 媒体断言、`unstyled` 计算样式断言（阴影清掉且节点盒尺寸不变）
 - [ ] 9.3 性能基线：移植 `scripts/benchmark.mjs`（2041 节点，6 个场景）+ Chromium 首渲染 < 300 ms 门禁；产出 `docs/perf.md`
+  - 已落地（阶段 7 期间）：`scripts/benchmark.mjs`（此前 `pnpm bench` 指向一个不存在的文件）+ `docs/perf.md`。7 个场景（比源项目多一条「展开单个节点」），关键数：首渲染 220 ms / 全展开首渲染 182 ms / expandAll 91 ms / filter 两轮 153 ms / 原地 push+pop 6.6 ms / 深层改名 0.5 ms / 展开单节点 0.6 ms。
+  - 与 Vue 基线对照的三条结构性差异写进 `docs/perf.md`：首渲染快 2.8–5.9 倍（无 reactive 代理）、expandAll/collapseAll 慢约 20 倍（组件粒度 vs 依赖粒度）、原地变更快 10–86 倍（无 deep watch 的 O(N) 遍历，就是 R2/D7 的取舍）。
+  - **一条假数字的教训**：场景 7 第一次测出 0.01 ms，看着像「局部更新快得离谱」，实为 `measure()` 跑 3 轮而 `expandNode` 不幂等，第二轮起什么都没发生。现在每轮前 `collapseAll()` 重置，并在函数内断言「可见节点数必须增加」，不满足直接抛错。以后所有计时场景都要配一个这种「测量有效性」断言。
+  - 还差：Chromium 首渲染 < 300 ms 门禁（并入 9.2 的 Playwright）。
 - [ ] 9.4 工程门禁：`publint` + `attw --pack` + `size-limit`（ESM ≤20 kB / UMD ≤21 kB / CSS ≤4 kB）+ 覆盖率阈值（80/75/80/80）
   - 提前跑过（阶段 7 期间，dist 为今日构建）：`verify:package` publint "All good!" + attw 全 🟢（node10 / node16 CJS / node16 ESM / bundler 四格）；`size` 三条全过——**ESM 18.48 kB / 20 kB（已用掉 92%）**、CSS 3.79 / 4 kB、UMD 16.66 / 21 kB。CSS 与 ESM 余量都很薄，阶段 8/9 若再加特性要先看这两条。覆盖率阈值待 9.4 正式收口时跑 `test:coverage`。
 - [ ] 9.5 CI：`verify` / `peer-matrix`（React 18.2 + `@types/react@18` 下编译一份消费者示例，确保 d.ts 不引用 19 独有类型）/ `visual` / `website-build`（export 静态性断言）/ `website-deploy`（Cloudflare，仅 main）/ `release`（tag → 门禁 → `npm publish --provenance` → GitHub Release）

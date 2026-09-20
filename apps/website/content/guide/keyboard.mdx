@@ -1,0 +1,83 @@
+---
+title: 键盘导航与可访问性
+description: WAI-ARIA tree 模式、漫游 tabindex 的唯一性、方向键在 OKR 左树的镜像、减弱动效降级。
+---
+
+键盘导航与 ARIA 是所有树的内置能力，没有任何开关。它按 WAI-ARIA tree pattern 实现，DOM 结构与类名一样属于对外契约（`src/dom-contract.ts`），不随版本随意改动。
+
+## 结构与属性
+
+| 元素                                                                      | 角色                 | 说明                                                                                                      |
+| ------------------------------------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------- |
+| `div.org-chart-node-children`（根容器内）                                 | `role="tree"`        | 它同时带 `.org-chart-node-children` 类，因此自己也吃一层层级 padding 与一条连接线伪元素——源项目行为，保留 |
+| `div.org-chart-node`                                                      | `role="treeitem"`    | 节点是 `div`，不是 `li`（源项目已从原版的 `li` 改为 `div` + ARIA）                                        |
+| `div.org-chart-node-children` / `.org-chart-node-left-children`（节点内） | `role="group"`       | 右子树与 OKR 左子树各一个                                                                                 |
+| 展开圆盘 `.org-chart-node-btn`                                            | `aria-hidden="true"` | 展开状态由 `treeitem` 的 `aria-expanded` 表达，圆盘是纯视觉件                                             |
+
+`treeitem` 上的属性：
+
+| 属性                             | 取值规则                                                                                     |
+| -------------------------------- | -------------------------------------------------------------------------------------------- |
+| `aria-level`                     | 节点层级（1 起）。OKR 左树是独立的第二棵树：伪根 `level 0`，其顶层节点与右树根同为 `level 1` |
+| `data-level`                     | 与 `aria-level` 同值，**所有主题下都输出**（`colorful` 靠它逐级着色）                        |
+| `aria-selected`                  | `true` / `false`，对应 `is-current`                                                          |
+| `aria-expanded`                  | 无子节点时**不输出**；OKR 根节点要左右**两侧都展开**才为 `true`                              |
+| `aria-checked`                   | 仅 `showCheckbox` 时输出：`true` / `false` / `mixed`（半选）                                 |
+| `aria-disabled`                  | 仅禁用节点输出 `true`                                                                        |
+| `aria-setsize` / `aria-posinset` | 按**可见**兄弟计数，1-based；被 `filter` 隐藏的兄弟不计入                                    |
+
+## 按键
+
+| 键             | 行为                                                 |
+| -------------- | ---------------------------------------------------- |
+| `Tab`          | 进入 / 离开树（树内只有一个可 Tab 进入的节点，见下） |
+| `↑` / `↓`      | 在可见节点间按文档顺序移动焦点，跳过折叠的子树       |
+| `→`            | 展开当前节点；已展开则进入第一个可见子节点           |
+| `←`            | 收起当前节点；已收起则回到父节点                     |
+| `Enter`        | 选中节点（等价点击卡片，触发 `onNodeClick`）         |
+| `Space`        | `showCheckbox` 下切换勾选；否则等同 `Enter`          |
+| `Home` / `End` | 移到第一个 / 最后一个可见节点                        |
+
+以上按键全部 `preventDefault()`，浏览器不会滚页或翻表单。
+
+OKR 模式下方向键按**视觉方位**解释，而不是按树的父子方向：
+
+- 根节点 `←` 作用于左子树（展开或进入第一个可见左子节点）。
+- 左树节点镜像：`←` 展开 / 进入（它的子树在视觉左侧），`→` 收起 / 返回。
+- 左树顶层节点的「父」在视觉上是 OKR 根节点，`→` 收起后焦点回到根。
+
+<Callout type="info" title="只在焦点落在 treeitem 本身时接管按键">
+
+节点内容里可以放输入框、按钮等控件（`renderNode` / `nodeComponent` / `renderContent`）。当焦点在它们身上时按键**不被拦截**——判定条件是事件的 `target` 就是该 `treeitem` 自己。在节点里打中文、按退格不会被树当成导航。
+
+</Callout>
+
+## 漫游 tabindex 的唯一性
+
+同一时刻**整棵树只有一个** `treeitem` 的 `tabIndex` 是 `0`，其余是 `-1`：
+
+- 还没有任何节点获得过焦点时，`0` 落在**第一个右树根节点**上（左树节点即使排在文档前面也不接管）。
+- 一旦某个节点被聚焦，`0` 跟着移过去，前一个持有者降回 `-1`。
+
+这样 `Tab` 进树落在「上次离开的地方」，`Tab` 出树继续走页面顺序，符合 ARIA tree 的漫游语义，而不是把几百个节点都塞进 Tab 序列。
+
+React 侧有两个必须知道的实现约定：
+
+1. **`onFocus` 要判 `event.target === event.currentTarget`。** React 的 `onFocus` 由 `focusin` 映射而来，而 `focusin` 会冒泡——后代 `treeitem` 或节点内控件被聚焦时，祖先节点的 `onFocus` 同样触发。少了这层判定，漫游 `tabIndex` 会被祖先抢回去（源项目绑的是不冒泡的原生 `focus`，天然没有这个问题）。
+2. **切换持有者只重渲染两个节点。** `0` 的移交只 bump「上一个持有者」与「新持有者」，不重渲染全树。这是 React 版最容易写出性能塌方的地方，也是 `↑↓` 连按在两千节点树上仍然顺滑的原因（见仓库 `docs/requirements.md` R1 / 9.3）。
+
+焦点环画在卡片上而不是 `treeitem` 外层：`.org-chart-node:focus { outline: none }`，改由 `:focus-visible` 时的 `.org-chart-node-label-inner` 承担 `2px solid`，`outline-offset: 2px`。颜色与线宽用 `--okr-focus-color`（默认 `#409eff`）/ `--okr-focus-width`（默认 `2px`）定制，见[主题与样式定制](/docs/theme)。
+
+## 减弱动效时的降级
+
+系统开启「减弱动态效果」（`prefers-reduced-motion: reduce`）时三处同时生效：
+
+- `style.css` 与 `transition.css` 各自的 `@media (prefers-reduced-motion: reduce)` 块按**类名逐个枚举**把 `duration` / `delay` 清零。不用 `[class*="-enter-active"]` 这类属性选择器，以免规则泄漏到宿主页面；另有把 enter-from 状态拍平为 `opacity: 1; transform: none` 的块，避免零时长过渡闪一帧。
+- JS 侧 `animateOn = animate && !prefersReducedMotion`，连带去掉 `is-animated` / `okr-anim-*` 类与内联 `--okr-anim-duration`、去掉「先隐藏再延迟置 `height: 0`」的高度保持、去掉 SVG 连接线的逐帧重绘。
+- `scrollToNode()` 改用 `behavior: 'auto'`，直接跳过去而不是平滑滚。
+
+`animate` 这个 prop 本身不需要为它写分支：它是「想不想要动画」，减弱动效是「系统层面不要」，两者取交集。
+
+## 打印
+
+`@media print` 下隐藏 `+/-` 圆盘与画布工具栏（纸上点不动的交互件），并去掉卡片与画布的 `box-shadow`（部分打印引擎会把阴影渲染成灰块）。折叠的子树按屏幕原样输出——想让整棵树都印出来，先调 `handle.expandAll()`。需要图片版用 `OkrTreeViewport` 的 `exportImage()`。

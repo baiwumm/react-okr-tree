@@ -1,0 +1,79 @@
+---
+title: 指南总览
+description: 全部能力按域索引：布局与展开、节点渲染与外观、交互与数据，以及各专题子页。
+---
+
+指南按「一块能力一页」组织，每页给出行为约定与可直接抄的写法，并内嵌对应的可交互用例。下面是能力全景，可以当成 checklist 用：需要哪块就直接跳过去。
+
+## 布局与展开
+
+| 能力                             | 关键 API                          | 默认值                                        |
+| -------------------------------- | --------------------------------- | --------------------------------------------- |
+| 垂直 / 水平两种基础方向          | `direction`                       | `vertical`                                    |
+| 显示 `+/-` 圆盘                  | `showCollapsable`                 | `false`（此时**强制全部展开**，原版行为）     |
+| 默认全部展开                     | `defaultExpandAll`                | `false`                                       |
+| 指定节点默认展开（祖先自动展开） | `nodeKey` + `defaultExpandedKeys` | —                                             |
+| 手风琴：展开一个自动收起同级     | `accordion`                       | `false`，只作用于**交互**展开                 |
+| 点卡片切换展开                   | `expandOnClickNode`               | `false`                                       |
+| OKR 双向展开                     | `onlyBothTree` + `leftData`       | `false`                                       |
+| OKR 根节点不位移                 | `alignRoot`                       | `true`                                        |
+| 折叠时在圆盘内显示子节点数       | `showNodeNum`                     | `false`（只计未被 `filter` 隐藏的可见子节点） |
+
+`showCollapsable` 是 `false` 时没有圆盘，也就没有「收起」这个动作——组件把全部节点展开。这是原版的既有行为，React 版照抄，`defaultExpandAll` 因此只在该 prop 打开时才有意义。
+
+## 节点渲染与外观
+
+| 能力                 | 关键 API                                                                                       |
+| -------------------- | ---------------------------------------------------------------------------------------------- |
+| 卡片尺寸             | `labelWidth` / `labelHeight`（number → px，string → 原样作 style，缺省 `auto`）                |
+| 卡片类名             | `labelClassName` / `currentLableClassName`（固定串或 `Function(node)`，入参是内部 `TreeNode`） |
+| 节点内容三种写法     | `renderNode`（或 `children` 传函数）> `nodeComponent` > `renderContent` > 内置 `node.label`    |
+| 展开按钮内容两种写法 | `showNodeNum` 的折叠数字 > `renderExpandBtn` > `nodeBtnContent`                                |
+| 空数据占位           | `empty`（`data` 为空数组时渲染在 `role="tree"` 容器内）                                        |
+| 字段映射             | `props`（`label` / `children` / `disabled` / `isLeaf`）                                        |
+| 主题                 | `theme`：`default` / `feishu` / `dark` / `auto` / `minimal` / `colorful`，或自定义名           |
+| 去掉卡片外观         | `unstyled`                                                                                     |
+| 连接线               | `connector`（`css` / `svg`）+ `connectorShape`（`curve` / `orthogonal` / `straight`）          |
+| 展开过渡             | `animate` + `animateName`（6 个 `okr-*` 名）+ `animateDuration`                                |
+
+优先级两行的顺序**不可调整**：源项目节点内容与展开按钮各有一条固定的分支链，React 版按同一顺序实现（`node-content.tsx`）。三处渲染定制同时传入时只有最高优先级那个生效。
+
+## 交互、数据与状态
+
+| 能力                       | 关键 API                                                                                                               | 页                                     |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| 全树过滤、父随可见后代     | `filterNodeMethod` + `handle.filter(value)`                                                                            | [数据变更](/docs/guide/data)           |
+| 增删改同步回写源数据       | `append` / `insertBefore` / `insertAfter` / `remove` / `updateKeyChildren` / `moveNode`、懒加载 `resolve`              | [数据变更](/docs/guide/data)           |
+| 原地变更检测               | `deepWatch` + `handle.refreshData()`                                                                                   | [数据变更](/docs/guide/data)           |
+| 点击 / 右键 / 展开收起事件 | `onNodeClick` / `onNodeContextMenu` / `onNodeExpand` / `onNodeCollapse`                                                | [受控与非受控](/docs/guide/controlled) |
+| 受控展开与选中             | `expandedKeys` + `onExpandedKeysChange`、`currentKey` + `onCurrentKeyChange`                                           | [受控与非受控](/docs/guide/controlled) |
+| 命令式方法                 | `OkrTreeHandle` 的 28 个方法 + `store` / `root`                                                                        | [受控与非受控](/docs/guide/controlled) |
+| 复选框                     | `showCheckbox` / `checkStrictly` / `defaultCheckedKeys`、`onCheck` / `onCheckChange`、6 个勾选方法                     | —                                      |
+| 拖拽换父级                 | `draggable` / `allowDrag` / `allowDrop`、`prev` / `inner` / `next` 三分区、6 个拖拽回调                                | —                                      |
+| 懒加载                     | `lazy` + `load(node, resolve, reject)`、`props.isLeaf`                                                                 | [懒加载](/docs/guide/lazy)             |
+| 画布缩放与导出             | `OkrTreeViewport`：`minZoom` / `maxZoom` / `zoomStep` / `wheelBehavior` / `toolbar` / `renderToolbar`、`exportImage()` | [画布](/docs/guide/viewport)           |
+| 多棵树根对齐               | `OkrTreeGroup` + `align` + `refresh()`                                                                                 | [组对齐](/docs/guide/group)            |
+| 键盘与 ARIA                | 内置，无需配置                                                                                                         | [键盘与可访问性](/docs/guide/keyboard) |
+| 类型推导                   | `OkrTree<T>` 泛型组件                                                                                                  | [泛型与类型推导](/docs/guide/typed)    |
+
+复选框与拖拽没有独立子页：两者的 props / 回调在 [API](/docs/api) 的 Attributes 与 Events 表里逐项列出，行为要点写在各自的表说明列，本页只登记入口。
+
+## 子页
+
+<Cards>
+
+  <Card href="/docs/guide/data" title="数据变更与源数据回写" description="React 特有的 R2 检测模型：换引用、同引用原地改、refreshData()，以及 Q3 回写与冻结数据边界" />
+
+  <Card href="/docs/guide/controlled" title="受控与非受控" description="expandedKeys / currentKey 成对 props、ref 方法、事件回调签名与合成事件" />
+
+  <Card href="/docs/guide/lazy" title="懒加载子节点" description="load / resolve / reject、isLeaf、加载中状态、失败重试与过滤的交互" />
+
+  <Card href="/docs/guide/viewport" title="画布缩放：OkrTreeViewport" description="缩放与平移的交互契约、受控 zoom / offset、工具栏与 exportImage" />
+
+  <Card href="/docs/guide/group" title="多棵树根对齐：OkrTreeGroup" description="测量机制、is-measured 与 --okr-group-left-width、何时需要手动 refresh()" />
+
+  <Card href="/docs/guide/keyboard" title="键盘导航与可访问性" description="漫游 tabindex 的唯一性、方向键在 OKR 左树的镜像、ARIA 属性与减弱动效降级" />
+
+  <Card href="/docs/guide/typed" title="泛型与类型推导" description="OkrTree 泛型组件直接收窄 data，不再有 createTypedOkrTree" />
+
+</Cards>

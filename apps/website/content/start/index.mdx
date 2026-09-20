@@ -1,0 +1,253 @@
+---
+title: 安装与快速开始
+description: npm / pnpm / CDN UMD 三种引入路径、样式引入、最小可用示例、React 版本要求。
+---
+
+## 环境要求
+
+| 依赖                  | 要求                 | 说明                                                                                                                                                     |
+| --------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `react` / `react-dom` | `>= 18.2.0`（peer）  | 用到的能力（`useSyncExternalStore` / `forwardRef` / `useImperativeHandle` / Context）自 18.2 起齐备；CI 在 18.2 与 19.2 两档 peer 矩阵下各跑一遍全量单测 |
+| TypeScript            | 可选                 | 产物带单文件 `index.d.ts`（`import`）与 `index.d.cts`（`require`）；不写 TS 也能用全部 API                                                               |
+| `html-to-image`       | `^1.11.0`，可选 peer | 只有 `OkrTreeViewport` 的 `exportImage()` 需要；未安装时调用会抛带安装指引的错。它**不在** `dependencies` 里，不需要导出能力就不必装                     |
+
+## 安装
+
+<Tabs items={['pnpm', 'npm', 'yarn']}>
+
+<Tab value="pnpm">
+
+```bash
+pnpm add react-okr-tree
+```
+
+</Tab>
+
+<Tab value="npm">
+
+```bash
+npm i react-okr-tree
+```
+
+</Tab>
+
+<Tab value="yarn">
+
+```bash
+yarn add react-okr-tree
+```
+
+</Tab>
+
+</Tabs>
+
+## 引入样式
+
+组件不自动注入样式，需要显式引一次（通常在应用入口）：
+
+```tsx
+import 'react-okr-tree/style.css'
+```
+
+`react-okr-tree/style.css` 与 `react-okr-tree/dist/style.css` 是同一个文件的两个导出路径，任选其一。漏掉这一步不会报错，但页面上只剩无外观的纯结构——连接线、卡片、展开按钮全在这份 CSS 里。
+
+## 最小可用示例
+
+```tsx
+'use client'
+
+import { useMemo } from 'react'
+import { OkrTree, type TreeNodeData } from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+export default function App() {
+  const data = useMemo<TreeNodeData[]>(
+    () => [
+      {
+        id: 1,
+        label: 'xxx科技有限公司',
+        children: [
+          {
+            id: 2,
+            label: '产品研发部',
+            children: [
+              { id: 3, label: '研发-前端' },
+              { id: 4, label: '研发-后端' },
+            ],
+          },
+          { id: 5, label: '销售部' },
+          { id: 6, label: '财务部' },
+        ],
+      },
+    ],
+    []
+  )
+
+  return (
+    <OkrTree
+      data={data}
+      nodeKey="id"
+      direction="horizontal"
+      showCollapsable
+      defaultExpandAll
+    />
+  )
+}
+```
+
+`data` 是数组，支持多个根节点。`nodeKey` 只在需要按 key 定位节点时才必须（受控展开、`getNode`、`getCheckedKeys` 等，见[数据与类型](/docs/guide/data)）。
+
+## OKR 双向展开
+
+```tsx
+'use client'
+
+import { useMemo } from 'react'
+import { OkrTree, type TreeNodeData } from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+export default function App() {
+  const data = useMemo<TreeNodeData[]>(
+    () => [
+      {
+        id: 1,
+        label: '2026 Q3 目标',
+        children: [{ id: 11, label: 'KR1 完成核心链路重构' }],
+      },
+    ],
+    []
+  )
+  const leftData = useMemo<TreeNodeData[]>(
+    () => [
+      {
+        id: 2,
+        label: '历史进展',
+        children: [{ id: 21, label: 'Q2 KR3 已达成' }],
+      },
+    ],
+    []
+  )
+
+  return (
+    <OkrTree
+      data={data}
+      leftData={leftData}
+      onlyBothTree
+      direction="horizontal"
+      nodeKey="id"
+      showCollapsable
+      defaultExpandAll
+    />
+  )
+}
+```
+
+`onlyBothTree` 只在 `direction="horizontal"` 下有效，且必须给 `leftData`，否则抛 `[Tree] leftData is required in onlyBothTree`。`leftData[0].children` 挂到右树第一个根节点的左侧。
+
+## 通过 ref 调方法
+
+ref 拿到的是 `OkrTreeHandle`，28 个方法都在这里（完整表见 [Methods](/docs/api)）：
+
+```tsx
+'use client'
+
+import { useMemo, useRef, useState } from 'react'
+import { OkrTree, type OkrTreeHandle, type TreeNodeData } from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+export default function App() {
+  const tree = useRef<OkrTreeHandle>(null)
+  const [keyword, setKeyword] = useState('')
+  const data = useMemo<TreeNodeData[]>(() => [{ id: 1, label: '总部' }], [])
+
+  return (
+    <>
+      <input
+        value={keyword}
+        onChange={e => {
+          setKeyword(e.target.value)
+          tree.current?.filter(e.target.value)
+        }}
+      />
+      <button type="button" onClick={() => tree.current?.expandAll()}>
+        全部展开
+      </button>
+      <OkrTree
+        ref={tree}
+        data={data}
+        nodeKey="id"
+        showCollapsable
+        filterNodeMethod={(value, item) =>
+          !value ? true : String(item.label).includes(String(value))
+        }
+      />
+    </>
+  )
+}
+```
+
+<Callout title="filter 空值也要返回 true">
+
+`filter('')` 同样会对每个节点执行 `filterNodeMethod`，对空值返回 `true` 才能恢复全部显示。这是 element-ui 的语义，与源项目一致。
+
+</Callout>
+
+## 其他引入路径
+
+| 路径 | 产物                                            | 写法                                            |
+| ---- | ----------------------------------------------- | ----------------------------------------------- |
+| ESM  | `dist/react-okr-tree.es.js` + `dist/index.d.ts` | `import { OkrTree } from 'react-okr-tree'`      |
+| CJS  | `dist/react-okr-tree.cjs` + `dist/index.d.cts`  | `const { OkrTree } = require('react-okr-tree')` |
+| UMD  | `dist/react-okr-tree.umd.js`                    | `<script>` 直挂，全局变量 `ReactOkrTree`        |
+
+包为 `"type": "module"`，CJS 产物因此用 `.cjs` 扩展名，`require()` 与 `import` 两条路都可用。
+组件另有**默认导出**（`import OkrTree from 'react-okr-tree'`，与具名 `OkrTree` 是同一引用；UMD 下为 `ReactOkrTree.default`）——源项目的默认导出是 `app.use()` 用的插件对象，React 没有全局注册，就改成了组件本身。
+
+CDN 用法（UMD 把 `react` 与 `react/jsx-runtime` 外部化为全局 `React` 与 `ReactJSXRuntime`，React 官方 UMD 包不提供后者，需自行桥接）：
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/react-okr-tree/dist/style.css" />
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script>
+  window.ReactJSXRuntime = {
+    Fragment: React.Fragment,
+    jsx: (type, props, key) => React.createElement(type, key == null ? props : { ...props, key }),
+    jsxs: (type, props, key) => React.createElement(type, key == null ? props : { ...props, key }),
+  }
+</script>
+<script src="https://unpkg.com/react-okr-tree"></script>
+<script>
+  const { OkrTree } = window.ReactOkrTree
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    React.createElement(OkrTree, { data: window.data, direction: 'horizontal', showCollapsable: true })
+  )
+</script>
+```
+
+<Callout type="warn" title="CDN 下没有开发期警告">
+
+警告按 `process.env.NODE_ENV !== 'production'` 判定，浏览器直挂 UMD 时 `process` 不存在，因此视为生产环境、**不输出任何开发期警告**。`nodeKey` 缺失、`lazy` 未配 `load`、`theme` 名字拼错这类问题在 CDN 下没有提示，只有控制台外的静默行为；正式项目仍建议走打包器。
+
+</Callout>
+
+## 在 Next.js / SSR 中使用
+
+组件在 `renderToString` 下可用：模块顶层不碰 `window` / `document` / `matchMedia` / `ResizeObserver`，与交互相关的 observer 和监听器只在挂载后注册，服务端快照走 `useSyncExternalStore` 的 `getServerSnapshot`。
+
+<Callout type="info" title="产物首行自带 'use client'">
+
+三种格式（es / cjs / umd）的产物首行都带 `'use client'` 指令（由 Rollup 的 `output.banner` 注入），
+所以你可以在 Server Component 里直接 `import` 并渲染 `OkrTree`，不需要再包一层客户端组件。
+但**只要那个文件里传了回调**（`onNodeClick` / `renderNode` 等函数），它本身就必须是客户端组件——
+函数不能作为 props 跨过 RSC 边界，这条限制来自 React 而不是本包。CSS 同样在那一层 import。
+
+</Callout>
+
+`exportImage()`、`html-to-image` 的动态导入、`scrollToNode()` 都是客户端专属能力，不要在服务端调用。
+
+## 下一步
+
+- 数据从哪来、改了怎么生效：[数据变更与源数据回写](/docs/guide/data)
+- 展开态归谁管：[受控与非受控](/docs/guide/controlled)
+- 仓库结构与开发命令：[仓库与本地开发](/docs/start/repo)

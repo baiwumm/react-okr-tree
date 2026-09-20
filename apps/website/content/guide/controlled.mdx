@@ -1,0 +1,175 @@
+---
+title: 受控与非受控
+description: expandedKeys / currentKey 成对 props 的受控语义、OkrTreeHandle 的 28 个方法、事件回调签名与合成事件。
+---
+
+## 判定规则
+
+传了值就是受控，没传就是非受控——判据是 `undefined`，与源项目一致：
+
+| prop           | 受控含义                      | 未传时                       |
+| -------------- | ----------------------------- | ---------------------------- |
+| `expandedKeys` | 列表内节点展开、其余全部收起  | 非受控，展开态由组件自己维护 |
+| `currentKey`   | 当前选中项，`null` 表示无选中 | 非受控，点卡片即选中         |
+
+两者都需要 `nodeKey`，否则不生效并输出开发期警告。它们对应的回调 `onExpandedKeysChange` / `onCurrentKeyChange` **只在受控时触发**（这也是它们与 `onNodeExpand` / `onNodeCollapse` 的区别：后两者任何模式下都触发）。
+
+源项目写成 `v-model:expanded-keys="expandedKeys"`，React 侧拆成「值 + 回调」一对（D3）：
+
+```tsx
+'use client'
+
+import { useMemo, useRef, useState } from 'react'
+import {
+  OkrTree,
+  type OkrTreeHandle,
+  type TreeKey,
+  type TreeNodeData,
+} from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+export default function App() {
+  const data = useMemo<TreeNodeData[]>(
+    () => [
+      {
+        id: 1,
+        label: '总部',
+        children: [
+          { id: 2, label: '研发部', children: [{ id: 5, label: '前端组' }] },
+          { id: 3, label: '销售部', children: [{ id: 8, label: '华东区' }] },
+        ],
+      },
+    ],
+    []
+  )
+  const tree = useRef<OkrTreeHandle>(null)
+  const [expandedKeys, setExpandedKeys] = useState<TreeKey[]>([1])
+  const [currentKey, setCurrentKey] = useState<TreeKey | null>(null)
+
+  return (
+    <>
+      <button type="button" onClick={() => tree.current?.expandAll()}>
+        全部展开
+      </button>
+      <button type="button" onClick={() => tree.current?.collapseAll()}>
+        全部收起
+      </button>
+      <button type="button" onClick={() => tree.current?.expandNode(2)}>
+        展开 id=2
+      </button>
+      <button type="button" onClick={() => void tree.current?.scrollToNode(8)}>
+        滚动到 id=8
+      </button>
+      <OkrTree
+        ref={tree}
+        data={data}
+        nodeKey="id"
+        showCollapsable
+        expandedKeys={expandedKeys}
+        onExpandedKeysChange={setExpandedKeys}
+        currentKey={currentKey}
+        onCurrentKeyChange={setCurrentKey}
+        renderExpandBtn={({ expanded }) => (
+          <span className="org-chart-node-btn-text">{expanded ? '−' : '＋'}</span>
+        )}
+        empty={<span>暂无数据</span>}
+      />
+      <p>
+        展开：{expandedKeys.join(', ') || '（无）'}；选中：{currentKey ?? '（无）'}
+      </p>
+    </>
+  )
+}
+```
+
+<Callout type="info" title="程序化方法在受控下也走回调">
+
+`expandAll()` / `collapseAll()` / `expandNode()` / `collapseNode()` 会先改内部状态，再把结果通过 `onExpandedKeysChange` 报给宿主。也就是说受控模式下这些方法是「请求」而不是「命令」：最终显示什么由你回写的 `expandedKeys` 决定。
+
+</Callout>
+
+<Callout type="warn" title="只传值不传回调时的两种锁定强度">
+
+传了 `expandedKeys` 但不传 `onExpandedKeysChange`：点击仍然会改内部状态，但宿主拿不到回写。此时如果把 `expandedKeys` 写成每次渲染新建的数组字面量，下一次渲染就会把它重新应用回去，表现为**完全锁定不可交互展开**；如果传的是引用稳定的数组，用户的展开会保留到 `expandedKeys` 真的变化为止。要真正锁死，请传内联字面量或干脆 `readonly` 的常量数组 + 不接收回调。
+
+</Callout>
+
+## 非受控的初始值
+
+不传受控 props 时，用这几个 prop 给初始状态：
+
+| prop                  | 作用                                                      | 运行时变更                             |
+| --------------------- | --------------------------------------------------------- | -------------------------------------- |
+| `defaultExpandedKeys` | 初始展开这些节点（祖先自动展开）；OKR 下左右两树同时生效  | ✅ 变更时重新应用                      |
+| `defaultExpandAll`    | 初始全部展开（只在 `showCollapsable` 为 `true` 时有意义） | ✅，且影响后续新建节点，不追溯既有节点 |
+| `currentNodeKey`      | 初始选中项（单向）                                        | ✅                                     |
+| `defaultCheckedKeys`  | 初始勾选（需 `nodeKey`）                                  | ✅ 语义是「先清空再按新列表应用」      |
+
+`data` 重建后这些初始值**不会**恢复（与受控值的恢复是两回事，见[数据变更](/docs/guide/data)）。
+
+`accordion` 与受控值互不干涉：手风琴只作用于**交互**展开（点圆盘、点卡片、键盘），`expandNode()` 与受控 `expandedKeys` 不受互斥限制。
+
+## 通过 ref 调方法
+
+ref 拿到的是 `OkrTreeHandle`。函数组件用 `useRef<OkrTreeHandle>(null)`，一次性取值可用 `createRef<OkrTreeHandle>()`。
+
+除 `filter(value)` 的 `value` 与几个无参方法外，入参普遍接受**三种形态**：`nodeKey` 字段的值（key）、源数据对象、`TreeNode` 实例。
+
+| 组         | 方法                                                                                                                                                                 |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 过滤       | `filter(value)`                                                                                                                                                      |
+| 定位与查询 | `getNode(data)`、`getNodeEl(data)`、`getNodeKey(node)`、`getNodePath(data)`、`getVisibleNodes()`、`getCurrentNode()`、`getCurrentKey()`                              |
+| 选中       | `setCurrentNode(node)`、`setCurrentKey(key \| null)`                                                                                                                 |
+| 展开与滚动 | `expandAll()`、`collapseAll()`、`expandNode(data, expandParent?)`、`collapseNode(data)`、`scrollToNode(data, options?)`                                              |
+| 勾选       | `getCheckedNodes(leafOnly?)`、`getCheckedKeys(leafOnly?)`、`getHalfCheckedNodes()`、`getHalfCheckedKeys()`、`setCheckedKeys(keys, leafOnly?)`、`isChecked(data)`     |
+| 增删与移动 | `append(data, parent?)`、`insertBefore(data, refNode)`、`insertAfter(data, refNode)`、`remove(data)`、`updateKeyChildren(key, data)`、`moveNode(data, target, type)` |
+| React 新增 | `refreshData()`                                                                                                                                                      |
+| 高级用法   | `store`、`root`（源项目同样公开的实例与虚拟根）                                                                                                                      |
+
+几条容易踩的边界：
+
+- **`getNode(data 对象)` 在未设 `nodeKey` 时返回 `null`**——注册表是空的，只有传实例或（设了 `nodeKey` 时）传 key 才查得到。OKR 模式下右树优先，未命中回退左树。
+- **`scrollToNode()` 返回 `Promise<boolean>`**：默认先展开全部祖先、等路径上的懒加载完成，再 `scrollIntoView({ block: 'center', inline: 'center', behavior: 减弱动效 ? 'auto' : 'smooth' })`。`options.expand` 默认 `true`，设 `false` 则不展开祖先。左树节点会顺带打开根的 `leftExpanded`。
+- **`getVisibleNodes()` 不等于 DOM 里的节点数**：折叠的子树仍然挂载在 DOM 中，但它返回的是「自身通过过滤且各级祖先都已展开到它」的节点，含 OKR 左树。做「全选可见项」用它，不要 `querySelectorAll`。
+- **`getNodePath(data)`** 返回顶层到目标（含目标自身）的数组，未命中返回 `[]`。左树节点的链路留在左树内，不会跨接到右树根。
+- **`moveNode(data, target, type)`** 的 `type` 是 `'prev' | 'inner' | 'next'`，禁止放进自身或自己的子树（`allowDrop` 也越不过这条硬规则），成功返回 `true`；`inner` 时目标自动展开并置为已加载。跨左右树时会递归迁移整棵子树的 `isLeftChild` 与注册表。
+- **`getCheckedKeys()` / `getHalfCheckedKeys()`** 把左右两树合并去重；未设 `nodeKey` 返回 `[]`。`setCheckedKeys(keys, leafOnly?)` 先清空再按列表勾选，非 `checkStrictly` 时带父子联动，OKR 下左右同 key 同时生效。
+- 受控模式下想读回「当前实际的」展开集合，`handle` 上没有对应方法，用 `handle.store.getExpandedKeys()`（源项目同样如此，未列入方法表）。
+
+## 事件回调
+
+14 个回调都是 `onXxx` prop。`node` 一律是内部 `TreeNode` 实例（源数据在 `node.data`，文本在 `node.label`）——这与 element-ui 只传 `data` 的惯例不同，是刻意对齐源项目的。
+
+| 回调                                                     | 参数                                                                       |
+| -------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `onNodeClick`                                            | `(data, node)`                                                             |
+| `onNodeExpand` / `onNodeCollapse`                        | `(data, node)`                                                             |
+| `onNodeContextMenu`                                      | `(event, data, node)`                                                      |
+| `onExpandedKeysChange`                                   | `(keys)`                                                                   |
+| `onCurrentKeyChange`                                     | `(key \| null)`                                                            |
+| `onCheck`                                                | `(data, { checkedNodes, checkedKeys, halfCheckedNodes, halfCheckedKeys })` |
+| `onCheckChange`                                          | `(data, checked, indeterminate)`                                           |
+| `onNodeDragStart`                                        | `(node, event)`                                                            |
+| `onNodeDragEnter` / `onNodeDragLeave` / `onNodeDragOver` | `(draggingNode, dropNode, event)`                                          |
+| `onNodeDragEnd`                                          | `(draggingNode, dropNode \| null, dropType \| null, event)`                |
+| `onNodeDrop`                                             | `(draggingNode, dropNode, dropType, event)`                                |
+
+<Callout type="info" title="右键菜单要显式接">
+
+`onNodeContextMenu` 只有**传了这个回调**时组件才 `preventDefault()`。没传就还是浏览器默认菜单——这是为了不在用户没接管的情况下吞掉原生行为。判断「有没有绑」的依据就是 `props.onNodeContextMenu !== undefined`，与源项目判定方式相同。
+
+</Callout>
+
+<Callout type="warn" title="event 是 React 合成事件（D11）">
+
+`onNodeContextMenu` 的 `event` 是 `ReactMouseEvent`，拖拽系列的 `event` 是 `ReactDragEvent`，不是源项目给的原生 DOM 事件。`preventDefault()` / `stopPropagation()` 语义一致（合成事件会转调原生），但需要原生事件对象（例如把坐标交给外部库）时取 `event.nativeEvent`。
+
+</Callout>
+
+<Callout type="warn" title="回调没有第三个参数（D2）">
+
+源项目每个节点事件的最后一个参数是 Vue 递归组件实例 `nodeComponent`，React 无对应概念，已移除。需要在 DOM 上做事（算位置、挂浮层）改用 `handle.getNodeEl(data)`，未渲染或不可见时返回 `null`。
+
+</Callout>
+
+`onCheckChange` 的触发密度值得单独留意：**每个受影响的节点各触发一次**，包含父子联动、`setCheckedKeys` 的批量变更，以及增删子节点引起的级联。想做「一次交互一个日志」请监听 `onCheck`（它只在用户点击复选框时触发，程序化 `setCheckedKeys` 不触发）。

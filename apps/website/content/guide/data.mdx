@@ -1,0 +1,227 @@
+---
+title: 数据变更与源数据回写
+description: React 下的 data 变更检测（换引用 / 同引用原地改 / refreshData）、增删方法回写源数据、冻结数据边界。
+---
+
+`data` 是唯一必填 prop，也是 React 版与 Vue 版行为差别最大的一块。这一页说明三件事：改了数据要怎么生效、组件会反过来改你的数据哪些部分、以及数据被冻结时会发生什么。
+
+## 组件怎么发现 data 变了
+
+源项目用 `watch(() => props.data, …, { deep })`，一个监听同时覆盖「引用变化」和「同引用原地变更」。React 没有这层能力：同引用变异不会触发重渲染，因此**根本进不了比较逻辑**。React 版把判定放在每次渲染之后做一次只读脏检查，四条路径分别是：
+
+| 你做了什么                                             | 组件行为                                        | 节点状态（展开 / 选中 / 勾选）                              |
+| ------------------------------------------------------ | ----------------------------------------------- | ----------------------------------------------------------- |
+| 换 `data` 引用，内容确实不同                           | `store.setData()` 全量重建                      | 重建；传入受控 `expandedKeys` / `currentKey` 时按受控值恢复 |
+| 换 `data` 引用，但元素**逐个是同一批对象**             | 视为未变，跳过重建                              | 全部保留                                                    |
+| 同一引用、内部 `push` / `splice`，且宿主组件恰好重渲染 | 结构脏检查命中 → 走 `updateChildren()` 增量重建 | 复用既有子节点实例的状态                                    |
+| 同一引用内部变更，宿主**没有**重渲染                   | 感知不到                                        | 不变。需要显式调 `handle.refreshData()`                     |
+
+第二行是 React 特有的：**元素逐个相同就认定为没变**。因为 `data={[...]}`、`data={rows.map(...)}` 这类每次渲染新建数组字面量的写法在 React 里远比 Vue 常见，若无条件重建，用户的展开态会被反复冲掉。代价是一个边角情况：如果你既原地改了元素、又恰好换了外层数组引用而元素没变，脏检查不会跑（它只在两个引用都相同时执行），此时仍要靠 `refreshData()`。
+
+增量重建的判据是「逐项同引用 + 长度一致」，逐层向下检查；命中差异的那一层才重建。
+
+### 推荐写法：交给引用变化
+
+```tsx
+'use client'
+
+import { useState } from 'react'
+import { OkrTree, type TreeNodeData } from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+export default function App() {
+  const [rows, setRows] = useState<TreeNodeData[]>(() => [
+    { id: 1, label: '总部', children: [{ id: 2, label: '研发部' }] },
+  ])
+
+  const addDept = () => {
+    setRows(prev => [
+      {
+        ...prev[0],
+        children: [...(prev[0].children ?? []), { id: Date.now(), label: '新部门' }],
+      },
+      ...prev.slice(1),
+    ])
+  }
+
+  return (
+    <>
+      <button type="button" onClick={addDept}>
+        新增部门
+      </button>
+      <OkrTree data={rows} nodeKey="id" showCollapsable defaultExpandAll />
+    </>
+  )
+}
+```
+
+不可变更新在 React 版里同样是有效的路径——新数组元素引用变了，脏检查同样能命中。
+
+### refreshData：状态库直接 mutate 时的兜底
+
+zustand / jotai 之类的 store 里直接改对象、或从别处拿到同一个数组引用做了增删，宿主重渲染与否全凭运气。此时调 `handle.refreshData()`，它等价于 `store.setData(store.data)`，强制走一次增量路径：
+
+```tsx
+'use client'
+
+import { useRef } from 'react'
+import { OkrTree, type OkrTreeHandle, type TreeNodeData } from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+const rows: TreeNodeData[] = [{ id: 1, label: '总部', children: [{ id: 2, label: '研发部' }] }]
+
+export default function App() {
+  const tree = useRef<OkrTreeHandle>(null)
+
+  const pushFromOutside = () => {
+    rows[0].children.push({ id: 3, label: '设计部' })
+    tree.current?.refreshData()
+  }
+
+  return (
+    <>
+      <button type="button" onClick={pushFromOutside}>
+        外部变更后同步
+      </button>
+      <OkrTree ref={tree} data={rows} nodeKey="id" showCollapsable defaultExpandAll />
+    </>
+  )
+}
+```
+
+<Callout type="info" title="这是 D7：能力降级 + 新增 API">
+
+「同引用原地变更」的自动感知在 React 下不可能等价复刻，因此默认行为是**尽力检测**（渲染时脏检查），显式 `refreshData()` 是保证。这条差异在[迁移说明](/docs/migration)里编号 D7。
+
+</Callout>
+
+### deepWatch：超大数据量时关掉
+
+`deepWatch` 默认 `true`，即每次 `OkrTree` 渲染后跑一次结构脏检查。2000+ 节点的数据集下这笔开销每次都付，而你的数据如果本来就只换引用，可以直接省掉：
+
+```tsx
+<OkrTree data={rows} nodeKey="id" deepWatch={false} showCollapsable />
+```
+
+`false` 时只响应引用变化，与源项目的 `deep-watch: false` 同名同语义。它是**创建期快照**类 prop，运行时变更不会生效；需要切换请给组件绑 `key` 重挂载。
+
+## 组件会写回你的源数据
+
+`append` / `insertBefore` / `insertAfter` / `remove` / `moveNode` / `updateKeyChildren` 以及懒加载 `resolve`，都会**同步修改你传入的源数据**的 `children` 数组，而不只是内部视图状态。这是源项目的正式行为（其 Q3 结论），React 版照抄，理由很直接：视图与源数据不分叉，宿主换引用重建时不会看到「刚加出来的节点消失」。
+
+```tsx
+'use client'
+
+import { useRef } from 'react'
+import { OkrTree, type OkrTreeHandle, type TreeNodeData } from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+const makeData = (): TreeNodeData[] => [
+  { id: 1, label: '总部', children: [{ id: 2, label: '研发部' }] },
+]
+
+export default function App() {
+  const tree = useRef<OkrTreeHandle>(null)
+  const data = makeData()
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => tree.current?.append({ id: 9, label: '销售三部' }, 1)}
+      >
+        追加子节点
+      </button>
+      <button type="button" onClick={() => tree.current?.remove(2)}>
+        删除 id=2
+      </button>
+      <OkrTree ref={tree} data={data} nodeKey="id" showCollapsable defaultExpandAll />
+    </>
+  )
+}
+```
+
+<Callout type="warn" title="这份数据会被改写">
+
+写回之后 `data` 里的对象已经和你当初传进去的不再是同一批。同一份数组字面量被多个用例或两个组件实例共用时，一个实例的增删会污染另一个——源项目的 Demo 数据因此全部写成**工厂函数**，每个用例拿独立副本。你在测试与示例里也应当这么做（上面示例中的 `makeData()`）。
+
+</Callout>
+
+`remove` 若删掉的正是当前选中节点，会同步触发 `onCurrentKeyChange`。
+
+## 冻结 / 只读源数据的边界
+
+只读操作全部正常：渲染、展开收起、过滤、勾选、键盘导航在 `Object.freeze` 或外部 store 的 readonly 数据上都不会抛错。被影响的只有上面那批回写操作——它们跳过写入并输出一条开发期警告（`检测到冻结/只读源数据，"…" 需要回写源数据，本次操作不会生效`），**视图那一层仍会照常改动**。也就是说下一次数据重建会把这个节点「弹」回来，因为源数据里它还在。
+
+<Callout type="info" title="要冻结数据就得自己管状态">
+
+在 `Object.freeze` 的数据上做增删，正确做法是更新上层状态、产生新引用让组件重建，而不是指望组件替你改。反过来，只想在可变数据上关掉回写也没有开关：回写是正式行为。
+
+</Callout>
+
+## 未设 nodeKey 时的内部 key 策略
+
+不配 `nodeKey` 也能正常渲染与交互：组件在每个源数据对象上写入一个**不可枚举**的 `$treeNodeId` 作为 React `key`（写不进去时降级到内部 `WeakMap` 记同样的 id，行为不变、不抛错）。
+
+代价是**节点注册表是空的**，凡按 key 或按 data 对象定位节点的能力都查不到：
+
+| 受影响                                                                       | 表现                                        |
+| ---------------------------------------------------------------------------- | ------------------------------------------- |
+| `getNode(data 对象)`                                                         | 返回 `null`                                 |
+| `getCheckedKeys` / `getHalfCheckedKeys`                                      | 返回空数组                                  |
+| `defaultExpandedKeys` / `expandedKeys` / `currentKey` / `defaultCheckedKeys` | 不生效（开发期警告）                        |
+| `updateKeyChildren` / `setCurrentKey` / `setCurrentNode` / `getCurrentKey`   | 抛 `[Tree] nodeKey is required in <方法名>` |
+| `remove`                                                                     | 静默无效                                    |
+
+抛错文案里的方法名沿用源项目，包括 `updateKeyChildren` 那条保留了原版被截断的 `updateKeyChild` 拼写——按文案搜索日志时注意这点。
+
+仍然可用的是**传 `TreeNode` 实例**的那批：`renderNode` 作用域里的 `node`、各事件回调的节点参数，以及不依赖注册表的 `getVisibleNodes()` / `expandAll()` / `collapseAll()` / `filter()`。
+
+另外，深拷贝源数据（`JSON.parse(JSON.stringify(data))`、某些状态库的快照恢复）会丢掉这个不可枚举标记，克隆出的对象会被分配新的内部 id、被当作不同节点，展开态随之丢失。需要持久化、跨拷贝定位或使用任何按 key 的能力，就配 `nodeKey`。
+
+## 过滤语义
+
+`handle.filter(value)` 触发全树过滤，配 `filterNodeMethod`：
+
+- 从**全部根节点**开始遍历，所有节点（含第一层）都执行 `filterNodeMethod`；父节点自身不匹配但有可见后代时保持可见（element-ui 语义）。
+- `filter('')` 同样会对每个节点执行方法，因此**必须对空值返回 `true`** 才能恢复全部显示。
+- 未传 `filterNodeMethod` 时调用 `filter()` 抛 `[Tree] filterNodeMethod is required when filter`。
+- 过滤不会触发懒加载节点的 `load`（未加载子树内容未知）。
+- 被过滤掉的节点**不渲染**（组件直接返回 `null`），DOM 里没有它们；这与「折叠」不同——折叠的子树仍然挂载在 DOM 中（容器带 `is-hidden` 类与 `visibility` / `height` 内联），只是不可见。
+- `showNodeNum` 的数字只计未被过滤隐藏的可见子节点；`aria-setsize` / `aria-posinset` 也只按可见兄弟计数。
+
+```tsx
+'use client'
+
+import { useRef, useState } from 'react'
+import { OkrTree, type OkrTreeHandle, type TreeNodeData } from 'react-okr-tree'
+import 'react-okr-tree/style.css'
+
+export default function App({ data }: { data: TreeNodeData[] }) {
+  const tree = useRef<OkrTreeHandle>(null)
+  const [keyword, setKeyword] = useState('')
+
+  return (
+    <>
+      <input
+        value={keyword}
+        onChange={e => {
+          setKeyword(e.target.value)
+          tree.current?.filter(e.target.value)
+        }}
+      />
+      <OkrTree
+        ref={tree}
+        data={data}
+        nodeKey="id"
+        showCollapsable
+        filterNodeMethod={(value, item) =>
+          !value ? true : String(item.label).includes(String(value))
+        }
+      />
+    </>
+  )
+}
+```
+
+OKR 模式下 `filter` 同时命中左右两棵树；两棵树允许共用同一批 id，因为注册表本就分开。

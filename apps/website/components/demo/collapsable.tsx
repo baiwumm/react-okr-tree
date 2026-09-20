@@ -16,9 +16,10 @@ import { baseData } from './data'
  *
  * 圆盘打开后键盘操作与源项目一致：Tab 进入树，→ 展开 / 进入子节点，← 收起 / 回到父节点。
  *
- * React 与 Vue 的一处差别：这三个 prop 都在**节点创建时**被读取（`defaultExpandAll` 决定
- * 初始展开态，另两个属于渲染配置，而节点组件是 memo 的），运行时换值不会重放也不会重绘，
- * 所以本例把它们拼进 `key` 触发重挂载。Vue 版靠响应式模板自动跟上，没有这条约束。
+ * React 与 Vue 的一处差别：`showCollapsable` 与 `showNodeNum` 运行时换值会立刻重绘（组件对
+ * 这两类 prop 做了全树通知），但 `defaultExpandAll` 是**初始态**语义——它只在节点创建时决定
+ * 展开状态，运行时换值不会把已经手动收起的节点再摊开。所以本例只把它拼进 `key` 触发重挂载，
+ * 让「默认全展开」这一档可以反复重放。Vue 版同样不会重放初始值，只是那边一般直接重挂组件。
  */
 export function CollapsableDemo() {
   const data = useMemo(baseData, [])
@@ -50,7 +51,7 @@ export function CollapsableDemo() {
         ))}
       </div>
       <OkrTree
-        key={`${showCollapsable}-${defaultExpandAll}-${showNodeNum}`}
+        key={`expand-all-${defaultExpandAll}`}
         data={data}
         direction="horizontal"
         showCollapsable={showCollapsable}

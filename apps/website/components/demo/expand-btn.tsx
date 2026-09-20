@@ -24,7 +24,8 @@ import { baseData } from './data'
  * 3. 自定义内容要包一层内置类 `org-chart-node-btn-text`：它用不透明底铺满整个圆盘，
  *    把 CSS 伪元素画的 +/− 盖掉——这属于 DOM 契约，不是可选美化；
  * 4. 圆盘是 20px 的绝对定位元素，按钮里放长文案会溢出，本例只放单字符；
- * 5. 换按钮口同样不会让已挂载节点重绘（渲染定制走 configRef），所以按 mode 重挂载。
+ * 5. 换按钮口不需要重挂载：渲染定制这一组 prop 变更会被组件广播成一次全树重绘，
+ *    已挂载节点立刻跟上，用户的展开态不受影响。
  */
 
 const MODES = ['default', 'nodeBtnContent', 'renderExpandBtn', 'both', 'showNodeNum'] as const
@@ -74,7 +75,6 @@ export function ExpandBtnDemo() {
           : '点圆盘收起 / 展开即可看到自定义内容替掉了内置的 +/−；renderExpandBtn 拿到的 expanded 就是该侧当前状态。'}
       </p>
       <OkrTree
-        key={mode}
         data={data}
         direction="horizontal"
         showCollapsable

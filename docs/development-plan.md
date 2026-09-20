@@ -46,6 +46,7 @@
 - [x] ⭐ 4.1 `context.ts` + `hooks/use-node-version.ts`：三个 Context 的 value 一次创建、引用永久稳定（R3）；`useSyncExternalStore` 绑定 R1，SSR 走常量 `getServerSnapshot`。落地补充：**渲染配置（labelWidth / renderNode / showCollapsable …）放在 `configRef` 里而不是 context value**，否则回调换身份就整树重渲染；改这些 prop 时由 `store.bumpAll()` 显式通知。
 - [x] ⭐ 4.2 `OkrTreeNode.tsx`：递归渲染 + 左右子树容器 + 展开圆盘（`showNodeNum` 计数只算可见子节点）+ `renderExpandBtn` / `nodeBtnContent` 优先级 + 折叠态内联样式（`visibility` / 延迟 `height:0;overflow:hidden`，R7）+ `is-hidden` / `is-animated` / `okr-anim-*` 状态类。`aria-setsize/posinset` 由父节点算好作 props 下传（避免订阅旧父节点）。
 - [x] ⭐ 4.3 `OkrTree.tsx`：全部 props、`store` 创建、`useImperativeHandle` 暴露 27 方法 + `store` / `root` + `refreshData()`、回调事件映射、抛错文案、运行时 prop 同步 effects。
+  - **阶段 8 补上的第三个缺口**：渲染定制与卡片尺寸那一组 prop（`renderContent` / `nodeComponent` / `nodeBtnContent` / `renderNode`+`children` / `renderExpandBtn` / `showNodeNum` / `labelWidth` / `labelHeight` / `alignRoot`）只写在 `configRef` 里，而节点组件是 memo + 只订阅自己那份版本（R1/R3 的直接后果），所以**运行时换它们完全不出图**——违反 requirements 第 82 行「要么生效、要么警告，不存在静默失效」。修法是给这组加一次全树通知（挂载那次跳过）。两个 agent 各撞一次并各自用 `key` 重挂载绕过，才把它暴露出来；demo 里的绕过已全部撤掉，`prop-sync.spec.tsx` 加了 2 条断言钉住。**同一轮**：`NodeScope` 没从包出口导出（消费者没法给 `renderNode` 参数标类型）、`onNodeDrop` 第 4 参标成 DOM `DragEvent` 而实参是 React 合成事件，也都修了。
   - 移植过程中修掉两个真 bug：① `TreeStore` 构造器的选项拷贝会把 `undefined` 覆盖到类字段默认值上（源项目靠 Vue prop default 挡住了，React 必须跳过 `undefined`）；② R2 的「每次渲染扫描」不能无脑调 `store.setData`——它会连带 `setLeftData` 整棵重建左树、把左子树的过滤结果冲掉，改为先跑只读脏检查 `store.isStructureDirty()`。
 - [x] 4.4 渲染定制：`renderNode` > `nodeComponent` > `renderContent` > `node.label`；`renderContent(node)` 无 `h`（D1）；`empty`
 - [x] 4.5 选中态与样式计算：`labelClassName` / `currentLableClassName`、`is-current` 双处、`is-disabled`、`data-level`、`theme` 类映射（`default` 不加类）
@@ -115,41 +116,43 @@
 > 模板见 `components/demo/basic.tsx`；页面装配在 `content/guide/demos.mdx`，源码由 `<DemoBlock file="…">`
 > 在构建期 `readFileSync` 读本文件，所以 demo 组件里**不要再抄一份代码字符串**。
 
-| # | 源项目用例 | React 文件 | 导出名 |
-| - | ---------- | ---------- | ------ |
-| 1 | `Base01` 基础用法 | `basic.tsx` | `BasicDemo` |
-| 2 | `Base02` 水平方向 | `horizontal.tsx` | `HorizontalDemo` |
-| 3 | `Base03` 是否可展开 | `collapsable.tsx` | `CollapsableDemo` |
-| 4 | `Base04` 默认全部展开 | `expand-all.tsx` | `ExpandAllDemo` |
-| 5 | `Base041` 指定默认展开 | `default-expanded-keys.tsx` | `DefaultExpandedKeysDemo` |
-| 6 | `Base05` 节点的样式 | `node-style.tsx` | `NodeStyleDemo` |
-| 7 | `Base06` 内容定制三种写法对比 | `content-modes.tsx` | `ContentModesDemo` |
-| 8 | `Base062` 展开按钮自定义 | `expand-btn.tsx` | `ExpandBtnDemo` |
-| 9 | `Base061` 节点动画 | `animation.tsx` | `AnimationDemo` |
-| 10 | `Base07` OKR + Group 两树对比 | `okr-group.tsx` | `OkrGroupDemo` |
-| 11 | `Base08` OKR 自定义内容 | `okr-content.tsx` | `OkrContentDemo` |
-| 12 | `Base081` OKR 节点数 | `okr-node-num.tsx` | `OkrNodeNumDemo` |
-| 13 | `Base09` 受控状态与方法 | `controlled.tsx` | `ControlledDemo` |
-| 14 | `Base10` 懒加载 | `lazy.tsx` | `LazyDemo` |
-| 15 | `Base11` 画布 Viewport | `viewport.tsx` | `ViewportDemo` |
-| 16 | `BaseFilter` 过滤 | `filter.tsx` | `FilterDemo` |
-| 17 | `BaseFilterOkr` OKR 过滤 | `filter-okr.tsx` | `FilterOkrDemo` |
-| 18 | `BaseEvents` 事件 | `events.tsx` | `EventsDemo` |
-| 19 | `BaseEventsOkr` OKR 事件 | `events-okr.tsx` | `EventsOkrDemo` |
-| 20 | `BaseAccordion` 手风琴 | `accordion.tsx` | `AccordionDemo` |
-| 21 | `BaseNodeClick` 点击展开/选中 | `node-click.tsx` | `NodeClickDemo` |
-| 22 | `BaseCheckbox` 复选框 | `checkbox.tsx` | `CheckboxDemo` |
-| 23 | `BaseDraggable` 拖拽 | `draggable.tsx` | `DraggableDemo` |
-| 24 | `BaseConnector` SVG 连接线 | `connector.tsx` | `ConnectorDemo` |
+| #   | 源项目用例                    | React 文件                  | 导出名                    |
+| --- | ----------------------------- | --------------------------- | ------------------------- |
+| 1   | `Base01` 基础用法             | `basic.tsx`                 | `BasicDemo`               |
+| 2   | `Base02` 水平方向             | `horizontal.tsx`            | `HorizontalDemo`          |
+| 3   | `Base03` 是否可展开           | `collapsable.tsx`           | `CollapsableDemo`         |
+| 4   | `Base04` 默认全部展开         | `expand-all.tsx`            | `ExpandAllDemo`           |
+| 5   | `Base041` 指定默认展开        | `default-expanded-keys.tsx` | `DefaultExpandedKeysDemo` |
+| 6   | `Base05` 节点的样式           | `node-style.tsx`            | `NodeStyleDemo`           |
+| 7   | `Base06` 内容定制三种写法对比 | `content-modes.tsx`         | `ContentModesDemo`        |
+| 8   | `Base062` 展开按钮自定义      | `expand-btn.tsx`            | `ExpandBtnDemo`           |
+| 9   | `Base061` 节点动画            | `animation.tsx`             | `AnimationDemo`           |
+| 10  | `Base07` OKR + Group 两树对比 | `okr-group.tsx`             | `OkrGroupDemo`            |
+| 11  | `Base08` OKR 自定义内容       | `okr-content.tsx`           | `OkrContentDemo`          |
+| 12  | `Base081` OKR 节点数          | `okr-node-num.tsx`          | `OkrNodeNumDemo`          |
+| 13  | `Base09` 受控状态与方法       | `controlled.tsx`            | `ControlledDemo`          |
+| 14  | `Base10` 懒加载               | `lazy.tsx`                  | `LazyDemo`                |
+| 15  | `Base11` 画布 Viewport        | `viewport.tsx`              | `ViewportDemo`            |
+| 16  | `BaseFilter` 过滤             | `filter.tsx`                | `FilterDemo`              |
+| 17  | `BaseFilterOkr` OKR 过滤      | `filter-okr.tsx`            | `FilterOkrDemo`           |
+| 18  | `BaseEvents` 事件             | `events.tsx`                | `EventsDemo`              |
+| 19  | `BaseEventsOkr` OKR 事件      | `events-okr.tsx`            | `EventsOkrDemo`           |
+| 20  | `BaseAccordion` 手风琴        | `accordion.tsx`             | `AccordionDemo`           |
+| 21  | `BaseNodeClick` 点击展开/选中 | `node-click.tsx`            | `NodeClickDemo`           |
+| 22  | `BaseCheckbox` 复选框         | `checkbox.tsx`              | `CheckboxDemo`            |
+| 23  | `BaseDraggable` 拖拽          | `draggable.tsx`             | `DraggableDemo`           |
+| 24  | `BaseConnector` SVG 连接线    | `connector.tsx`             | `ConnectorDemo`           |
 
 - [x] 8.1 数据集移植 `playground/data.ts`（7 个工厂函数 → `components/demo/data.ts`）
-- [ ] 8.2 基础组（1–9）
-- [ ] 8.3 OKR 组（10–12）
-- [ ] 8.4 过滤与事件组（16–19）：Filter 含 11 个方法按钮 + **空值恢复语义**；OKR Filter 左右同时命中
-- [ ] 8.5 状态组（13–15）：受控与方法 / 懒加载 / Viewport（含 `exportImage` 注入 `toPng` 避开动态导入）
-- [ ] 8.6 交互组（20–24）：手风琴 / 点击展开 / 复选框 / 拖拽 / SVG 连接线（非 svg 时形状按钮 disabled）
+- [x] 8.2 基础组（1–6）：基础 / 水平 / 可展开 / 全展开 / 指定 key 展开 / 节点样式
+- [x] 8.3 内容定制与动画（7–9）：三种写法对比（含「三种同传」验优先级）/ 展开按钮自定义（须套 org-chart-node-btn-text 盖掉伪元素 +/−）/ 六个动画名 + 时长
+- [x] 8.4 状态组（13–15）：受控与方法（两对受控 props + 十几个 ref 按钮 + R2 三条路径）/ 懒加载（假 300ms、固定失败分支、重试、isLeaf）/ Viewport（exportImage 走注入 toPng）
+- [x] 8.5 过滤与事件组（16–19）：Filter 含方法按钮与**空值恢复语义** / OKR Filter 左右同时命中 / 事件 14 个全挂（须同时给 expandedKeys+currentKey 才看得到两个 change 回调）/ OKR 事件
+- [x] 8.6 交互组（20–24）：手风琴（另给 expandAll 反例）/ 点击展开 / 复选框（含半选与取设 key）/ 拖拽（三区 + 禁自嵌套）/ SVG 连接线（非 svg 时形状按钮 disabled）
 - [x] 8.7 主题切换条（6 套 + 「跟随站点主题」第七个按钮）：`components/demo/theme-switcher.tsx`，已登记进 MDX 白名单并接在 `content/theme/index.mdx` 那条「`auto` 跟的是媒体查询、不是 `.dark` 类」的警告后面，作为该结论的活样例（不新增任何站点 CSS：跟随站点走的是 `resolvedTheme` → `theme` prop 这条路，另一条「祖先覆盖变量」的路子在页面上用代码块说明）
-- [ ] 8.8 源码展示：`<DemoBlock file>` 在 RSC 侧 `readFileSync` + 构建期 shiki 高亮 + 原生 `<details>` 折叠（已落地，24 个用例复用同一条链路；不做客户端 shiki）
+- [x] 8.8 源码展示：`<DemoBlock file>` 在 RSC 侧 `readFileSync` + 构建期 shiki 高亮 + 原生 `<details>` 折叠（已落地，24 个用例复用同一条链路；不做客户端 shiki）
+  - DemoBlock 因此是**服务端组件**（别加 `'use client'`，那会把高亮推回浏览器）；`file` 只允许 `components/demo/` 下的 `.tsx`，带 `..` 直接抛错。
+  - 已知告警一条，不修：`next build` 会报 `Turbopack build encountered 1 warnings: Encountered unexpected file in NFT list`，原因正是这里的 `readFileSync(process.cwd() + file)` —— Next 的产物追踪见到动态文件读就把周边整体纳入 trace。它只影响 `.next/` 里的 serverless trace 清单，而静态导出部署的是 `out/`（`verify:export` 也断言过产物里没有服务端残留），所以是噪声；消除它的办法是回到「源码抄一份字符串」，那正是这一步要消灭的漂移。
 
 ## 阶段 9：文档、验收与发布
 
@@ -200,7 +203,7 @@ workspace 根 `.npmrc`：`save-exact=true`。全部精确版本，不用 `^` / `
 | `eslint-plugin-react-hooks` | 5.2.0   | 同上；peer 支持 eslint ≤9                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `typescript-eslint`         | 8.70.0  | peer 兼容 eslint 9                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `globals`                   | 17.12.0 | flat config 环境                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `pnpm` workspace            | 11.24.0 | `pnpm-workspace.yaml` 的 `allowBuilds` 现有三项：`esbuild`（vite/vitest 二进制）、`@tailwindcss/oxide`（文档站）、`sharp`（next 可选依赖）；仍然不需要任何 trust 豁免 |
+| `pnpm` workspace            | 11.24.0 | `pnpm-workspace.yaml` 的 `allowBuilds` 现有三项：`esbuild`（vite/vitest 二进制）、`@tailwindcss/oxide`（文档站）、`sharp`（next 可选依赖）；仍然不需要任何 trust 豁免                                                                                                                                                                                                                                                                                      |
 
 **库（`packages/react-okr-tree`）**
 

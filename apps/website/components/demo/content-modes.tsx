@@ -24,9 +24,10 @@ import { contentData } from './data'
  * 3. Vue 用 `markRaw(defineComponent(...))` 防 reactive 代理，React 没这个问题，
  *    但组件身份同样要稳定：`DiyCard` 必须定义在模块作用域——写在渲染函数里，
  *    每次渲染都是一个「新的组件类型」，卡片会整棵重挂载；
- * 4. 切换写法用 `key` 重挂载。渲染定制走 `configRef`（换回调身份不导致整树重渲染，R1），
- *    代价是换了口之后已挂载的节点不会自己重绘，要么重挂载，要么 `handle.refreshData()`
- *    逐节点通知。Vue 版改 prop 天然会重渲染，没有这一条。
+ * 4. 切换写法**不需要**重挂载：渲染定制虽然走 `configRef`（换回调身份不该让整树重渲染，R1），
+ *    但组件对这一组 prop 做了一次全树通知，所以换了口已挂载的节点会立刻重绘，展开态保住。
+ *    （这一条是文档 demo 反过来发现的库缺口：早期版本换 renderContent 视觉上毫无反应，
+ *    当时只能靠 `key` 重挂载绕过。）
  */
 
 const ROUTES = ['label', 'renderContent', 'nodeComponent', 'renderNode', 'all'] as const
@@ -83,7 +84,6 @@ export function ContentModesDemo() {
         <code>node.isCurrent</code>。
       </p>
       <OkrTree
-        key={route}
         data={data}
         direction="horizontal"
         showCollapsable

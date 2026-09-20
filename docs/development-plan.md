@@ -86,12 +86,24 @@
 
 ## 阶段 7：文档站基建（Next.js + fumadocs）
 
-- [ ] 7.1 `apps/website` 脚手架：Next 16.2.6 + `output: 'export'`（0.2 结论）+ `trailingSlash` + `createMDX()` + Tailwind 4.3.3 + fumadocs `neutral`/`preset` + `--color-fd-*` 与 shadcn oklch token 同源（6.2）
-- [ ] 7.2 照搬参考站基建：`lib/{site,source,i18n}.ts`、`app/layout.tsx`（`RootProvider` + zh-CN + next-themes class 策略）、`app/docs/layout.tsx`（`DocsLayout` + Logo nav + GitHub icon link）、`not-found` / `sitemap` / `robots`、静态 `public/og.png`（替代 `opengraph-image.tsx`）、Maple Mono CN 子集字体、`scripts/with-memory-cap.mjs`
-- [ ] 7.3 落地页：`Navbar` / `Hero`（含 `LightRays`，参数照参考站收着用）/ `Features`（7 张卡）/ `Stacks`→布局展示位 / `Cta` / `Faq` / `Footer`
+- [x] 7.1 `apps/website` 脚手架：Next 16.2.6 + `output: 'export'`（0.2 结论）+ `trailingSlash` + `createMDX()` + Tailwind 4.3.3 + fumadocs `neutral`/`preset` + `--color-fd-*` 与 shadcn oklch token 同源（6.2）
+  - 落地补充：`turbopack.root` 要显式设到仓库根（文档站跨包 import `packages/react-okr-tree/shared/api.ts`）；`images.unoptimized`（静态导出没有图片优化服务端）。
+  - **坑**：`output: 'export'` 下 `robots.ts` / `sitemap.ts` 必须写 `export const dynamic = 'force-static'`，否则 `next build` 在「收集页面数据」阶段直接失败（错误信息只说没配 force-static，不告诉你是元数据路由的问题）。
+- [x] 7.2 照搬参考站基建：`lib/{site,source,i18n}.ts`、`app/layout.tsx`（`RootProvider` + zh-CN + next-themes class 策略）、`app/docs/layout.tsx`（`DocsLayout` + Logo nav + GitHub icon link）、`not-found` / `sitemap` / `robots`、Maple Mono CN 子集字体、`scripts/with-memory-cap.mjs`
+  - 未完成的一项：静态 `public/og.png` 还没有（`opengraph-image.tsx` 在 export 下不可用），`metadata.openGraph.images` 暂时留空，留到 9.9 与设计资源一起做；`favicon.svg` / `logo.svg` / `logo-dark.svg` 已换成本项目自己的树形标记。
+  - 版本号统一走 `lib/version.ts`（`react-okr-tree/package.json` 真源），站上不出现第二份版本号副本。
+- [x] 7.3 落地页：`Navbar` / `Hero`（含 `LightRays`，参数照参考站收着用）/ `Features`（7 张卡 + 1 张 API 面统计卡）/ `Stacks`→布局展示位（三种布局 + SVG 连接线 + unstyled + 六套主题，全是真实组件）/ `Cta` / `Faq` / `Footer`
+  - 落地页首屏 HTML 里已有 62 个节点标签（11 个活体 `<OkrTree>` 实例）——这是库在 Next 静态导出下 SSR 安全的真实证据，比 R8 的单测更有说服力。
+  - **消费侧发现的库缺陷（已修）**：optional peer 的动态导入只有 `@vite-ignore`，Turbopack 不认，会对变量说明符报构建期 Module not found——库能发出去但下游装不上。补 `webpackIgnore` / `turbopackIgnore`，并在 `verify:dist` 加 4 条断言钉住。
+  - 浏览器内视觉自检做不了：内置浏览器够不到本机端口（`ERR_FAILED`，curl 同一端口 200）。视觉与几何一律留给 9.2 的 Playwright，不在这里靠猜测下结论。
 - [ ] ⭐ 7.4 MDX 组件白名单：`getMDXComponents()` 注册 `Cards` / `Callout` / `Steps` / `Tabs` + 本站新增的 `<DemoBlock>` / `<EventLog>` / `<ThemeSwitcher>` / `<ApiTable>`（6.3 第 1 点：demo 组件全部 `'use client'`）
-- [ ] 7.5 搜索：构建期导出静态 Orama 索引 + `oramaStaticClient`（0.2 结论：静态导出下不需要 Pagefind）
-- [ ] 7.6 `content/` 骨架与 `meta.json` 分组（`start` / `guide` / `theme` / `api` / `migration` / `changelog`）；`guide/typed` 改为「泛型与类型推导」（D5）
+  - 已注册 `DemoBlock` + `ApiTable`；`EventLog` / `ThemeSwitcher` 随阶段 8 的 Demo 一起登记（没有对应 Demo 之前先注册就是死代码）。
+  - `DemoBlock` 现在用的是 `DynamicCodeBlock`（客户端 shiki）。8.8 落地时若确认首屏体积吃不消，改 RSC 侧 `fumadocs-core/highlight` 预高亮 + `<CodeBlock>`——这与 6.3 第 2 点「源码不经 loader、构建期出 HTML」的原意更贴。
+- [x] 7.5 搜索：构建期导出静态 Orama 索引 + `staticClient`（0.2 结论：静态导出下不需要 Pagefind）
+  - 实现比预想更省：`app/api/search/route.ts` 里 `createFromSource(source).staticGET` 配 `export const dynamic = 'force-static'`，`next build` 就把索引当静态文件写到 `out/api/search`；前端 `RootProvider search={{ options: { type: 'static', api: '/api/search' } }}`。零额外构建步骤、零额外依赖。
+  - 运行时验证方式：本机没有可用浏览器环境（见 7.3），改为用**同一份 `staticClient`** 对导出的 `out/api/search` 做取回-加载-检索往返，命中与 `<mark>` 高亮正常。0.2 遗留的「包产物核实 ≠ 运行时验证」到此收口；浏览器里的那一遍归 9.2。
+- [ ] 7.6 `content/` 骨架与 `meta.json` 分组（`start` / `guide` / `theme` / `api` / `migration` / `changelog`）；`guide/typed` 改为「泛型与类型推导」（D5）；`guide/data` 是 React 新增页（R2 数据变更检测 + Q3 回写 + 冻结数据边界）
+- [x] 7.7（新增，原记在 9.5）静态导出真实性门禁：`scripts/verify-export.mjs` —— 无服务端残留 / 站内零死链 / 索引与资产齐备 / sitemap 覆盖每个文档页。写它的理由：部署是纯静态资产，「构建通过」≠「可部署」。落地当天就抓到页脚 7 个指向未创建页面的死链。
 
 ## 阶段 8：24 个 Demo 用例
 
@@ -110,7 +122,10 @@
 - [ ] 9.2 视觉回归基线：Playwright 截文档站 Demo 路由，win32 + linux 两套基线；含 print 媒体断言、`unstyled` 计算样式断言（阴影清掉且节点盒尺寸不变）
 - [ ] 9.3 性能基线：移植 `scripts/benchmark.mjs`（2041 节点，6 个场景）+ Chromium 首渲染 < 300 ms 门禁；产出 `docs/perf.md`
 - [ ] 9.4 工程门禁：`publint` + `attw --pack` + `size-limit`（ESM ≤20 kB / UMD ≤21 kB / CSS ≤4 kB）+ 覆盖率阈值（80/75/80/80）
+  - 提前跑过（阶段 7 期间，dist 为今日构建）：`verify:package` publint "All good!" + attw 全 🟢（node10 / node16 CJS / node16 ESM / bundler 四格）；`size` 三条全过——**ESM 18.48 kB / 20 kB（已用掉 92%）**、CSS 3.79 / 4 kB、UMD 16.66 / 21 kB。CSS 与 ESM 余量都很薄，阶段 8/9 若再加特性要先看这两条。覆盖率阈值待 9.4 正式收口时跑 `test:coverage`。
 - [ ] 9.5 CI：`verify` / `peer-matrix`（React 18.2 + `@types/react@18` 下编译一份消费者示例，确保 d.ts 不引用 19 独有类型）/ `visual` / `website-build`（export 静态性断言）/ `website-deploy`（Cloudflare，仅 main）/ `release`（tag → 门禁 → `npm publish --provenance` → GitHub Release）
+  - 已落地（阶段 7 期间）：`.github/workflows/ci.yml` 的 `verify`（node 22/24 两档，含 format:check / lint / typecheck / test / coverage / build / verify:dist / verify:package / size / npm pack --dry-run）、`website`（先出库 dist → typecheck:website → next build → verify:export）、`peer-matrix`（pnpm overrides 钉 react ~18.2 / ~18.3 + @types/react ~18.3，跑全套测试）。
+  - 还差三件：① peer-matrix 的**消费者示例**（现有腿只跑库自身测试，编译的是 `src/`；要再加一个用 `paths: {"react-okr-tree": ["../dist/index.d.ts"]}` 的 `tsc --noEmit` 才能真的验到 d.ts）；② `visual.yml`（等阶段 8 有 Demo 路由）；③ release 链路。**部署不走 GH Actions**：与源项目一致由 Cloudflare Workers Builds 跑 `npx wrangler deploy` 读仓库根 `wrangler.jsonc`，所以计划里这条 `website-deploy` 作业取消（等价的静态性断言已在 website job 里）。
 - [ ] 9.6 README（结构见 requirements 7 的「文档」行）：**必须显式写** D7（原地变更与 `refreshData()`）、Q3（增删方法回写源数据）、`nodeKey` 缺失时注册表为空导致哪些方法静默、冻结数据边界、CDN 无开发期警告
 - [ ] 9.7 `shared/api.ts` 驱动文档站 `<ApiTable>`（首版）；`gen:readme` + README 生成段留到 1.1.0（11.4）
 - [ ] 9.8 dist 双路径收口：website 切到引 `dist` 产物跑一遍 24 个 Demo（源项目 6.8 的做法，验证发布产物与源码路径渲染一致）

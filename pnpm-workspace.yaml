@@ -1,0 +1,7 @@
+packages:
+  - 'packages/*'
+  - 'apps/*'
+
+# pnpm 供应链策略：esbuild 需要 postinstall 下载平台二进制（vite/vitest 依赖）
+allowBuilds:
+  esbuild: true

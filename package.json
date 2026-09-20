@@ -1,0 +1,22 @@
+{
+  "name": "react-okr-tree-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter react-okr-tree dev",
+    "build": "pnpm --filter react-okr-tree build",
+    "verify:dist": "pnpm --filter react-okr-tree verify:dist",
+    "build:check": "pnpm --filter react-okr-tree build:check",
+    "test": "pnpm --filter react-okr-tree test",
+    "typecheck": "pnpm --filter react-okr-tree typecheck",
+    "lint": "pnpm --filter react-okr-tree lint",
+    "format": "pnpm --filter react-okr-tree format",
+    "size": "pnpm --filter react-okr-tree size",
+    "bench": "pnpm --filter react-okr-tree bench"
+  }
+}

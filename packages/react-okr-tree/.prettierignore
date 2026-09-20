@@ -1,0 +1,10 @@
+dist/
+coverage/
+test-results/
+playwright-report/
+dev/dist/
+
+# 组件样式是从 vue3-okr-tree 逐字平移的（requirements R7）：
+# 一旦被格式化，与源文件的 diff 就失去了「只改了头部注释」这个可核对性，
+# 而且 prettier 的书写风格可能改动伪元素选择器的换行与缩进。
+src/styles/

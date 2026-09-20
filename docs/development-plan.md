@@ -157,25 +157,33 @@
 ## 阶段 9：文档、验收与发布
 
 - [ ] ⭐ 9.1 逐项对照验收（requirements 9.1–9.4）：R1–R9 各条、D1–D10 各条、Q1–Q9 与 2.3 继承结论逐条打钩并记录证据（测试文件名）
-- [ ] 9.2 视觉回归基线：Playwright 截文档站 Demo 路由，win32 + linux 两套基线；含 print 媒体断言、`unstyled` 计算样式断言（阴影清掉且节点盒尺寸不变）
+- [x] 9.2 视觉回归基线：Playwright 截文档站 Demo 路由，win32 + linux 两套基线；含 print 媒体断言、`unstyled` 计算样式断言（阴影清掉且节点盒尺寸不变）
+  - win32 基线 15 张已提交并连跑两次全绿（13 条用例：11 张像素 + 冒烟 + 两条计算样式契约）。Linux 基线由新增的 `snapshot-bootstrap.yml` 生成后提交，与源项目同一套路
+  - 截图目标是 **demo 卡片**而不是 `.org-chart-container`：后者在垂直布局下高度合法为 0（子容器出排布），Playwright 把空包围盒判成 not visible、元素截图直接超时。基线人工看过一张（layout-vertical）：树、连线、卡片阴影、DemoBlock 的标题/说明/查看源码都正常。
+  - 服务器是自写的 `apps/website/scripts/serve-out.mjs`（跑 `out/`）而不是 `next dev`：基线要拍部署形态。端口默认从 4173 换到 4520——这台 Windows 的 TCP 排除区间是 4229–4328，4173 整段被保留，listen 直接 EACCES（源项目 CHANGELOG 1.13.0 记过同一条）。
+  - 待核的一条：Next 对 `[[...slug]]` 的 RSC 预取请求 `__next.docs.$oc$slug.txt`，而产物落的是 `__next.docs/$oc$slug.txt`（点号 vs 目录），静态服务器上必 404。冒烟把它单独计数并要求「资源加载失败条数 == 预取缺失条数」，新的真 404 藏不进去；**Cloudflare Pages 上是否同样 404 要在部署后核一次**（若同样，考虑 `redirects` 或接受为预取降级）。
 - [ ] 9.3 性能基线：移植 `scripts/benchmark.mjs`（2041 节点，6 个场景）+ Chromium 首渲染 < 300 ms 门禁；产出 `docs/perf.md`
   - 已落地（阶段 7 期间）：`scripts/benchmark.mjs`（此前 `pnpm bench` 指向一个不存在的文件）+ `docs/perf.md`。7 个场景（比源项目多一条「展开单个节点」），关键数：首渲染 220 ms / 全展开首渲染 182 ms / expandAll 91 ms / filter 两轮 153 ms / 原地 push+pop 6.6 ms / 深层改名 0.5 ms / 展开单节点 0.6 ms。
   - 与 Vue 基线对照的三条结构性差异写进 `docs/perf.md`：首渲染快 2.8–5.9 倍（无 reactive 代理）、expandAll/collapseAll 慢约 20 倍（组件粒度 vs 依赖粒度）、原地变更快 10–86 倍（无 deep watch 的 O(N) 遍历，就是 R2/D7 的取舍）。
   - **一条假数字的教训**：场景 7 第一次测出 0.01 ms，看着像「局部更新快得离谱」，实为 `measure()` 跑 3 轮而 `expandNode` 不幂等，第二轮起什么都没发生。现在每轮前 `collapseAll()` 重置，并在函数内断言「可见节点数必须增加」，不满足直接抛错。以后所有计时场景都要配一个这种「测量有效性」断言。
   - 还差：Chromium 首渲染 < 300 ms 门禁（并入 9.2 的 Playwright）。
-- [ ] 9.4 工程门禁：`publint` + `attw --pack` + `size-limit`（ESM ≤20 kB / UMD ≤21 kB / CSS ≤4 kB）+ 覆盖率阈值（80/75/80/80）
+- [x] 9.4 工程门禁：`publint` + `attw --pack` + `size-limit`（ESM ≤20 kB / UMD ≤21 kB / CSS ≤4 kB）+ 覆盖率阈值（80/75/80/80）
+  - 覆盖率实跑：92.96% 语句 / 85.52% 分支 / 94.96% 函数 / 95.71% 行，阈值 80/75/80/80 全过；`publint` "All good!"、`attw` 四格全 🟢、size-limit 三条全过（见 9.4 上方那条提前跑的记录）。**顺带修了一条门禁自碰**：vitest 的 include 原是 `tests/**/*.spec.{ts,tsx}`，加了视觉门禁后它会去跑 Playwright 的 `test.describe`（252 条通过但 2 个文件失败），改成目录白名单，与源项目同一做法
   - 提前跑过（阶段 7 期间，dist 为今日构建）：`verify:package` publint "All good!" + attw 全 🟢（node10 / node16 CJS / node16 ESM / bundler 四格）；`size` 三条全过——**ESM 18.48 kB / 20 kB（已用掉 92%）**、CSS 3.79 / 4 kB、UMD 16.66 / 21 kB。CSS 与 ESM 余量都很薄，阶段 8/9 若再加特性要先看这两条。覆盖率阈值待 9.4 正式收口时跑 `test:coverage`。
 - [ ] 9.5 CI：`verify` / `peer-matrix`（React 18.2 + `@types/react@18` 下编译一份消费者示例，确保 d.ts 不引用 19 独有类型）/ `visual` / `website-build`（export 静态性断言）/ `website-deploy`（Cloudflare，仅 main）/ `release`（tag → 门禁 → `npm publish --provenance` → GitHub Release）
   - 已落地（阶段 7 期间）：`.github/workflows/ci.yml` 的 `verify`（node 22/24 两档，含 format:check / lint / typecheck / test / coverage / build / verify:dist / verify:package / size / npm pack --dry-run）、`website`（先出库 dist → typecheck:website → next build → verify:export）、`peer-matrix`（pnpm overrides 钉 react ~18.2 / ~18.3 + @types/react ~18.3，跑全套测试）。
   - ① 已落地：`tests-consumer/consumer.tsx` + `tests-consumer/tsconfig.json`（`paths` 指到 `../dist/index.d.ts`）+ `pnpm verify:peer-types`，已挂进 peer-matrix 作业。写它时撞出三条臆测（`filterNodeMethod` 不做泛型收窄、没有 `onNodeSelect` / `onZoomCommit` / `getCurrentKey` 这三个 prop），全是示例写错而不是库的问题。
-  - 还差两件：② `visual.yml`（等阶段 8 有 Demo 路由）；③ release 链路。**部署不走 GH Actions**：与源项目一致由 Cloudflare Workers Builds 跑 `npx wrangler deploy` 读仓库根 `wrangler.jsonc`，所以计划里这条 `website-deploy` 作业取消（等价的静态性断言已在 website job 里）。
+  - 还差一件：③ release 链路（tag → 门禁 → `npm publish --provenance` → GitHub Release）。②已补齐：`visual.yml`（ubuntu-24.04 固定镜像，构建走「库 dist → 静态导出」与 website job 同链路）+ `snapshot-bootstrap.yml`（生成 Linux 基线的 workflow_dispatch 作业，套路照抄源项目）。**部署不走 GH Actions**：与源项目一致由 Cloudflare Workers Builds 跑 `npx wrangler deploy` 读仓库根 `wrangler.jsonc`，所以原计划里的 `website-deploy` 作业取消（等价的静态性断言已在 website job 里）。
   - 预扫结论（阶段 7 期间，dist 为当日构建）：`dist/index.d.ts` 的公开面上只出现 `ReactNode`(13) / `useSyncExternalStore`(1) 与项目自己的 `useEvent`，没有任何 `@types/react@19` 独有类型——18.2 起这些都在。消费者示例要做的是把这个结论钉成门禁。
 - [x] 9.6 README（结构见 requirements 7 的「文档」行）：**必须显式写** D7（原地变更与 `refreshData()`）、Q3（增删方法回写源数据）、`nodeKey` 缺失时注册表为空导致哪些方法静默、冻结数据边界、CDN 无开发期警告
   - 已落地 `packages/react-okr-tree/README.md`（657 行，结构与源项目 README 对齐，仅中文）。五处硬性说明全部写了，其中「数据变更检测」独立成节按三条路径分述。
   - 它反过来查到三处「文档说有、实现没有」：默认导出（D6）与 `'use client'`（R8）确实缺，已补进实现；`getCheckedKeys` 未设 nodeKey 返回 `[]` 是实现/源项目/requirements 三方一致，是我给 agent 的任务书写错，库侧无改动。
-- [ ] 9.7 `shared/api.ts` 驱动文档站 `<ApiTable>`（首版）；`gen:readme` + README 生成段留到 1.1.0（11.4）
-- [ ] 9.8 dist 双路径收口：website 切到引 `dist` 产物跑一遍 24 个 Demo（源项目 6.8 的做法，验证发布产物与源码路径渲染一致）
-- [ ] 9.9 `CHANGELOG.md` 1.0.0、`LICENSE`、`repository` 字段、`npm publish --dry-run`
+- [x] 9.7 `shared/api.ts` 驱动文档站 `<ApiTable>`（首版）；`gen:readme` + README 生成段留到 1.1.0（11.4）
+  - `<ApiTable>` 六张表由 `packages/react-okr-tree/shared/api.ts` 单一来源驱动（/docs/api 16 条路由之一）；`gen:readme` 按计划留到 1.1.0
+- [x] 9.8 dist 双路径收口：website 切到引 `dist` 产物跑一遍 24 个 Demo（源项目 6.8 的做法，验证发布产物与源码路径渲染一致）
+  - 文档站本来就是引 workspace 的 **dist 产物**（`react-okr-tree` + `react-okr-tree/style.css`，根脚本 `build:website` 先 `pnpm build` 再导出），24 个 Demo 全部跑在产物上并被 15 张基线拍过——源项目 6.8 那条「源码路径与产物路径渲染一致」在这里等价于「产物路径 + 单测走源码路径」，两条都覆盖到了
+- [x] 9.9 `CHANGELOG.md` 1.0.0、`LICENSE`、`repository` 字段、`npm publish --dry-run`
+  - CHANGELOG 1.0.0 已写（按源项目写法：不只列特性，把这一路修出来的 React 侧缺陷连成因一起列进去）；LICENSE 之前只在仓库根而 package.json 的 files 列了它，npm 只从包目录取文件 → 补进包内；`npm publish --dry-run` 通过（13 个文件，293 kB）。**version 仍是 0.1.0：升版 + 打 tag + 真发布是同一步，等你点头。**
 
 ## 里程碑
 

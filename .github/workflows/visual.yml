@@ -1,0 +1,66 @@
+name: Visual Regression
+
+# 视觉回归（计划 9.2）：真实 Chromium 对**静态导出产物**截图比对 + 冒烟交互断言。
+# 失败时上传 diff 图与报告，便于定位像素级回归（改 CSS 变量 / 连接线时捕捉）。
+#
+# runner 镜像固定：Linux 基线（*-chromium-linux.png）由系统字体渲染决定，
+# ubuntu-latest 将于 2026-10-19 迁移到 Ubuntu 26，届时全部基线会集体失配。
+# 换镜像必须先用 snapshot-bootstrap.yml 重新生成并提交 Linux 基线。
+#
+# 与源项目的差别：这里没有独立的 playground，服务器是文档站的 out/ 目录
+# （apps/website/scripts/serve-out.mjs，由 playwright.config.ts 的 webServer 拉起），
+# 所以构建步骤是「出库 dist → next build 静态导出」，与 website job 同一条链路。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: visual-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  visual:
+    name: Playwright Visual · Perf
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: packages/react-okr-tree
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        # 根目录安装（workspace），Playwright 与库都在里面
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build library
+        run: pnpm build
+
+      - name: Build docs site (static export)
+        run: pnpm --filter react-okr-tree-website build
+
+      - name: Visual & smoke tests
+        run: pnpm test:visual
+
+      - name: Upload diff & report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            packages/react-okr-tree/playwright-report/
+            packages/react-okr-tree/test-results/
+          retention-days: 14

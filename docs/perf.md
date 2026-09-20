@@ -50,6 +50,28 @@
 - 场景 5 / 6 的 `tree.render()` 是必需的：React 没有深监听，宿主不重渲染就什么都不会发生。
   这不是脚本缺陷，正是 D7 要表达的行为，所以两条各测一遍。
 
+## 浏览器侧基线（Chromium，2026-09-20）
+
+> 复现：`pnpm build && pnpm test:visual`（夹具由 `tests/visual/global-setup.ts` 用 Vite 打成
+> 自包含 IIFE，`tests/visual/perf.spec.ts` 注入 about:blank 后测量，结果落 `test-results/perf-browser.json`）。
+
+| 场景 | 数值 | 门禁 |
+| ---- | ---- | ---- |
+| 2040 节点首渲染（挂载，默认折叠，5 轮取最优） | **36.9 ms**（单轮 32–60 ms） | < 300 ms（开发机）/ < 1500 ms（CI） |
+
+与 jsdom 版对照：真实浏览器比 jsdom 快约 6 倍（220 ms → 37 ms），落在源项目「jsdom 高 3–5 倍」的经验区间内，
+说明 jsdom 那套数字用作横向对比与回归告警是可靠的。
+
+两条踩坑记录（都是「测量本身跑空」这一类，和 jsdom 版那条 0.01 ms 同源）：
+
+- 并发根上 `root.render()` 只是**排一次更新**，函数返回时 DOM 还是空的——不加 `flushSync` 就测成调度耗时，
+  且节点数会量出 0。
+- `flushSync` 挂在 `react-dom` 上而不是 `react`（18.2 与 19 都是这个位置）。从 `react` 引会在打包期静默
+  变成 `undefined`、运行期才抛 `(0, f.flushSync) is not a function`。
+
+因此 `perf.spec.ts` 里那条「渲染节点数必须 > 2000」的断言是门禁的一部分，不是装饰：
+它先证明测的是一次真实的整树挂载，再谈毫秒。
+
 ## 产物体积（同一天的 size-limit 结果，门禁见 package.json）
 
 | 产物 | gzip | 预算 |

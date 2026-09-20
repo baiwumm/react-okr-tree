@@ -24,6 +24,8 @@ const baseURL = `http://127.0.0.1:${port}`
 export default defineConfig({
   testDir: 'tests/visual',
   testMatch: '**/*.spec.ts',
+  // 性能夹具（自包含 IIFE）在这里打，见 tests/visual/global-setup.ts
+  globalSetup: './tests/visual/global-setup.ts',
   fullyParallel: false,
   workers: 1,
   forbidOnly: !!process.env.CI,
@@ -35,6 +37,18 @@ export default defineConfig({
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1,
     locale: 'zh-CN',
+    /**
+     * 截图统一在「减弱动态效果」姿态下进行：Playwright 只自动停 CSS *animation*，不停
+     * *transition*，收起圆盘那类 300ms 过渡可能被拍在中间帧上。库本身实现了
+     * prefers-reduced-motion 降级（reduced-motion.spec.tsx 覆盖），用它自己的开关钉画面，
+     * 比把 waitForTimeout 越加越长体面。动画正确性归 jsdom 侧的
+     * transition-robustness / reduced-motion 用例，视觉门禁量的是静态外观。
+     *
+     * 另记一条排查结论，免得下次误判：本地出现过 `browserContext.close: ENOENT …/trace`
+     * 形式的"随机失败"，真因是**两个 Playwright 套件并发共用 test-results/**（互相清目录），
+     * 与像素无关。跑门禁前先确认没有另一个套件在跑。
+     */
+    reducedMotion: 'reduce',
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
   },

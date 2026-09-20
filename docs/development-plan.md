@@ -162,11 +162,13 @@
   - 截图目标是 **demo 卡片**而不是 `.org-chart-container`：后者在垂直布局下高度合法为 0（子容器出排布），Playwright 把空包围盒判成 not visible、元素截图直接超时。基线人工看过一张（layout-vertical）：树、连线、卡片阴影、DemoBlock 的标题/说明/查看源码都正常。
   - 服务器是自写的 `apps/website/scripts/serve-out.mjs`（跑 `out/`）而不是 `next dev`：基线要拍部署形态。端口默认从 4173 换到 4520——这台 Windows 的 TCP 排除区间是 4229–4328，4173 整段被保留，listen 直接 EACCES（源项目 CHANGELOG 1.13.0 记过同一条）。
   - 待核的一条：Next 对 `[[...slug]]` 的 RSC 预取请求 `__next.docs.$oc$slug.txt`，而产物落的是 `__next.docs/$oc$slug.txt`（点号 vs 目录），静态服务器上必 404。冒烟把它单独计数并要求「资源加载失败条数 == 预取缺失条数」，新的真 404 藏不进去；**Cloudflare Pages 上是否同样 404 要在部署后核一次**（若同样，考虑 `redirects` 或接受为预取降级）。
-- [ ] 9.3 性能基线：移植 `scripts/benchmark.mjs`（2041 节点，6 个场景）+ Chromium 首渲染 < 300 ms 门禁；产出 `docs/perf.md`
+- [x] 9.3 性能基线：移植 `scripts/benchmark.mjs`（2041 节点，6 个场景）+ Chromium 首渲染 < 300 ms 门禁；产出 `docs/perf.md`
   - 已落地（阶段 7 期间）：`scripts/benchmark.mjs`（此前 `pnpm bench` 指向一个不存在的文件）+ `docs/perf.md`。7 个场景（比源项目多一条「展开单个节点」），关键数：首渲染 220 ms / 全展开首渲染 182 ms / expandAll 91 ms / filter 两轮 153 ms / 原地 push+pop 6.6 ms / 深层改名 0.5 ms / 展开单节点 0.6 ms。
   - 与 Vue 基线对照的三条结构性差异写进 `docs/perf.md`：首渲染快 2.8–5.9 倍（无 reactive 代理）、expandAll/collapseAll 慢约 20 倍（组件粒度 vs 依赖粒度）、原地变更快 10–86 倍（无 deep watch 的 O(N) 遍历，就是 R2/D7 的取舍）。
   - **一条假数字的教训**：场景 7 第一次测出 0.01 ms，看着像「局部更新快得离谱」，实为 `measure()` 跑 3 轮而 `expandNode` 不幂等，第二轮起什么都没发生。现在每轮前 `collapseAll()` 重置，并在函数内断言「可见节点数必须增加」，不满足直接抛错。以后所有计时场景都要配一个这种「测量有效性」断言。
-  - 还差：Chromium 首渲染 < 300 ms 门禁（并入 9.2 的 Playwright）。
+  - Chromium 门禁也已落地：`tests/visual/fixtures/perf-entry.tsx` + `vite.perf.config.mjs` + `global-setup.ts` + `perf.spec.ts`，实测 **36.9 ms / 2040 节点**（门禁 300 ms，CI 1500 ms），数值与两条踩坑记进 `docs/perf.md`。
+  - 为什么不用源项目那套「route 拦截 + importmap 引 vue 浏览器版」：React 19 取消了 UMD，`react-dom` 没有能直接给 `<script>` 用的浏览器构建，所以改成 Vite 打一个自包含 IIFE 夹具、`addScriptTag` 注入 about:blank——不依赖网络也不依赖 webServer。
+  - 夹具连踩两条「测量跑空」：并发根 `render()` 只排更新不提交（必须 `flushSync`），而 `flushSync` 在 `react-dom` 上不在 `react` 上（从 react 引会打包期静默变 undefined、运行期才炸）。用例里「节点数必须 > 2000」那条断言两次把这类假数字拦下。
 - [x] 9.4 工程门禁：`publint` + `attw --pack` + `size-limit`（ESM ≤20 kB / UMD ≤21 kB / CSS ≤4 kB）+ 覆盖率阈值（80/75/80/80）
   - 覆盖率实跑：92.96% 语句 / 85.52% 分支 / 94.96% 函数 / 95.71% 行，阈值 80/75/80/80 全过；`publint` "All good!"、`attw` 四格全 🟢、size-limit 三条全过（见 9.4 上方那条提前跑的记录）。**顺带修了一条门禁自碰**：vitest 的 include 原是 `tests/**/*.spec.{ts,tsx}`，加了视觉门禁后它会去跑 Playwright 的 `test.describe`（252 条通过但 2 个文件失败），改成目录白名单，与源项目同一做法
   - 提前跑过（阶段 7 期间，dist 为今日构建）：`verify:package` publint "All good!" + attw 全 🟢（node10 / node16 CJS / node16 ESM / bundler 四格）；`size` 三条全过——**ESM 18.48 kB / 20 kB（已用掉 92%）**、CSS 3.79 / 4 kB、UMD 16.66 / 21 kB。CSS 与 ESM 余量都很薄，阶段 8/9 若再加特性要先看这两条。覆盖率阈值待 9.4 正式收口时跑 `test:coverage`。
@@ -187,14 +189,14 @@
 
 ## 里程碑
 
-| 里程碑 | 内容     | 验收                                                                          |
-| ------ | -------- | ----------------------------------------------------------------------------- |
-| M0     | 阶段 0   | 两个 spike 结论回写 requirements（R1 方案定稿、6.5 部署方式定稿），无遗留未知 |
-| M1     | 阶段 1–3 | workspace 两包打通；模型层单测全绿（含 Q1–Q4）；样式与 DOM 契约就位           |
-| M2     | 阶段 4–5 | 三套布局可渲染可交互，组件与结构比对测试通过，局部更新断言进 CI               |
-| M3     | 阶段 6   | Group / Viewport / 主题 / 连接线 / a11y / 懒加载全部对齐并有测试              |
+| 里程碑 | 内容     | 验收                                                                                                                              |
+| ------ | -------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| M0     | 阶段 0   | 两个 spike 结论回写 requirements（R1 方案定稿、6.5 部署方式定稿），无遗留未知                                                     |
+| M1     | 阶段 1–3 | workspace 两包打通；模型层单测全绿（含 Q1–Q4）；样式与 DOM 契约就位                                                               |
+| M2     | 阶段 4–5 | 三套布局可渲染可交互，组件与结构比对测试通过，局部更新断言进 CI                                                                   |
+| M3     | 阶段 6   | Group / Viewport / 主题 / 连接线 / a11y / 懒加载全部对齐并有测试                                                                  |
 | M4     | 阶段 7–8 | ✅ 达成：16 条文档路由 + 24 个活体 Demo（demos 页静态 HTML 里 276 个节点标签），`out/` 零死链、搜索走浏览器内静态索引并已往返验证 |
-| M5     | 阶段 9   | 达到 requirements 第 9 节全部验收标准，可发 `1.0.0`                           |
+| M5     | 阶段 9   | 达到 requirements 第 9 节全部验收标准，可发 `1.0.0`                                                                               |
 
 ## 附录 A：版本锁定清单
 

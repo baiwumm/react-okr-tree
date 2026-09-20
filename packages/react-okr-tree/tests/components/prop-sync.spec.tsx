@@ -127,3 +127,64 @@ describe('创建期快照 prop 的运行时变更警告', () => {
     warnSpy.mockRestore()
   })
 })
+
+describe('渲染定制类 props 的运行时同步', () => {
+  /**
+   * 这组 props 只写在 configRef 里（context 引用要稳定），节点组件又是 memo + 只订阅自己那份
+   * 版本，所以库必须自己把变更广播出去——否则换 renderContent 毫无反应，
+   * 而源项目里它们是普通 props，换一个就整树重渲染。
+   * 文档站的 demo 一度用 key 重挂载绕过这件事，那就是没修之前的症状。
+   */
+  it('换 renderContent / renderNode 立即重绘，且不重挂载（展开态保住）', () => {
+    const data = makeData()
+    const ref = createRef<OkrTreeHandle>()
+    const utils = render(<OkrTree data={data} nodeKey="id" showCollapsable ref={ref} />)
+    const inner = () => utils.container.querySelector('.org-chart-node-label-inner') as HTMLElement
+    expect(inner().textContent).toBe('A')
+    expect(inner().querySelector('b')).toBeNull()
+    // 先展开，再换渲染方式：重挂载会让展开态回到 defaultExpandedKeys，那就测不出区别了
+    ref.current!.expandNode(1)
+    rerenderWith(utils, ref, {
+      data,
+      nodeKey: 'id',
+      showCollapsable: true,
+      renderContent: node => <b>{`c-${node.label}`}</b>,
+    })
+    expect(inner().querySelector('b')?.textContent).toBe('c-A')
+    expect(ref.current!.getNode(1)!.expanded).toBe(true)
+
+    rerenderWith(utils, ref, {
+      data,
+      nodeKey: 'id',
+      showCollapsable: true,
+      renderNode: ({ node }) => <i>{`n-${node.level}`}</i>,
+    })
+    expect(inner().querySelector('i')?.textContent).toBe('n-1')
+  })
+
+  it('换 labelWidth 与 showNodeNum 立即重绘', () => {
+    const data = makeData()
+    const utils = render(<OkrTree data={data} nodeKey="id" labelWidth={120} />)
+    const inner = () => utils.container.querySelector('.org-chart-node-label-inner') as HTMLElement
+    expect(inner().style.width).toBe('120px')
+    rerenderWith(utils, createRef<OkrTreeHandle>(), { data, nodeKey: 'id', labelWidth: 200 })
+    expect(inner().style.width).toBe('200px')
+
+    const withNum = render(
+      <OkrTree data={data} nodeKey="id" showCollapsable defaultExpandedKeys={[]} />
+    )
+    expect(withNum.container.querySelector('.org-chart-node-btn-text')).toBeNull()
+    withNum.rerender(
+      <OkrTree
+        data={data}
+        nodeKey="id"
+        showCollapsable
+        showNodeNum
+        defaultExpandedKeys={[]}
+        labelWidth={200}
+      />
+    )
+    // 折叠圆盘里的子节点数：showNodeNum 是运行时才打开的，必须立刻出现
+    expect(withNum.container.querySelector('.org-chart-node-btn-text')?.textContent).toBe('2')
+  })
+})

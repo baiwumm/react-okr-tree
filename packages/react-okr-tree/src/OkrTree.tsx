@@ -714,6 +714,34 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
     () => syncStoreField('defaultExpandAll', !!props.defaultExpandAll, false),
     [props.defaultExpandAll, syncStoreField]
   )
+  /**
+   * 渲染定制与卡片尺寸这一组只存在 configRef 里（context 的引用必须永久稳定，R3），
+   * 而节点组件是 memo + 只订阅自己那个节点的版本（R1）——所以换 renderContent、
+   * 换 labelWidth 之类**没有任何人会重绘**。源项目里它们是普通 props，换一个就整树重渲染。
+   * 这里补一次等价的全树通知。
+   *
+   * 挂载时那次跳过：此刻 configRef 已经是最新值，bump 只会白重渲染一遍。
+   */
+  const firstConfigSync = useRef(true)
+  useEffect(() => {
+    if (firstConfigSync.current) {
+      firstConfigSync.current = false
+      return
+    }
+    bumpAll()
+  }, [
+    props.renderContent,
+    props.nodeComponent,
+    props.nodeBtnContent,
+    props.renderNode,
+    props.children,
+    props.renderExpandBtn,
+    props.showNodeNum,
+    props.labelWidth,
+    props.labelHeight,
+    props.alignRoot,
+    bumpAll,
+  ])
   useEffect(() => {
     if (props.defaultCheckedKeys === store.defaultCheckedKeys) return
     store.setDefaultCheckedKeys(props.defaultCheckedKeys)

@@ -2,6 +2,8 @@ export { OkrTree } from './OkrTree'
 export type { OkrTreeHandle, OkrTreeProps } from './OkrTree'
 export { OkrTreeGroup } from './OkrTreeGroup'
 export type { OkrTreeGroupHandle, OkrTreeGroupProps } from './OkrTreeGroup'
+/** renderNode / children 的作用域参数类型：不导出的话消费者只能自己重新声明一遍 */
+export type { NodeScope } from './node-content'
 export { OkrTreeViewport } from './OkrTreeViewport'
 export type {
   OkrTreeViewportHandle,

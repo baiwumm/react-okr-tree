@@ -48,7 +48,10 @@ export function Basic() {
       connectorShape="orthogonal"
       onNodeClick={(node: Dept, tree: TreeNode) => console.log(node.id, tree.level)}
       onNodeExpand={(node: Dept) => node.label}
-      onNodeContextMenu={(event, node: Dept) => event.preventDefault()}
+      onNodeContextMenu={(event, node: Dept) => {
+        event.preventDefault()
+        console.log(node.label)
+      }}
       onExpandedKeysChange={keys => keys.map(k => String(k)).join(',')}
       currentKey={2}
       labelClassName={node => `lvl-${node.level}`}
@@ -114,11 +117,18 @@ export function Imperative() {
       getNodeKey('id', {} as TreeNodeData),
     ]
   }
-  return <OkrTree data={data} nodeKey="id" ref={ref} showCheckbox draggable />
+  return (
+    <>
+      <button type="button" onClick={run}>
+        调一批 ref 方法
+      </button>
+      <OkrTree data={data} nodeKey="id" ref={ref} showCheckbox draggable />
+    </>
+  )
 }
 
 export function Grouped() {
-  const [rows, setRows] = useState<Dept[]>(data)
+  const [rows] = useState<Dept[]>(data)
   return (
     <OkrTreeGroup align>
       <OkrTree<Dept> data={rows} nodeKey="id" onlyBothTree direction="horizontal" leftData={data} />

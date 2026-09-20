@@ -173,7 +173,7 @@ export interface OkrTreeProps<T extends TreeNodeData = TreeNodeData> {
     draggingNode: TreeNode,
     dropNode: TreeNode,
     dropType: DropType,
-    event: DragEvent
+    event: ReactDragEvent<HTMLDivElement>
   ) => void
 
   // ---- 渲染定制（对应源项目插槽）----

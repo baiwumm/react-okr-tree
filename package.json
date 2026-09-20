@@ -12,11 +12,18 @@
     "build": "pnpm --filter react-okr-tree build",
     "verify:dist": "pnpm --filter react-okr-tree verify:dist",
     "build:check": "pnpm --filter react-okr-tree build:check",
+    "verify:package": "pnpm --filter react-okr-tree verify:package",
     "test": "pnpm --filter react-okr-tree test",
+    "test:coverage": "pnpm --filter react-okr-tree test:coverage",
+    "test:visual": "pnpm --filter react-okr-tree test:visual",
     "typecheck": "pnpm --filter react-okr-tree typecheck",
     "lint": "pnpm --filter react-okr-tree lint",
     "format": "pnpm --filter react-okr-tree format",
     "size": "pnpm --filter react-okr-tree size",
-    "bench": "pnpm --filter react-okr-tree bench"
+    "bench": "pnpm --filter react-okr-tree bench",
+    "dev:website": "pnpm build && pnpm --filter react-okr-tree-website dev",
+    "build:website": "pnpm build && pnpm --filter react-okr-tree-website build",
+    "typecheck:website": "pnpm --filter react-okr-tree-website typecheck",
+    "format:website": "pnpm --filter react-okr-tree-website format"
   }
 }

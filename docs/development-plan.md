@@ -142,7 +142,7 @@ workspace 根 `.npmrc`：`save-exact=true`。全部精确版本，不用 `^` / `
 | `eslint-plugin-react-hooks` | 5.2.0   | 同上；peer 支持 eslint ≤9                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `typescript-eslint`         | 8.70.0  | peer 兼容 eslint 9                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `globals`                   | 17.12.0 | flat config 环境                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `pnpm` workspace            | 11.24.0 | `pnpm-workspace.yaml` 仅保留 `allowBuilds: esbuild`（vite/vitest 的二进制下载），无需任何 trust 豁免                                                                                                                                                                                                                                                                                                                                                       |
+| `pnpm` workspace            | 11.24.0 | `pnpm-workspace.yaml` 的 `allowBuilds` 现有三项：`esbuild`（vite/vitest 二进制）、`@tailwindcss/oxide`（文档站）、`sharp`（next 可选依赖）；仍然不需要任何 trust 豁免 |
 
 **库（`packages/react-okr-tree`）**
 
@@ -166,7 +166,9 @@ workspace 根 `.npmrc`：`save-exact=true`。全部精确版本，不用 `^` / `
 | `@arethetypeswrong/cli`             | 0.18.5           | —                                                                              |
 | `html-to-image`                     | 1.11.13          | **devDependency only** + optional peer（导出用例用）                           |
 
-**文档站（`apps/website`）** —— 全部锁参考站：`next` 16.2.6、`react`/`react-dom` 19.2.6、`fumadocs-core`/`fumadocs-ui` 16.15.7、`fumadocs-mdx` 15.4.0、`tailwindcss`/`@tailwindcss/postcss` 4.3.3、`next-themes` 0.4.6、`lucide-react` 0.545.0、`ogl` 1.0.11、`theme-switch-animation` 0.1.0、`@types/mdx` 2.0.14；新增两项：`pagefind` 1.5.2（6.5 静态搜索）、`wrangler` 4.135.0（部署）。
+**文档站（`apps/website`）** —— 全部锁参考站：`next` 16.2.6、`react`/`react-dom` 19.2.6、`fumadocs-core`/`fumadocs-ui` 16.15.7、`fumadocs-mdx` 15.4.0、`tailwindcss`/`@tailwindcss/postcss` 4.3.3、`next-themes` 0.4.6、`lucide-react` 0.545.0、`ogl` 1.0.11、`theme-switch-animation` 0.1.0、`@types/mdx` 2.0.14。**两项原计划新增已取消**：`pagefind`（0.2 的 spike 结论：fumadocs 自带的 `staticClient` 静态索引够用，阶段 7 已跑通并做过往返验证）、`wrangler`（源项目也不装，靠 Workers Builds 的 `npx wrangler deploy` 读 `wrangler.jsonc`）。
+
+> 落地时另外放行过一个构建脚本：`sharp`（next@16 的可选依赖）。pnpm 11 的 `verify-deps-before-run` 会把「存在被忽略的构建脚本」判为安装失败，故与参考站一样写进 `pnpm-workspace.yaml` 的 `allowBuilds`——不是新增依赖，是 next 自己带进来的。
 
 > 注：`fumadocs-ui@16.15.7` 的 peer 是 `react ^19.2.0`，所以文档站必须是 React 19——这与库的 peer 下限 18.2 不冲突（两包各自独立）。
 

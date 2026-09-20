@@ -1,18 +1,27 @@
-import Link from 'next/link'
+import { Cta } from '@/components/landing/cta'
+import { Faq } from '@/components/landing/faq'
+import { Features } from '@/components/landing/features'
+import { Footer } from '@/components/landing/footer'
+import { Hero } from '@/components/landing/hero'
+import { Navbar } from '@/components/landing/navbar'
+import { Showcase } from '@/components/landing/showcase'
 
+/**
+ * 落地页（参考站的段次：Navbar / Hero / Features / 展示位 / Cta / Faq / Footer）
+ *
+ * 静态导出下整页首屏是 SSR 出来的 HTML——包括 Hero 与展示位里那些真实的 `<OkrTree>`，
+ * 交互所需的客户端 JS 才增量 hydrate。
+ */
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 px-6">
-      <h1 className="text-4xl font-bold tracking-tight">react-okr-tree</h1>
-      <p className="max-w-xl text-center text-muted-foreground">
-        组织架构图 / OKR 树 React 组件文档站脚手架占位页，落地页组件见阶段 7.3。
-      </p>
-      <Link
-        href="/docs"
-        className="rounded-full bg-foreground px-6 py-2.5 text-sm font-bold text-background"
-      >
-        进入文档
-      </Link>
+    <main className="min-h-screen bg-background text-foreground">
+      <Navbar />
+      <Hero />
+      <Features />
+      <Showcase />
+      <Cta />
+      <Faq />
+      <Footer />
     </main>
   )
 }

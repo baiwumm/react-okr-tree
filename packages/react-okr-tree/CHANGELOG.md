@@ -2,6 +2,17 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。**版本号自 1.13.0 起与 [`vue3-okr-tree`](https://github.com/baiwumm/vue3-okr-tree) 锁步发布**：同号即同一功能面，版本决策（patch / minor / major）永远先在上游发生，本包跟随——上游发版后对齐移植，无对应变更也发同号空版本；特性面差异只发生在机制层（见 `docs/requirements.md` 第 8 节的 D1–D12）。
 
+## Unreleased
+
+### 工程化（无对外行为变更）
+
+与上游 `vue3-okr-tree` 同批次的断言补全，收口 `docs/acceptance.md` 的 G3 / G5 / G10：
+
+- **`verify:dist` 的 UMD 断言由恒真改为真实执行**（G10）。原先是 `assert(/factory\(exports, React\)/.test(src) || /React/.test(src))`——第一个分支因产物被压缩成 `(e,t)` 而永不匹配，第二个分支对任何含 `ReactOkrTree` 字样的产物恒真，等于没有断言。现在改为：断言 UMD 的 CJS 分支确实 `require('react')`（即 react 未被内联），并用 `new Function('module','exports','require', src)` 真跑一遍，断言 `default === OkrTree`、`BUILT_IN_THEMES` 为 6 项
+- **六种内置过渡名逐个断言**（G5）。此前只有 `okr-fade-in` 一种进测试，其余五种被删掉也不会有人发现；`verify:dist` 的 CSS 侧同步由「只钉一组」改为逐个断 `enter-active` / `leave-active`
+- **警告前缀 `[react-okr-tree]` 补断言**（G3）。此前测试只断警告文案，前缀本身零覆盖
+- 单测 252 → **259** 条（26 个文件），覆盖率维持 92.96 / 85.52 / 94.96 / 95.71
+
 ## 1.13.0（2026-09-21）
 
 首个发布版本，版本号直接取所对齐的上游版本（此前的 0.1.0 / 1.0.0 规划号从未发布到 npm）：

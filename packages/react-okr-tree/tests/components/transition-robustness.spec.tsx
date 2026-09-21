@@ -135,4 +135,27 @@ describe('过渡在 rAF 被节流环境下的健壮性', () => {
     expect(c2.classList).not.toContain('is-animated')
     expect(c2.getAttribute('style') ?? '').not.toContain('--okr-anim-duration')
   })
+
+  /** src/types 的 AnimateName 联合类型全集，增删内置动画时这里与 verify:dist 的 CSS 枚举要同步 */
+  const BUILT_IN_ANIMATE_NAMES = [
+    'okr-fade-in-linear',
+    'okr-fade-in',
+    'okr-zoom-in-center',
+    'okr-zoom-in-top',
+    'okr-zoom-in-bottom',
+    'okr-zoom-in-left',
+  ]
+
+  // 原先只钉了 okr-fade-in 一种，其余五种被删掉也不会有人发现
+  it.each(BUILT_IN_ANIMATE_NAMES)('animateName=%s 时子容器带上 okr-anim-<name> 类', animateName => {
+    const host = renderHost({ animate: true, animateName })
+    const container = host.container.querySelector(
+      '.org-chart-node > .org-chart-node-children'
+    ) as HTMLElement
+    expect(container.classList).toContain(`okr-anim-${animateName}`)
+  })
+
+  it('内置动画名共 6 种', () => {
+    expect(BUILT_IN_ANIMATE_NAMES).toHaveLength(6)
+  })
 })

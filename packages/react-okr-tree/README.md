@@ -9,6 +9,8 @@
 
 基于 React 的组织架构树 / OKR 树组件，是 [vue3-okr-tree](https://github.com/baiwumm/vue3-okr-tree)（Vue 3 版，v1.13.0）的 React 完整复刻版，特性逐项对齐。核心是支持类似飞书 OKR 的**根节点左右双向展开**布局，全部连接线由纯 CSS 绘制。
 
+版本号自 1.13.0 起与 `vue3-okr-tree` **锁步发布**：两边同号即同一功能面，升级时直接对照上游 CHANGELOG 即可。
+
 - 对外 API 与 `vue3-okr-tree` 逐项对齐（含 `showCollapsable` / `currentLableClassName` 两处原版拼写），命名按 React 惯例做机械转换：`kebab-case` → `camelCase`、事件 → `onXxx` 回调、插槽 → render props、`v-model:x` → `x` + `onXxxChange`
 - 有意差异集中在本文末节「与 vue3-okr-tree 的差异」（D1–D12），其中只有 **D7 数据变更检测**是能力差异，需要读一遍
 - TypeScript 编写，提供单文件 `.d.ts`；`OkrTree<T>` 是泛型组件，`data` 与渲染作用域直接带上你的数据类型

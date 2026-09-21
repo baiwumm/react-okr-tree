@@ -1,11 +1,11 @@
 # Changelog
 
-本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。特性面与 `vue3-okr-tree` 1.13.0 逐条对齐，
-差异只发生在机制层（见 `docs/requirements.md` 第 8 节的 D1–D12）。
+本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。**版本号自 1.13.0 起与 [`vue3-okr-tree`](https://github.com/baiwumm/vue3-okr-tree) 锁步发布**：同号即同一功能面，版本决策（patch / minor / major）永远先在上游发生，本包跟随——上游发版后对齐移植，无对应变更也发同号空版本；特性面差异只发生在机制层（见 `docs/requirements.md` 第 8 节的 D1–D12）。
 
-## 1.0.0（2026-09-20）
+## 1.13.0（2026-09-21）
 
-首个版本：把 `vue3-okr-tree` 的全部能力搬到 React 上，并继承源项目 1.0.0 → 1.13.0 一路修出来的
+首个发布版本，版本号直接取所对齐的上游版本（此前的 0.1.0 / 1.0.0 规划号从未发布到 npm）：
+把 `vue3-okr-tree` 1.13.0 的全部能力搬到 React 上，并继承源项目 1.0.0 → 1.13.0 一路修出来的
 九条行为结论（Q1–Q9）。42 个 props / 14 个事件 / 28 个 ref 方法 / 3 种布局 / 6 套主题 / 6 种动画，
 `docs/requirements.md` 第 9 节是逐项验收清单。
 

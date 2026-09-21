@@ -6,10 +6,13 @@ name: Release
 #   1. GitHub 仓库 Settings → Secrets → 添加 NPM_TOKEN（npmjs.com 的 Automation token）；
 #   2. npm 包首次发布可由本 workflow 完成（`npm publish --provenance` 走 OIDC，需仓库公开）。
 #
+# 版本基准：与 vue3-okr-tree 锁步，同号即同一功能面；升什么号先看上游发了什么。
 # 日常发布：改 packages/react-okr-tree/package.json 的 version 与 CHANGELOG.md → 提交 →
-#          `git tag v1.0.0 && git push origin v1.0.0`。
+#          `git tag v1.14.0 && git push origin v1.14.0`。
 # 注意 version 与 tag 必须一致（下面有一步专门比对），所以升版要单独一个提交，
 # 不要和别的改动混在一起。
+# 例外：1.13.0（对齐上游的首版）由维护者手动 npm publish 首发，未走本 workflow，
+# 因此 v1.13.0 tag 不可再推（npm 拒收重复版本，workflow 会红灯在 publish 步）。
 
 on:
   push:

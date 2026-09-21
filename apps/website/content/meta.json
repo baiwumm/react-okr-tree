@@ -1,4 +1,4 @@
 {
   "title": "react-okr-tree",
-  "pages": ["index", "---", "start", "guide", "theme", "---", "api", "migration", "changelog"]
+  "pages": ["index", "start", "guide", "theme", "api", "migration", "changelog"]
 }

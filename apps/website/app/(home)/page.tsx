@@ -1,3 +1,4 @@
+import LightRays from '@/components/background/light-ray'
 import { Cta } from '@/components/landing/cta'
 import { Faq } from '@/components/landing/faq'
 import { Features } from '@/components/landing/features'
@@ -14,14 +15,22 @@ import { Showcase } from '@/components/landing/showcase'
  */
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <Navbar />
-      <Hero />
-      <Features />
-      <Showcase />
-      <Cta />
-      <Faq />
-      <Footer />
+    <main className="relative min-h-screen bg-background text-foreground">
+      {/* 整页光线：fixed 一层，滚动时全程可见；pointer-events-none 保证按钮与卡片照旧可点 */}
+      <LightRays
+        className="pointer-events-none fixed inset-0 z-0 opacity-65"
+        raysOrigin="top-center"
+        followMouse
+      />
+      <div className="relative z-10">
+        <Navbar />
+        <Hero />
+        <Features />
+        <Showcase />
+        <Cta />
+        <Faq />
+        <Footer />
+      </div>
     </main>
   )
 }

@@ -1,11 +1,13 @@
 import { BookOpen, Github } from 'lucide-react'
 import Link from 'next/link'
-import LightRays from '@/components/background/light-ray'
 import { HeroTree } from '@/components/demo/hero-tree'
 import { SITE } from '@/lib/site'
 
 /**
  * 主视觉窗口（对应参考站的 AdminMockup）
+ *
+ * 光线背景不在这里：它挂在 app/(home)/page.tsx 上作为整页 fixed 层（与参考实现同挂法），
+ * 只留首屏一块会显得像贴了张渐变图。
  *
  * 差别在于这里**不是**仿制界面，而是真实的 `<OkrTree>`：组件本身 SSR 安全
  * （requirements R8），静态导出下首屏就是渲染好的树，点 ± 圆盘可以现场收起展开。
@@ -35,7 +37,9 @@ function TreeWindow() {
             </span>
           </div>
           <div className="overflow-x-auto px-6 py-10">
-            <HeroTree layout="vertical" showCollapsable defaultExpandAll animate />
+            <div className="mx-auto w-fit">
+              <HeroTree layout="vertical" showCollapsable defaultExpandAll animate />
+            </div>
           </div>
         </div>
       </div>
@@ -50,12 +54,6 @@ export function Hero() {
         背景光效参数照参考站收着用：`opacity` 压低整体强度、`rayLength` 收窄影响范围，
         只留首屏顶部这束光，不往页面下半部渗——白底上光束过量会像蒙了层灰纱。
       */}
-      <LightRays
-        className="pointer-events-none absolute inset-0 z-0 opacity-65"
-        raysOrigin="top-center"
-        rayLength={1.5}
-        followMouse
-      />
       {/* 极淡点阵材质，只在主视觉背后可见 */}
       <div
         aria-hidden

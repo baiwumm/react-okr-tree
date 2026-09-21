@@ -53,13 +53,7 @@ export function Showcase() {
           {LAYOUTS.map(item => (
             <figure key={item.layout} className="card-premium flex flex-col overflow-hidden p-0">
               <div className="overflow-x-auto px-4 py-8">
-                <HeroTree
-                  layout={item.layout}
-                  showCollapsable
-                  defaultExpandAll
-                  labelWidth={92}
-                  labelHeight={34}
-                />
+                <HeroTree layout={item.layout} showCollapsable defaultExpandAll labelWidth={104} />
               </div>
               <figcaption className="mt-auto border-t px-6 py-5">
                 <p className="font-mono text-sm font-semibold">{item.title}</p>
@@ -114,7 +108,9 @@ export function Showcase() {
               <div key={item.theme} className="panel-premium p-5">
                 <p className="mb-4 font-mono text-xs text-muted-foreground">{item.label}</p>
                 <div className="overflow-x-auto">
-                  <HeroTree theme={item.theme} defaultExpandAll labelWidth={80} labelHeight={30} />
+                  <div className="mx-auto w-fit">
+                    <HeroTree theme={item.theme} defaultExpandAll labelWidth={104} />
+                  </div>
                 </div>
               </div>
             ))}

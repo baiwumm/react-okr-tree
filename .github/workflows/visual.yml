@@ -24,6 +24,8 @@ jobs:
   visual:
     name: Playwright Visual · Perf
     runs-on: ubuntu-24.04
+    # 兜底：正常全套 ~2 分钟，防止步骤级挂死占住 runner（vue 侧出现过 2 小时挂起）
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: packages/react-okr-tree

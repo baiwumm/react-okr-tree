@@ -38,6 +38,11 @@ jobs:
       - name: ESLint
         run: pnpm lint
 
+      # 先出 dist：视觉夹具（tests/visual/fixtures）按包名 import 本库，类型走 dist/index.d.ts，
+      # 全新 checkout 里没有 dist 时 typecheck 必挂
+      - name: Build library
+        run: pnpm build
+
       - name: Typecheck
         run: pnpm typecheck
 
@@ -46,9 +51,6 @@ jobs:
 
       - name: Coverage (thresholds in vite.config.ts)
         run: pnpm test:coverage
-
-      - name: Build library
-        run: pnpm build
 
       - name: Verify dist
         run: pnpm verify:dist
@@ -60,6 +62,7 @@ jobs:
         run: pnpm size
 
       - name: Pack (dry run)
+        working-directory: packages/react-okr-tree
         run: npm pack --dry-run
 
   # 文档站是 workspace 的第二包：单独一个 job，文档挂了不掩盖库的结论。
@@ -84,11 +87,13 @@ jobs:
       - name: Build library (docs site consumes dist)
         run: pnpm build
 
-      - name: Typecheck website
-        run: pnpm typecheck:website
-
+      # typecheck 放在 build 之后：fumadocs 的 .source 生成物由 next build 产出，
+      # 全新 checkout 先 typecheck 必挂（lib/source.ts 的 @/.source/server）
       - name: Build website
         run: pnpm --filter react-okr-tree-website build
+
+      - name: Typecheck website
+        run: pnpm typecheck:website
 
       - name: Verify export is fully static + no dead links
         run: pnpm --filter react-okr-tree-website verify:export
@@ -125,8 +130,11 @@ jobs:
       - name: Install
         run: pnpm install --no-frozen-lockfile
 
+      # react 只在库包的 node_modules 里有链接，必须在该包目录下才能 resolve
       - name: Assert resolved versions
-        run: node -e "console.log('react', require('react/package.json').version, '| @types/react', require('@types/react/package.json').version)"
+        run: |
+          cd packages/react-okr-tree
+          node -e "console.log('react', require('react/package.json').version, '| @types/react', require('@types/react/package.json').version)"
 
       # 编译 tests-consumer/consumer.tsx，它 import 的是包名而 paths 指到 dist/index.d.ts：
       # 库自身的 typecheck 编的是 src/，只有这一步能挡住「产物 d.ts 引用了 React 19 独有类型」。

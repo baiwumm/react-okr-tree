@@ -52,6 +52,10 @@ jobs:
       - name: Verify version matches tag
         run: node -e "const p=require('./package.json'); const t=process.env.GITHUB_REF_NAME.slice(1); if(p.version!==t){console.error('package.json version '+p.version+' != tag '+t);process.exit(1)}"
 
+      # 先出 dist：typecheck 与视觉夹具按包名 import 本库，类型走 dist/index.d.ts
+      - name: Build library
+        run: pnpm build
+
       - name: Lint / Typecheck / Test
         run: |
           pnpm lint
@@ -59,9 +63,8 @@ jobs:
           pnpm test
           pnpm test:coverage
 
-      - name: Build & verify dist
+      - name: Verify dist & package
         run: |
-          pnpm build
           pnpm verify:dist
           pnpm verify:package
           pnpm verify:peer-types

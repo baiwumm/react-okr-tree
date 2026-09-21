@@ -8,9 +8,10 @@ name: Snapshot Bootstrap
 #
 # 用法：
 #   1. Actions → Snapshot Bootstrap → Run workflow（main 分支）；
-#   2. 下载 artifact `linux-snapshots`，在**仓库根**解包：tar -xzf linux-snapshots.tgz
-#      （路径已含 packages/react-okr-tree/tests/visual/…-snapshots/，解出来即就位）；
-#      已装 gh CLI 可直接：gh run download <RUN_ID> -n linux-snapshots && tar -xzf linux-snapshots.tgz
+#   2. 下载 artifact `linux-snapshots`，在 packages/react-okr-tree/ 下解包：
+#      tar -xzf linux-snapshots.tgz（tar 里的路径相对库包：tests/visual/…-snapshots/）；
+#      已装 gh CLI 可直接：gh run download <RUN_ID> -n linux-snapshots
+#      && tar -xzf linux-snapshots.tgz -C packages/react-okr-tree
 #   3. git add 这些 *-chromium-linux.png 并提交，Visual Regression 即转绿。
 #
 # 构建步骤必须与 visual.yml 完全一致（同镜像、同 Playwright 版本、同「库 dist → 静态导出」链路），

@@ -279,7 +279,7 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 
 第 7 节之外另有三项，一并校准：
 
-- **「CI 各 job 没有一次历史 run 可查」→ ✅ 已消**。`ci.yml` 与 `visual.yml` 在 main 上均多次 success，`release.yml` 也跑过一次 success（run `35579145408`：publish 步被「registry 已有该版本则跳过」守卫标为 `skipped`，只补建 GitHub Release）。
+- **「CI 各 job 没有一次历史 run 可查」→ ✅ 已消**。`ci.yml` 与 `visual.yml` 在 main 上均多次 success。`release.yml` 跑过两次：run `35579145408`（推 `v1.13.0`）publish 步被守卫标为 `skipped`、只补建 GitHub Release；**run `35711304130`（推 `v1.14.0`）publish 步 success，本包首次由 CI 经 OIDC 真实发包**，日志 `+ react-okr-tree@1.14.0` 与 `Provenance statement published to transparency log: …logIndex=2908890080`，`gh secret list` 为空即无 token 参与。
 - **peer-matrix 字面不符 → 仍成立**。`ci.yml:112–115` 实际钉的是 react `~18.2.0` 与 `~18.3.0`，而 §7 与 requirements 483 行写的是「React 18.2 / 19.2」；`ci.yml:101–103` 的注释解释了 19 由默认 `verify` job 覆盖，但文档字面仍未改。
 - **`wrangler deploy --dry-run` 无承载 → 仍成立**。`package.json`、`apps/website/package.json` 与全部 workflow 内 grep `wrangler` 零命中。
 

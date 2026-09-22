@@ -2,7 +2,9 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。**版本号自 1.13.0 起与 [`vue3-okr-tree`](https://github.com/baiwumm/vue3-okr-tree) 锁步发布**：同号即同一功能面，版本决策（patch / minor / major）永远先在上游发生，本包跟随——上游发版后对齐移植，无对应变更也发同号空版本；特性面差异只发生在机制层（见 `docs/requirements.md` 第 8 节的 D1–D12）。
 
-## Unreleased
+## 1.14.0（2026-09-22）
+
+跟随上游 `vue3-okr-tree` 1.14.0 同号发布（锁步约定）。上游本版本唯一的对外变更是新增 `BUILT_IN_THEMES` 导出——**本包早已导出它，故本版本对外 API 无变化**，内容全部是下面这批门禁断言补强。
 
 ### 工程化（无对外行为变更）
 

@@ -1,6 +1,7 @@
 import { Github, Package } from 'lucide-react'
 import Link from 'next/link'
 import { Logo } from '@/components/logo'
+import { AnimatedBadge } from '@/components/motion/animated-badge'
 import { LIB_VERSION } from '@/lib/version'
 import { SITE } from '@/lib/site'
 
@@ -32,9 +33,9 @@ export function Footer() {
           <div className="flex items-center gap-2">
             <Logo size={24} className="rounded-md" />
             <span className="font-semibold">{SITE.name}</span>
-            <span className="pill-badge rounded-full px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
+            <AnimatedBadge size="sm" className="font-mono">
               v{LIB_VERSION}
-            </span>
+            </AnimatedBadge>
           </div>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
             {SITE.description}

@@ -71,7 +71,9 @@
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
+  /* beUI 的玻璃卡要求 card 与 background 有分离度（参考站 99% / 97%），
+     文档区不吃这个值——它走下面独立的 --color-fd-card，仍保持纯白 */
+  --card: oklch(0.97 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
@@ -196,328 +198,16 @@
   }
 }
 
-/* 首页入场动效（克制的 fade-up，替代 motion 库） */
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.animate-fade-up {
-  animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.animate-fade-up-delay-1 {
-  animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
-}
-
-.animate-fade-up-delay-2 {
-  animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.16s both;
-}
-
-.animate-fade-up-delay-3 {
-  animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.24s both;
-}
-
-.animate-fade-up-delay-4 {
-  animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.32s both;
-}
-
 /* ==========================================================================
- * 首页「高级感」组件层
+ * 首页组件层
  *
- * 设计约束：保持 ogimg 式纯黑白极简基调，**不引入任何彩色**。
- * 质感全部来自光影层次——多层阴影、顶部内高光、渐变描边、hover 微抬升。
- * 全部用 var(--foreground / --card / --muted / --border) 推导，
- * 因此亮暗两档自动适配，不维护第二套变量。
+ * 首页卡片与按钮已换成 beUI 那套（components/motion/**，玻璃卡 .glass-card），
+ * 原先自研的 .btn-solid / .btn-outline / .card-premium / .panel-premium /
+ * .window-premium / .pill-badge / .icon-tile 与 fade-up 入场一并删除——
+ * 入场改由 motion 的 whileInView 承担，同时响应系统的减弱动效设置。
+ * 只保留顶部导航这条悬浮玻璃条（navbar.tsx 在用）。
  * ========================================================================== */
 @layer components {
-  /* 主按钮：实心 + 垂直渐变 + 顶高光 + 三层投影 */
-  .btn-solid {
-    position: relative;
-    isolation: isolate;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border-radius: 9999px;
-    background-image: linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--foreground) 90%, white),
-      var(--foreground)
-    );
-    color: var(--background);
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklab, white 28%, transparent),
-      inset 0 -1px 0 color-mix(in oklab, black 12%, transparent),
-      0 1px 2px color-mix(in oklab, black 14%, transparent),
-      0 10px 24px -10px color-mix(in oklab, black 45%, transparent);
-    transition:
-      transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-      box-shadow 0.18s ease;
-  }
-
-  .btn-solid:hover {
-    transform: translateY(-1.5px);
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklab, white 32%, transparent),
-      inset 0 -1px 0 color-mix(in oklab, black 12%, transparent),
-      0 2px 4px color-mix(in oklab, black 16%, transparent),
-      0 18px 36px -12px color-mix(in oklab, black 55%, transparent);
-  }
-
-  .btn-solid:active {
-    transform: translateY(0);
-    box-shadow:
-      inset 0 1px 3px color-mix(in oklab, black 22%, transparent),
-      0 1px 2px color-mix(in oklab, black 14%, transparent);
-  }
-
-  /* 幽灵按钮：描边 + 极轻渐变底 + 顶高光；hover 时描边收紧变实 */
-  .btn-outline {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border-radius: 9999px;
-    border: 1px solid color-mix(in oklab, var(--foreground) 13%, transparent);
-    background-image: linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--card) 92%, transparent),
-      color-mix(in oklab, var(--muted) 70%, transparent)
-    );
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklab, white 62%, transparent),
-      0 1px 2px color-mix(in oklab, black 6%, transparent);
-    transition:
-      transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-      border-color 0.18s ease,
-      box-shadow 0.18s ease;
-  }
-
-  .btn-outline:hover {
-    transform: translateY(-1.5px);
-    border-color: color-mix(in oklab, var(--foreground) 30%, transparent);
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklab, white 70%, transparent),
-      0 2px 4px color-mix(in oklab, black 8%, transparent),
-      0 14px 28px -14px color-mix(in oklab, black 30%, transparent);
-  }
-
-  .btn-outline:active {
-    transform: translateY(0);
-  }
-
-  .dark .btn-outline {
-    background-image: linear-gradient(
-      180deg,
-      color-mix(in oklab, white 7%, transparent),
-      color-mix(in oklab, white 2%, transparent)
-    );
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklab, white 10%, transparent),
-      0 1px 2px color-mix(in oklab, black 35%, transparent);
-  }
-
-  .dark .btn-outline:hover {
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklab, white 14%, transparent),
-      0 2px 4px color-mix(in oklab, black 40%, transparent),
-      0 14px 28px -14px color-mix(in oklab, black 70%, transparent);
-  }
-
-  /* 高级感卡片：细描边 + 纵向渐变面 + 顶高光 + hover 抬升 */
-  .card-premium {
-    position: relative;
-    border-radius: 1rem;
-    border: 1px solid var(--border);
-    background-image: linear-gradient(
-      180deg,
-      var(--card),
-      color-mix(in oklab, var(--muted) 55%, var(--card))
-    );
-    box-shadow:
-      0 1px 2px color-mix(in oklab, black 4%, transparent),
-      0 10px 26px -16px color-mix(in oklab, black 20%, transparent);
-    transition:
-      transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
-      box-shadow 0.24s ease,
-      border-color 0.24s ease;
-  }
-
-  .card-premium::before {
-    content: '';
-    position: absolute;
-    inset-inline: 0;
-    top: 0;
-    height: 1px;
-    border-start-start-radius: 1rem;
-    border-start-end-radius: 1rem;
-    background-image: linear-gradient(
-      90deg,
-      transparent,
-      color-mix(in oklab, white 75%, transparent),
-      transparent
-    );
-    pointer-events: none;
-  }
-
-  .card-premium:hover {
-    transform: translateY(-3px);
-    border-color: color-mix(in oklab, var(--foreground) 22%, transparent);
-    box-shadow:
-      0 2px 4px color-mix(in oklab, black 5%, transparent),
-      0 24px 48px -22px color-mix(in oklab, black 30%, transparent);
-  }
-
-  .dark .card-premium::before {
-    background-image: linear-gradient(
-      90deg,
-      transparent,
-      color-mix(in oklab, white 22%, transparent),
-      transparent
-    );
-  }
-
-  .dark .card-premium {
-    box-shadow:
-      0 1px 2px color-mix(in oklab, black 35%, transparent),
-      0 10px 26px -16px color-mix(in oklab, black 65%, transparent);
-  }
-
-  .dark .card-premium:hover {
-    box-shadow:
-      0 2px 6px color-mix(in oklab, black 40%, transparent),
-      0 24px 48px -22px color-mix(in oklab, black 80%, transparent);
-  }
-
-  /* 图标容器：让图标有「嵌进去」的立体感
-     -sm 为卡片头部的小号变体（技术栈图标用），质感与 .icon-tile 完全一致 */
-  .icon-tile,
-  .icon-tile-sm {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--border);
-    background-image: linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--card), white 10%),
-      var(--muted)
-    );
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklab, white 70%, transparent),
-      0 1px 2px color-mix(in oklab, black 7%, transparent);
-    transition:
-      transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
-      box-shadow 0.24s ease;
-  }
-
-  .icon-tile {
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: 0.875rem;
-  }
-
-  .icon-tile-sm {
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: 0.75rem;
-  }
-
-  .card-premium:hover .icon-tile,
-  .card-premium:hover .icon-tile-sm {
-    transform: translateY(-2px) scale(1.04);
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklab, white 80%, transparent),
-      0 6px 14px -6px color-mix(in oklab, black 26%, transparent);
-  }
-
-  .dark .icon-tile,
-  .dark .icon-tile-sm {
-    background-image: linear-gradient(
-      180deg,
-      color-mix(in oklab, white 9%, transparent),
-      color-mix(in oklab, white 3%, transparent)
-    );
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklab, white 12%, transparent),
-      0 1px 2px color-mix(in oklab, black 40%, transparent);
-  }
-
-  /* 小徽标 / 状态胶囊 */
-  .pill-badge {
-    border: 1px solid color-mix(in oklab, var(--foreground) 13%, transparent);
-    background-image: linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--card), white 8%),
-      var(--muted)
-    );
-    box-shadow: inset 0 1px 0 color-mix(in oklab, white 62%, transparent);
-  }
-
-  .dark .pill-badge {
-    background-image: linear-gradient(
-      180deg,
-      color-mix(in oklab, white 7%, transparent),
-      color-mix(in oklab, white 2%, transparent)
-    );
-    box-shadow: inset 0 1px 0 color-mix(in oklab, white 9%, transparent);
-  }
-
-  /* 大面板（CTA / 页脚品牌区）：带内发光与渐变描边的容器 */
-  .panel-premium {
-    position: relative;
-    overflow: hidden;
-    border-radius: 1.5rem;
-    border: 1px solid var(--border);
-    background-image:
-      radial-gradient(
-        120% 90% at 50% -20%,
-        color-mix(in oklab, var(--foreground) 7%, transparent),
-        transparent 60%
-      ),
-      linear-gradient(180deg, var(--card), color-mix(in oklab, var(--muted) 65%, var(--card)));
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklab, white 65%, transparent),
-      0 1px 2px color-mix(in oklab, black 4%, transparent),
-      0 30px 60px -34px color-mix(in oklab, black 26%, transparent);
-  }
-
-  .dark .panel-premium {
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklab, white 10%, transparent),
-      0 1px 2px color-mix(in oklab, black 40%, transparent),
-      0 30px 60px -34px color-mix(in oklab, black 85%, transparent);
-  }
-
-  /* 主视觉窗口外框：多层阴影营造「悬浮玻璃」层感 */
-  .window-premium {
-    border: 1px solid color-mix(in oklab, var(--foreground) 12%, transparent);
-    background-color: var(--card);
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklab, white 70%, transparent),
-      0 1px 2px color-mix(in oklab, black 6%, transparent),
-      0 24px 48px -24px color-mix(in oklab, black 26%, transparent),
-      0 60px 120px -60px color-mix(in oklab, black 34%, transparent);
-  }
-
-  .dark .window-premium {
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklab, white 10%, transparent),
-      0 1px 2px color-mix(in oklab, black 45%, transparent),
-      0 24px 48px -24px color-mix(in oklab, black 70%, transparent),
-      0 60px 120px -60px color-mix(in oklab, black 90%, transparent);
-  }
-
-  /* 顶部导航：更通透的玻璃 + 渐变描边 */
   .navbar-premium {
     border: 1px solid color-mix(in oklab, var(--foreground) 11%, transparent);
     background-image: linear-gradient(
@@ -538,6 +228,26 @@
       0 1px 2px color-mix(in oklab, black 45%, transparent),
       0 16px 40px -22px color-mix(in oklab, black 75%, transparent);
   }
+}
+
+/* beUI 玻璃卡：质感来自半透明渐变 + 背景模糊 + 顶部内高光（与参考站同名工具类一致） */
+.glass-card {
+  position: relative;
+  background: linear-gradient(135deg, rgb(255 255 255 / 50%), rgb(255 255 255 / 18%));
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  backdrop-filter: blur(24px) saturate(170%);
+  border: 1px solid rgb(255 255 255 / 50%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 40%),
+    0 8px 32px rgb(0 0 0 / 6%);
+}
+
+.dark .glass-card {
+  background: linear-gradient(135deg, rgb(255 255 255 / 9%), rgb(255 255 255 / 3%));
+  border-color: rgb(255 255 255 / 12%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 8%),
+    0 8px 32px rgb(0 0 0 / 35%);
 }
 
 /* 主视觉背后的极淡点阵，给大面积留白一点材质 */

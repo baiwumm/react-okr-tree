@@ -4,6 +4,8 @@ import { Github, Menu } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { Logo } from '@/components/logo'
+import { AnimatedBadge } from '@/components/motion/animated-badge'
+import { ButtonLink } from '@/components/motion/button/base'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LIB_VERSION } from '@/lib/version'
 import { SITE } from '@/lib/site'
@@ -19,7 +21,7 @@ export function Navbar() {
 
   return (
     <header className="fixed inset-x-0 top-4 z-50 flex justify-center px-4">
-      <nav className="navbar-premium w-full max-w-3xl rounded-2xl px-4 py-2">
+      <nav className="navbar-premium w-full max-w-3xl rounded-full px-4 py-2">
         <div className="flex items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2 text-sm font-semibold">
             <Logo size={24} className="rounded-md" />
@@ -27,8 +29,10 @@ export function Navbar() {
           </Link>
 
           {/* 版本号是库真源的一部分，窄屏优先让它活着，链接文字后撤 */}
-          <span className="pill-badge hidden shrink-0 rounded-full px-2 py-0.5 font-mono text-[11px] text-muted-foreground sm:inline">
-            v{LIB_VERSION}
+          <span className="hidden shrink-0 sm:inline">
+            <AnimatedBadge size="sm" className="font-mono">
+              v{LIB_VERSION}
+            </AnimatedBadge>
           </span>
 
           <div className="hidden items-center gap-1 md:flex">
@@ -54,9 +58,9 @@ export function Navbar() {
               <Github size={16} />
             </a>
             <ThemeToggle />
-            <Link href="/docs/start" className="btn-solid ms-1 px-4 py-1.5 text-xs font-bold">
+            <ButtonLink href="/docs/start" size="sm" className="ms-1 font-bold">
               开始使用
-            </Link>
+            </ButtonLink>
           </div>
 
           <div className="flex items-center gap-1 md:hidden">

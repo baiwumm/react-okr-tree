@@ -1,6 +1,11 @@
+'use client'
+
 import { BookOpen, Github } from 'lucide-react'
-import Link from 'next/link'
+import { motion } from 'motion/react'
 import { HeroTree } from '@/components/demo/hero-tree'
+import { AnimatedBadge } from '@/components/motion/animated-badge'
+import { ButtonLink } from '@/components/motion/button/base'
+import { TextReveal } from '@/components/motion/text-reveal'
 import { SITE } from '@/lib/site'
 
 /**
@@ -11,38 +16,42 @@ import { SITE } from '@/lib/site'
  *
  * 差别在于这里**不是**仿制界面，而是真实的 `<OkrTree>`：组件本身 SSR 安全
  * （requirements R8），静态导出下首屏就是渲染好的树，点 ± 圆盘可以现场收起展开。
- * 因此整块不再 `aria-hidden` / `pointer-events-none`，只做一层轻微透视——
- * 参考站敢把角度给到 8deg，是因为那是假界面；真组件要留可点击的阅读性。
+ * 因此整块不再 `aria-hidden` / `pointer-events-none`。窗口不做透视倾斜：参考站敢倾斜
+ * 是因为那是假界面，这里要留可点击的阅读性，正放更清楚。
  */
+const MAC_DOTS = ['#ff5f57', '#febc2e', '#28c840']
+
 function TreeWindow() {
   const host = SITE.url.replace(/^https?:\/\//, '')
 
   return (
-    <div
-      className="mx-auto mt-20 max-w-4xl"
-      style={{ transform: 'perspective(1500px) rotateX(5deg)' }}
-    >
-      {/*
-        透视挂外层、入场动画挂内层：`fade-up` 末帧是 `transform: none`，
-        而动画在层叠里优先于内联 style，同元素叠加会把透视静默吃掉（参考站同注释）。
-      */}
-      <div className="animate-fade-up-delay-4">
-        <div className="window-premium overflow-hidden rounded-2xl text-left">
-          <div className="flex items-center gap-2 border-b px-4 py-2.5">
-            <span className="size-2.5 rounded-full bg-foreground/15" />
-            <span className="size-2.5 rounded-full bg-foreground/15" />
-            <span className="size-2.5 rounded-full bg-foreground/15" />
+    <div className="mx-auto mt-20 max-w-4xl">
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.45, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <div className="glass-card overflow-hidden rounded-3xl border-border/60 text-left">
+          {/* 仿 macOS 窗控：三颗彩色圆点 + 居中的地址条 */}
+          <div className="flex items-center gap-2 border-b border-border/60 px-4 py-2.5">
+            {MAC_DOTS.map(color => (
+              <span
+                key={color}
+                className="size-3 rounded-full ring-1 ring-inset ring-black/10"
+                style={{ backgroundColor: color }}
+              />
+            ))}
             <span className="ms-3 flex h-5 flex-1 items-center justify-center rounded-full bg-muted text-[10px] text-muted-foreground/70">
               {host}/docs
             </span>
           </div>
           <div className="overflow-x-auto px-6 py-10">
-            <div className="mx-auto w-fit">
+            <div className="mx-auto w-max">
               <HeroTree layout="vertical" showCollapsable defaultExpandAll animate />
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }
@@ -50,45 +59,64 @@ function TreeWindow() {
 export function Hero() {
   return (
     <section className="relative overflow-hidden px-6 pt-40 pb-24 text-center">
-      {/*
-        背景光效参数照参考站收着用：`opacity` 压低整体强度、`rayLength` 收窄影响范围，
-        只留首屏顶部这束光，不往页面下半部渗——白底上光束过量会像蒙了层灰纱。
-      */}
-      {/* 极淡点阵材质，只在主视觉背后可见 */}
+      {/* 背景光效参数照参考站收着用：白底上光束过量会像蒙了层灰纱，只留首屏顶部这一束 */}
       <div
         aria-hidden
         className="dot-grid pointer-events-none absolute inset-x-0 top-0 h-[560px] opacity-60"
       />
       <div className="relative">
-        <div className="pill-badge animate-fade-up mx-auto mb-6 w-fit rounded-full px-4 py-1 text-xs font-medium text-muted-foreground">
-          React 移植 · 与 vue3-okr-tree 特性逐条对齐
-        </div>
-        <h1 className="animate-fade-up-delay-1 text-balance text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
-          一套树组件
-          <br />
-          三种布局形态
-        </h1>
-        <p className="animate-fade-up-delay-2 mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="mb-6 flex justify-center"
+        >
+          <AnimatedBadge status="info" size="md" pulse>
+            React 移植 · 与 vue3-okr-tree 特性逐条对齐
+          </AnimatedBadge>
+        </motion.div>
+
+        <TextReveal
+          as="h1"
+          text={['一套树组件', '三种布局形态']}
+          className="mx-auto text-balance text-5xl font-bold tracking-tight text-foreground sm:text-6xl"
+          delay={0.12}
+        />
+
+        <motion.p
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground"
+        >
           垂直、水平与飞书 OKR 双树三种布局的组织架构图 React 组件，内置六套主题、六种展开动画、CSS
           与 SVG 两种连接线，复选框、拖拽排序与懒加载开箱即用。
-        </p>
-        <div className="animate-fade-up-delay-3 mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Link href="/docs/start" className="btn-solid px-6 py-2.5 text-sm font-bold">
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.38, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-8 flex flex-wrap items-center justify-center gap-3"
+        >
+          <ButtonLink href="/docs/start" variant="primary" size="lg">
             <BookOpen size={16} />
             快速开始
-          </Link>
-          <a
+          </ButtonLink>
+          <ButtonLink
             href={SITE.github}
             target="_blank"
             rel="noreferrer"
-            className="btn-outline px-6 py-2.5 text-sm font-bold text-foreground"
+            variant="outline"
+            size="lg"
           >
             <Github size={16} />
             GitHub
-          </a>
-        </div>
+          </ButtonLink>
+        </motion.div>
+
         <TreeWindow />
-        <p className="animate-fade-up-delay-4 mx-auto mt-5 max-w-md text-xs text-muted-foreground">
+        <p className="mx-auto mt-5 max-w-md text-xs text-muted-foreground">
           上面是真实组件而非截图：点节点下方的 ± 圆盘，看默认动画收起整棵子树。
         </p>
       </div>

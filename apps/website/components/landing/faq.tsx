@@ -1,10 +1,15 @@
+'use client'
+
 import Link from 'next/link'
+import { AnimatedBadge } from '@/components/motion/animated-badge'
+import { BouncyAccordion } from '@/components/motion/bouncy-accordion'
 
 /**
  * 问答区：只回答「装之前就要知道」的六件事，答案与 docs/requirements.md 对齐。
  *
- * 用原生 <details>（+ summary）而不是 fumadocs 的 Accordion：静态导出下零 JS，
- * 且展开态天然可被浏览器 find 命中。
+ * 手风琴用 beUI 的 BouncyAccordion（与参考站同一件）：分组联动展开、共享 layoutId
+ * 滑块、减弱动效时降级。代价是这块从「零 JS 的 <details>」变成客户端组件——
+ * 静态导出下答案文本仍在 SSR 的 HTML 里（非活动面板用 hidden 保留，不脱离 DOM）。
  */
 const FAQ = [
   {
@@ -94,30 +99,21 @@ const FAQ = [
 
 export function Faq() {
   return (
-    <section className="px-6 py-24">
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-10 text-center">
-          <p className="pill-badge mx-auto mb-5 w-fit rounded-full px-3 py-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-            FAQ
-          </p>
-          <h2 className="text-3xl font-bold tracking-tight">装之前大概会问的</h2>
+    <section className="relative border-b border-dashed border-black/10 py-20 dark:border-white/10">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto mb-10 max-w-2xl text-center">
+          <div className="mb-4 flex justify-center">
+            <AnimatedBadge size="sm">FAQ</AnimatedBadge>
+          </div>
+          <h2 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
+            装之前大概会问的
+          </h2>
         </div>
-        <div className="divide-y rounded-2xl border">
-          {FAQ.map(item => (
-            <details key={item.q} className="group px-6 py-4">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium marker:hidden">
-                {item.q}
-                <span
-                  aria-hidden
-                  className="shrink-0 text-muted-foreground transition-transform group-open:rotate-45"
-                >
-                  +
-                </span>
-              </summary>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.a}</p>
-            </details>
-          ))}
-        </div>
+        <BouncyAccordion
+          collapsible
+          defaultValue={null}
+          items={FAQ.map((item, i) => ({ id: `faq-${i}`, title: item.q, description: item.a }))}
+        />
       </div>
     </section>
   )

@@ -179,10 +179,11 @@
   - ③ release 链路已补齐：`release.yml`（tag 触发 → version 与 tag 比对 → lint/typecheck/test/coverage → build + verify:dist + verify:package + verify:peer-types + size → **文档站跟着构建**（它是产物的第一个真实消费者，发布前发现「装不上/类型不对」比发出去再撤版便宜）→ `npm publish --provenance` → GitHub Release）。②已补齐：`visual.yml`（ubuntu-24.04 固定镜像，构建走「库 dist → 静态导出」与 website job 同链路）+ `snapshot-bootstrap.yml`（生成 Linux 基线的 workflow_dispatch 作业，套路照抄源项目）。**部署不走 GH Actions**：与源项目一致由 Cloudflare Workers Builds 跑 `npx wrangler deploy` 读仓库根 `wrangler.jsonc`，所以原计划里的 `website-deploy` 作业取消（等价的静态性断言已在 website job 里）。
   - 预扫结论（阶段 7 期间，dist 为当日构建）：`dist/index.d.ts` 的公开面上只出现 `ReactNode`(13) / `useSyncExternalStore`(1) 与项目自己的 `useEvent`，没有任何 `@types/react@19` 独有类型——18.2 起这些都在。消费者示例要做的是把这个结论钉成门禁。
 - [x] 9.6 README（结构见 requirements 7 的「文档」行）：**必须显式写** D7（原地变更与 `refreshData()`）、Q3（增删方法回写源数据）、`nodeKey` 缺失时注册表为空导致哪些方法静默、冻结数据边界、CDN 无开发期警告
-  - 已落地 `packages/react-okr-tree/README.md`（657 行，结构与源项目 README 对齐，仅中文）。五处硬性说明全部写了，其中「数据变更检测」独立成节按三条路径分述。
+  - 已落地 `packages/react-okr-tree/README.md`（结构与源项目 README 对齐，仅中文）。五处硬性说明全部写了，其中「数据变更检测」独立成节按三条路径分述。
+  - 2026-09-22 更新：README 精简为「主信息 + 指向文档站」的 158 行版本（原 657 行），五处硬性说明仍以要点形式保留，完整机制说明在文档站 `guide/data`。
   - 它反过来查到三处「文档说有、实现没有」：默认导出（D6）与 `'use client'`（R8）确实缺，已补进实现；`getCheckedKeys` 未设 nodeKey 返回 `[]` 是实现/源项目/requirements 三方一致，是我给 agent 的任务书写错，库侧无改动。
-- [x] 9.7 `shared/api.ts` 驱动文档站 `<ApiTable>`（首版）；`gen:readme` + README 生成段留到 1.1.0（11.4）
-  - `<ApiTable>` 六张表由 `packages/react-okr-tree/shared/api.ts` 单一来源驱动（/docs/api 16 条路由之一）；`gen:readme` 按计划留到 1.1.0
+- [x] 9.7 `shared/api.ts` 驱动文档站 `<ApiTable>`（首版）；~~`gen:readme` + README 生成段留到 1.1.0（11.4）~~ —— **该后续项已作废**：本包不提供 `gen:readme`，README 的 API 一节只留分组与条数概览、指向文档站 API 页（2026-09-22 与 README 精简同批收口）
+  - `<ApiTable>` 六张表由 `packages/react-okr-tree/shared/api.ts` 单一来源驱动（/docs/api 16 条路由之一）
 - [x] 9.8 dist 双路径收口：website 切到引 `dist` 产物跑一遍 24 个 Demo（源项目 6.8 的做法，验证发布产物与源码路径渲染一致）
   - 文档站本来就是引 workspace 的 **dist 产物**（`react-okr-tree` + `react-okr-tree/style.css`，根脚本 `build:website` 先 `pnpm build` 再导出），24 个 Demo 全部跑在产物上并被 15 张基线拍过——源项目 6.8 那条「源码路径与产物路径渲染一致」在这里等价于「产物路径 + 单测走源码路径」，两条都覆盖到了
 - [x] 9.9 `CHANGELOG.md` 1.0.0、`LICENSE`、`repository` 字段、`npm publish --dry-run`

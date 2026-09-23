@@ -103,7 +103,7 @@ export default function App() {
 <OkrTree data={rows} nodeKey="id" deepWatch={false} showCollapsable />
 ```
 
-`false` 时只响应引用变化，与源项目的 `deep-watch: false` 同名同语义。它是**创建期快照**类 prop，运行时变更不会生效；需要切换请给组件绑 `key` 重挂载。
+`false` 时只响应引用变化，与源项目的 `deep-watch: false` 同名同语义。但它**不是**创建期快照类 prop：`deepWatch` 每次渲染即时读取，运行时切换下一次渲染就生效，不必绑 `key` 重挂载（这一点与 Vue 版不同——Vue 侧的 `deep-watch` 是 watch 创建期取的快照，运行时改不生效）。真正需要重挂载的只有 `nodeKey` / `direction` / `onlyBothTree`。
 
 ## 组件会写回你的源数据
 

@@ -5,13 +5,16 @@
  * 拒绝加载 root（本包）以外的文件，防漂移测试 `tests/api-surface.spec.tsx` 要 import 它；
  * 文档站在 workspace 根一侧用相对路径引同一条路径（Turbopack 的 root 已放开到仓库根）。
  *
- * 三处消费：
- * - apps/website 的 `<ApiTable>`（文档站 API 页）
- * - README 的 API 段落（1.1.0 起由 scripts/gen-readme-api.mjs 生成）
- * - 类型定义由 src/ 自动派生，这里是「人读的说明文案」的唯一副本
+ * 两处消费：
+ * - apps/website 的 `<ApiTable>`（文档站 API 页渲染完整表格）
+ * - `tests/api-surface.spec.tsx`（Methods 表与 `OkrTreeHandle` 双向防漂移）
+ * 类型定义由 src/ 自动派生，这里是「人读的说明文案」的唯一副本。
+ *
+ * README 的 API 一节只留分组与条数概览、指向文档站 API 页，不复制完整表格
+ * （本包没有 gen:readme 生成脚本，逐条表格一处手写必与这里漂移）。
  *
  * 注意：本文件可能被 Node 直接导入，只使用可擦除语法。
- * 单元格里的 <code> / <strong> 是 HTML 片段，由渲染器与 README 生成器分别处理。
+ * 单元格里的 <code> / <strong> 是 HTML 片段，由渲染器按 HTML 消费。
  *
  * 命名规则（requirements R3 / D1–D4）：kebab-case → camelCase；
  * 事件 → onXxx 回调；插槽 → render props；v-model:x → x + onXxxChange。
@@ -244,7 +247,7 @@ export const attributesSection: ApiSection = {
     ],
     [
       'deepWatch',
-      'data 深度侦听开关（创建期生效）：<code>true</code> 时每次渲染做结构脏检查以接住原地变更；<code>false</code> 只响应引用变化。React 下的能力边界见 requirements R2 / D7',
+      'data 深度侦听开关：<code>true</code> 时每次渲染做结构脏检查以接住原地变更；<code>false</code> 只响应引用变化。与 <code>nodeKey</code> / <code>direction</code> / <code>onlyBothTree</code> 不同，它<strong>每次渲染即时读取</strong>，运行时切换即生效、无需重挂载。React 下的能力边界见 requirements R2 / D7',
       'boolean',
       '—',
       'true',

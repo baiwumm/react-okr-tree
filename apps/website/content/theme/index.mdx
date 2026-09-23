@@ -35,6 +35,8 @@ export default function App({ data }: { data: TreeNodeData[] }) {
 
 传不在这六套里的名字是允许的（用于挂你自己的 `.okr-theme-{name}` 类），只是开发期会输出一条提示，避免拼错主题名时毫无视觉变化却查不到原因。
 
+要枚举这六个名字（主题选择器、设置面板）不必硬编码字符串数组：`import { BUILT_IN_THEMES } from 'react-okr-tree'` 拿到的就是这份清单，`TreeTheme` 类型也由它派生。
+
 <Callout type="warn" title={'theme="auto" 跟随的是系统，不是站点主题类'}>
 
 `auto` 走 `@media (prefers-color-scheme: dark)` 媒体查询。如果你的站点用 `.dark` 类切换明暗（Next + next-themes 的常见做法），**站级切换不会改变媒体查询**，`auto` 就看起来「没生效」。这两种情况分开处理：
@@ -114,6 +116,21 @@ React 侧写内联变量记得加引号：`<div style={{ '--okr-line-color': '#4
 `--okr-group-left-width` 由 `OkrTreeGroup` 运行时测量写入，**不是给用户改的**，见[组对齐](/docs/guide/group)。
 
 几个改不动的东西：连接线的部分几何值是硬编码且相互咬合的（如 OKR 左子树根 stub 的 `width: 12px` / `left: calc(100% - 11px)` / `height: 10px` 三元组、水平模式折叠指示短线 `10px`）。它们被参数化的任何尝试都会产生亚像素漂移，源码注释里也明确写了不要动。层级与间距请用 `--okr-gap-*` 表达。
+
+## 连接线：CSS 与 SVG 两种渲染模式
+
+默认 `connector="css"` 用伪元素画线；`connector="svg"` 把线条换成覆盖层 `<svg>` 路径，**布局零改动**——伪元素只被中和边框、保留占位盒（展开按钮的 +/- 符号同为伪元素边框，不在中和范围内）。
+
+```tsx
+<OkrTree data={data} direction="horizontal" connector="svg" connectorShape="orthogonal" />
+```
+
+- `connectorShape` 仅在 svg 模式下生效：`curve` 三次贝塞尔（控制点随主轴延伸，最长 40px）/ `orthogonal` 中点直角折线 / `straight` 两点直线；未知形状回退 `curve`。
+- 线色与线宽继续走 `--okr-line-color` / `--okr-line-width`，六套主题与自定义变量零配置适配。
+- 锚点随模式镜像：垂直出底入顶；水平右树出右入左、OKR 左树出左入右；根节点到 OKR 左树顶层节点绘制镜像连线。
+- 展开/收起（含 `animate` 过渡期间）与容器尺寸变化都会自动重绘，不留残影——由**突变订阅 + ResizeObserver + 过渡期逐帧 rAF** 三重触发兜住（只靠 ResizeObserver 不够：展开深层节点未必改动树根尺寸）。
+- `connector` 传非 `css` / `svg` 的值会输出一条开发期警告并按 `css` 渲染。
+- 可与[画布缩放](/docs/guide/viewport)与 OKR 双树组合；实时切换的模式与形状见 [Demo 总览](/docs/guide/demos) 的「SVG 连接线」用例。
 
 ## 无样式模式
 

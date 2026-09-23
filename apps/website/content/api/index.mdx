@@ -1,9 +1,9 @@
 ---
 title: API
-description: react-okr-tree 的完整 API 表：42 个 props、字段映射、14 个回调、28 个 ref 方法、渲染定制与组合组件。
+description: react-okr-tree 的完整 API 表：props、字段映射、回调、ref 方法、渲染定制与组合组件。
 ---
 
-以下六张表由 `packages/react-okr-tree/shared/api.ts` 单一来源渲染——库侧的防漂移测试（`tests/api-surface.spec.tsx`）断言 Methods 表与真实的 `OkrTreeHandle` 一致，README 的 API 段落读的也是同一份数据。
+以下六张表由 `packages/react-okr-tree/shared/api.ts` 单一来源渲染——库侧的防漂移测试（`tests/api-surface.spec.tsx`）断言 Methods 表与真实的 `OkrTreeHandle` 一致。README 的 API 一节只留分组与条数概览，完整表格以本页为准。
 
 命名规则是机械转换：kebab-case → camelCase、事件 → `onXxx` 回调、插槽 → render props、`v-model:x` → `x` + `onXxxChange`。`currentLableClassName` 与 `showCollapsable` 两处**原版拼写错误刻意保留**。完整差异见[从 vue3-okr-tree 迁移](/docs/migration)。
 

@@ -253,8 +253,9 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
   const group = useOkrTreeGroupContext()
   const viewport = useOkrTreeViewportContext()
 
-  // ---- store 只创建一次：创建期快照的字段（nodeKey / direction / onlyBothTree / deepWatch）
-  // 运行时变更不支持，与源项目一致 ----
+  // ---- store 只创建一次：创建期快照的字段（nodeKey / direction / onlyBothTree）
+  // 运行时变更不支持，与源项目一致。deepWatch 不在其列——它在下面的渲染期判定里逐次读取，
+  // 运行时切换即生效（源项目的 deep-watch 是 watch 创建期取的快照，两边这一点行为不同）。----
   const [store] = useState(() => {
     const created = new TreeStore({
       key: props.nodeKey,

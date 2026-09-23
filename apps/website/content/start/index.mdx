@@ -5,11 +5,11 @@ description: npm / pnpm / CDN UMD 三种引入路径、样式引入、最小可�
 
 ## 环境要求
 
-| 依赖                  | 要求                 | 说明                                                                                                                                                     |
-| --------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `react` / `react-dom` | `>= 18.2.0`（peer）  | 用到的能力（`useSyncExternalStore` / `forwardRef` / `useImperativeHandle` / Context）自 18.2 起齐备；CI 在 18.2 与 19.2 两档 peer 矩阵下各跑一遍全量单测 |
-| TypeScript            | 可选                 | 产物带单文件 `index.d.ts`（`import`）与 `index.d.cts`（`require`）；不写 TS 也能用全部 API                                                               |
-| `html-to-image`       | `^1.11.0`，可选 peer | 只有 `OkrTreeViewport` 的 `exportImage()` 需要；未安装时调用会抛带安装指引的错。它**不在** `dependencies` 里，不需要导出能力就不必装                     |
+| 依赖                  | 要求                 | 说明                                                                                                                                                                                                                                                                                                           |
+| --------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `react` / `react-dom` | `>= 18.2.0`（peer）  | 用到的能力（`useSyncExternalStore` / `forwardRef` / `useImperativeHandle` / Context）自 18.2 起齐备；CI 的 peer 矩阵在 `~18.2.0` 与 `~18.3.0` 两档各跑一遍全量单测（`@types/react` 同步降到 18，以便让 React 19 独有的类型依赖在 18 下编译失败被捕获），React 19 由 workspace 默认安装的那条 `verify` 作业覆盖 |
+| TypeScript            | 可选                 | 产物带单文件 `index.d.ts`（`import`）与 `index.d.cts`（`require`）；不写 TS 也能用全部 API                                                                                                                                                                                                                     |
+| `html-to-image`       | `^1.11.0`，可选 peer | 只有 `OkrTreeViewport` 的 `exportImage()` 需要；未安装时调用会抛带安装指引的错。它**不在** `dependencies` 里，不需要导出能力就不必装                                                                                                                                                                           |
 
 ## 安装
 
@@ -146,7 +146,7 @@ export default function App() {
 
 ## 通过 ref 调方法
 
-ref 拿到的是 `OkrTreeHandle`，28 个方法都在这里（完整表见 [Methods](/docs/api)）：
+ref 拿到的是 `OkrTreeHandle`，命令式方法都在这里（完整表见 [Methods](/docs/api)）：
 
 ```tsx
 'use client'

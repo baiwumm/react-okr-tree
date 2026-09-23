@@ -506,6 +506,8 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 ### 6.4 API 表单一来源
 
 与源项目同为 6 张（Attributes / Props / Events / Methods / 渲染定制 / Group 与键盘），数据落在 `packages/react-okr-tree` 与文档站共享的 `shared/api.ts`（列内容按本文档 4.1–4.5 的 React 命名改写）。**第一天就建这个文件**（React 版 API 面比 Vue 更长，多处手写必然漂移），但三个消费出口分两步：首版由 `<ApiTable>` 组件在文档站读它渲染 + README 手写；1.1.0 再补 `gen:readme` 脚本生成 README 的 API 段落（源项目用 `<!-- API-DOC-BEGIN/END -->` 标记包裹生成段，照抄该约定）。
+>
+> **2026-09-22 修正**：`gen:readme` 一步**作废**，本包不提供该脚本。README 的 API 一节只留分组与条数概览并指向文档站 API 页，完整表格以 `shared/api.ts` → 文档站为唯一呈现路径；两个消费出口为 `<ApiTable>` 与 `tests/api-surface.spec.tsx`。
 
 ### 6.5 部署：Cloudflare（纯静态资产）
 
@@ -628,6 +630,8 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 ### 11.4 `shared/api.ts` 首日建立，消费出口分两步
 
 React 版 API 面（42 props + 14 回调 + 28 方法 + 渲染定制）比 Vue 版更长，三份手写必漂移。表数据落在 workspace 共享的 `shared/api.ts`；文档站 `<ApiTable>` 首版即读它，README 的 API 段落首版手写、1.1.0 再补 `gen:readme`（照抄 `<!-- API-DOC-BEGIN/END -->` 标记约定）。这样单一来源的收益当天就拿到，而不让渲染器工程挡住首版。
+
+**2026-09-22 修正**：`gen:readme` 不做了（见 6.4）。README 只留分组与条数概览，逐条表格由文档站读 `shared/api.ts` 渲染；防漂移靠 `tests/api-surface.spec.tsx`（表 ↔ `OkrTreeHandle`），不再要求 README 与表同源。
 
 ### 11.5 文档站按你的要求换栈，并兼任 playground
 

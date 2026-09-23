@@ -31,7 +31,7 @@ packages/react-okr-tree/
 │  ├─ viewport.ts            # clampZoom / computeFit / renderToDataUrl / loadHtmlToImage
 │  ├─ index.ts               # 导出面
 │  └─ types.ts               # 公共类型
-├─ shared/api.ts             # API 表单一来源（库、文档站、README 三处消费）
+├─ shared/api.ts             # API 表单一来源（文档站完整表格 + 防漂移测试）
 ├─ dev/                      # 库侧开发 harness（视觉核对 + Playwright 基线），不是发布物
 ├─ tests/                    # components / model / ssr 三类用例 + api-surface 防漂移测试
 └─ scripts/                  # post-build.mjs（生成 index.d.cts）、verify-dist.mjs（产物挂载冒烟）
@@ -54,7 +54,7 @@ apps/website/
 
 | 真源           | 位置                                      | 谁在消费                                                                                                                       |
 | -------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| API 表         | `packages/react-okr-tree/shared/api.ts`   | 文档站 `<ApiTable>`、`tests/api-surface.spec.tsx`（断言表格与 `OkrTreeHandle` 不漂移）、README 的 API 段落                     |
+| API 表         | `packages/react-okr-tree/shared/api.ts`   | 文档站 `<ApiTable>` 渲染完整表格、`tests/api-surface.spec.tsx` 断言表与 `OkrTreeHandle` 不漂移；README 只留分组概览            |
 | 样式           | `src/styles/style.css` + `transition.css` | 与源项目逐字相同的两份 CSS，diff 仅限包名注释；库版本由 `dist/style.css` 单文件产出                                            |
 | DOM 类名与结构 | `src/dom-contract.ts`                     | `OkrTreeGroup` 的测量选择器、`getVisibleNodes` 的可见性判定、SVG 连接线的卡片定位都按类名查询，因此 DOM 结构是对外契约的一部分 |
 

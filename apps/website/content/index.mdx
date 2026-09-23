@@ -5,7 +5,7 @@ description: react-okr-tree 是什么、三种布局怎么选、与 vue3-okr-tre
 
 组织架构图 / OKR 树 React 组件。核心特性是飞书 OKR 的**根节点左右双向展开**，以及全部由 CSS 伪元素绘制的连接线——组件本体不依赖任何样式框架，外观通过 `--okr-*` CSS 变量暴露。
 
-它是 `vue3-okr-tree`（Vue 3 版，v1.13.0）的 React 移植：数据模型、样式表与 API 表都取自同一份真源，功能逐项对齐，只有框架范式强制的部分不同（见[迁移说明](/docs/migration)）。
+它是 `vue3-okr-tree`（Vue 3 版）的 React 移植：数据模型、样式表与 API 表都取自同一份真源，功能逐项对齐，只有框架范式强制的部分不同（见[迁移说明](/docs/migration)）。版本号自 1.13.0 起两边锁步发布，同号即同一功能面。
 
 ## 三种布局
 
@@ -27,7 +27,7 @@ OKR 模式下的左树是**同一组件的第二棵树**：它有独立的伪根
 | 状态     | 非受控（`defaultExpandedKeys` / `currentNodeKey` / `defaultCheckedKeys`）与受控（`expandedKeys` / `currentKey` + 对应 `onXxxChange`）双模                                     |
 | 外观     | 6 套内置主题、27 个 `--okr-*` 外观变量（画布另有 6 个）、`unstyled` 无样式模式、6 组展开动画、CSS / SVG 双连接线模式（SVG 三种形状）、打印样式、`prefers-reduced-motion` 降级 |
 | 组合件   | `OkrTreeGroup`（跨实例根对齐）、`OkrTreeViewport`（画布缩放平移 + PNG / SVG 导出）                                                                                            |
-| 查询     | `getVisibleNodes` / `getNodePath` / `getNodeEl` / `getCheckedKeys` 等 28 个 ref 方法                                                                                          |
+| 查询     | `getVisibleNodes` / `getNodePath` / `getNodeEl` / `getCheckedKeys` 等 ref 方法                                                                                                |
 | 工程     | ESM + CJS + UMD + 单文件 `d.ts`、SSR 可用、库与文档站共用同一份 API 表                                                                                                        |
 
 ## 和 Vue 版的关系
@@ -70,7 +70,7 @@ Vue 的 `deep watch` 能同时接住「引用变化」与「原地 push/splice�
 
   <Card href="/docs/theme" title="主题与样式定制" description="6 套内置主题、--okr-* 变量一览、自定义主题、unstyled、打印" />
 
-  <Card href="/docs/api" title="API" description="42 个 props、14 个回调、28 个 ref 方法、渲染定制与组合组件" />
+  <Card href="/docs/api" title="API" description="props、字段映射、回调、ref 方法、渲染定制与组合组件" />
 
   <Card href="/docs/migration" title="从 vue3-okr-tree 迁移" description="命名规则与 D1–D12 有意差异逐条" />
 

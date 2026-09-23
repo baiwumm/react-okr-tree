@@ -1,13 +1,17 @@
 ---
 title: 更新日志
-description: react-okr-tree 版本记录。1.0.0 为 React 复刻版首次发布。
+description: react-okr-tree 版本记录。1.13.0 为 React 复刻版首次发布，此后与 vue3-okr-tree 同号锁步。
 ---
 
-本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。仓库根的 `CHANGELOG.md` 是真源，本页同步展示。
+本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。真源是 `packages/react-okr-tree/CHANGELOG.md`（仓库根没有 CHANGELOG），**本页只摘要最近两个版本**，完整历史请直接看那份；两处不一致以 CHANGELOG 为准。（不做成 include：CHANGELOG 是纯 Markdown，含 `{` / `<` 的行会被 MDX 当表达式解析，将来任意一条新记录写歪就能把整站构建打断。）
 
-## 1.0.0
+## 1.14.0（2026-09-22）
 
-React 复刻版首次发布，特性对齐 `vue3-okr-tree` v1.13.0 累积的全部能力（1.0.0 → 1.13.0）。
+跟随上游 `vue3-okr-tree` 1.14.0 同号发布（锁步约定）。上游本版本唯一的对外变更是新增 `BUILT_IN_THEMES` 导出，而**本包早已导出它，故本版本对外 API 无变化**，内容全部是门禁断言补强：`verify:dist` 的 UMD 断言由恒真改为真实执行（用 `new Function` 跑一遍工厂函数，断言 `default === OkrTree`、`BUILT_IN_THEMES` 为 6 项）、六种内置过渡名逐个断言、`tests-consumer/` 补类型层消费者示例。单测 250 → 259 条。
+
+## 1.13.0（2026-09-21）
+
+React 复刻版**首次发布到 npm**（此前的 0.1.0 / 1.0.0 只是规划号，从未发布），特性对齐 `vue3-okr-tree` v1.13.0 累积的全部能力（1.0.0 → 1.13.0）。版本号自本版本起与上游锁步。
 
 ### 新增
 

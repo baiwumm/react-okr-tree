@@ -47,7 +47,7 @@ description: 全部能力按域索引：布局与展开、节点渲染与外观�
 | 原地变更检测               | `deepWatch` + `handle.refreshData()`                                                                                   | [数据变更](/docs/guide/data)           |
 | 点击 / 右键 / 展开收起事件 | `onNodeClick` / `onNodeContextMenu` / `onNodeExpand` / `onNodeCollapse`                                                | [受控与非受控](/docs/guide/controlled) |
 | 受控展开与选中             | `expandedKeys` + `onExpandedKeysChange`、`currentKey` + `onCurrentKeyChange`                                           | [受控与非受控](/docs/guide/controlled) |
-| 命令式方法                 | `OkrTreeHandle` 的 28 个方法 + `store` / `root`                                                                        | [受控与非受控](/docs/guide/controlled) |
+| 命令式方法                 | `OkrTreeHandle` 的全部方法 + `store` / `root`                                                                          | [受控与非受控](/docs/guide/controlled) |
 | 复选框                     | `showCheckbox` / `checkStrictly` / `defaultCheckedKeys`、`onCheck` / `onCheckChange`、6 个勾选方法                     | —                                      |
 | 拖拽换父级                 | `draggable` / `allowDrag` / `allowDrop`、`prev` / `inner` / `next` 三分区、6 个拖拽回调                                | —                                      |
 | 懒加载                     | `lazy` + `load(node, resolve, reject)`、`props.isLeaf`                                                                 | [懒加载](/docs/guide/lazy)             |
@@ -64,9 +64,13 @@ description: 全部能力按域索引：布局与展开、节点渲染与外观�
 
   <Card href="/docs/guide/demos" title="Demo 总览（24 个）" description="与源项目 playground 一一对应的可交互用例，每个都折叠着真实组件源码" />
 
+  <Card href="/docs/guide/node-content" title="自定义节点内容" description="renderNode / nodeComponent / renderContent 三种写法与优先级、展开按钮与空态定制" />
+
   <Card href="/docs/guide/data" title="数据变更与源数据回写" description="React 特有的 R2 检测模型：换引用、同引用原地改、refreshData()，以及 Q3 回写与冻结数据边界" />
 
   <Card href="/docs/guide/controlled" title="受控与非受控" description="expandedKeys / currentKey 成对 props、ref 方法、事件回调签名与合成事件" />
+
+  <Card href="/docs/guide/interaction" title="复选框与拖拽" description="父子联动与半选、checkStrictly、25/50/25 三分区按方向换轴、防自嵌套与 OKR 跨树规则" />
 
   <Card href="/docs/guide/lazy" title="懒加载子节点" description="load / resolve / reject、isLeaf、加载中状态、失败重试与过滤的交互" />
 

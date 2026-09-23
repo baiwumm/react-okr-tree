@@ -1,0 +1,85 @@
+---
+title: 自定义节点内容
+description: renderNode / nodeComponent / renderContent 三种写法与优先级，展开按钮与空态的定制口。
+---
+
+import { ContentModesDemo } from '@/components/demo/content-modes'
+import { ExpandBtnDemo } from '@/components/demo/expand-btn'
+
+三种等价写法，优先级：`renderNode` > `nodeComponent` > `renderContent` > 内置 `node.label`。
+
+<DemoBlock title="三种内容写法对比" description="实时切换三种写法，渲染结果一致。" file="components/demo/content-modes.tsx">
+  <ContentModesDemo />
+</DemoBlock>
+
+## renderContent
+
+签名 `(node) => ReactNode`。React 不需要框架注入创建函数，因此**没有 Vue 版的 `h` 参数**（D1），直接写 JSX 即可。`node` 是内部 `TreeNode` 实例（源数据在 `node.data`，文本在 `node.label`，另有 `isCurrent` / `expanded` / `leftExpanded` / `isLeftChild` / `level` / `childNodes` / `checked` 等）。
+
+```tsx
+function renderContent(node: TreeNode) {
+  return (
+    <div className={['diy', node.isCurrent && 'is-current', node.isLeftChild && 'left'].join(' ')}>
+      <div>{node.data.label}</div>
+      <small>{(node.data as { content?: string }).content}</small>
+    </div>
+  )
+}
+
+<OkrTree data={data} renderContent={renderContent} />
+```
+
+`nodeBtnContent` 用同一套入参约定（旧名仍在，新代码请用下面的 `renderExpandBtn`）。
+
+## nodeComponent
+
+传一个组件，以 `{ node, data }` 为 props 渲染：
+
+```tsx
+function DeptCard({ node, data }: { node: TreeNode<Dept>; data: Dept }) {
+  return (
+    <b>
+      {data.label}
+      {node.isCurrent ? '（已选中）' : ''}
+    </b>
+  )
+}
+
+<OkrTree<Dept> data={depts} nodeComponent={DeptCard} />
+```
+
+## renderNode（或 children 传函数）
+
+对应源项目的 `#default` 作用域插槽。`children` 传函数与 `renderNode` 等价（`children` 传 JSX 节点不会被渲染，开发期会警告）：
+
+```tsx
+<OkrTree
+  data={data}
+  renderNode={({ node, data }) => (
+    <>
+      <b>{data.label}</b>
+      {node.isCurrent ? <small>（已选中）</small> : null}
+    </>
+  )}
+/>
+```
+
+## 展开按钮内容
+
+优先级：`showNodeNum` 的折叠数字 > `renderExpandBtn` > `nodeBtnContent`；三者都缺省时渲染内置的 `+/-` 符号。作用域参数含 `expanded` / `side`（`'left'` 区分 OKR 左树）/ `loading`（懒加载进行中）。
+
+<DemoBlock title="展开按钮内容" description="renderExpandBtn 与 showNodeNum 的优先关系。" file="components/demo/expand-btn.tsx">
+  <ExpandBtnDemo />
+</DemoBlock>
+
+## 空态
+
+`data` 为空数组时渲染 `empty`（对应源项目的 `#empty` 插槽）：
+
+```tsx
+<OkrTree data={[]} empty={<span>暂无数据</span>} />
+```
+
+## 类型收窄
+
+`OkrTree<T>` 本身就是泛型组件，`data` / `leftData` 与上面三种写法的渲染作用域都会带上你的数据类型，见[泛型与类型推导](/docs/guide/typed)。

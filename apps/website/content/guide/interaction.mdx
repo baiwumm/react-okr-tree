@@ -1,0 +1,53 @@
+---
+title: 复选框与拖拽
+description: showCheckbox 的父子联动与半选、checkStrictly、勾选方法；draggable 的三分区放置、allow 钩子、防自嵌套与 OKR 跨树规则。
+---
+
+import { CheckboxDemo } from '@/components/demo/checkbox'
+import { DraggableDemo } from '@/components/demo/draggable'
+
+两块交互能力，语义都对齐 el-tree 的使用习惯。
+
+## 复选框选择
+
+```tsx
+<OkrTree data={data} nodeKey="id" showCheckbox defaultCheckedKeys={[3]} />
+```
+
+<DemoBlock title="复选框" description="checkStrictly 切换、事件日志、方法演示。" file="components/demo/checkbox.tsx">
+  <CheckboxDemo />
+</DemoBlock>
+
+联动规则：
+
+- 勾选父节点向下联动**全部后代**（含 `disabled` 节点——`disabled` 只阻止直接点击），祖先按子树重算全选 / 半选。「全部子节点选中 ⇒ 父选中」，所以唯一子链选中会让父节点直接变全选。
+- `checkStrictly` 关闭联动，勾选只作用于自身；运行时切换后新交互按新模式执行。
+- `defaultCheckedKeys` 需配 `nodeKey`；运行时变更会**先清空再按新列表应用**，`data` 重建后不恢复。
+- OKR 模式下左右两树的勾选**独立维护**（点击只作用于所在树），而 `setCheckedKeys` / `getCheckedKeys` 等按 key 对两树同时生效 / 合并去重。
+- 勾选态在增删子节点、懒加载 resolve、增量重建后自动重算祖先。
+
+回调与方法：`onCheck` 只在**点击复选框**时触发（携带全量勾选信息），`onCheckChange` 在每个状态变化的节点各触发一次（联动、`setCheckedKeys` 批量、增删级联都覆盖）。方法为 `getCheckedKeys` / `getCheckedNodes` / `setCheckedKeys` / `getHalfCheckedKeys` / `getHalfCheckedNodes` / `isChecked`。键盘 `Space` 切换勾选、`Enter` 选中；treeitem 输出 `aria-checked`，半选为 `mixed`（见[键盘导航](/docs/guide/keyboard)）。
+
+样式复用既有变量（边框取 `--okr-line-color`、填充取 `--okr-current-bg`），六套主题与自定义主题零配置适配。
+
+## 拖拽调整层级
+
+```tsx
+<OkrTree data={data} nodeKey="id" draggable allowDrop={allowDrop} onNodeDrop={onDrop} />
+```
+
+<DemoBlock title="拖拽换父级" description="prev / inner / next 三分区、allowDrag / allowDrop 钩子、事件日志。" file="components/demo/draggable.tsx">
+  <DraggableDemo />
+</DemoBlock>
+
+- 放置分区为 25% / 50% / 25%，并**按布局方向换轴**：`horizontal`（同级上下排列）按 Y 轴 prev 上 / inner 中 / next 下；`vertical`（同级左右排列）按 X 轴 prev 左 / inner 中 / next 右。指示线画在节点卡片上（prev / next 指示线、inner 虚线描边），颜色用 `--okr-drop-color` 定制。
+- 移动同步修改你传入的源数据的 `children`（与 `append` / `remove` 同一套语义，冻结数据下跳过写入并警告，见[数据变更与源数据回写](/docs/guide/data)），并修正整棵子树的 `level` 与节点注册表；inner 放置时目标自动展开。
+- 硬性规则：不可拖到自身或自己的子树内（`allowDrop` 越不过这条），`disabled` 节点不可拖。
+- OKR 模式跨左右树**默认禁止**；`allowDrop` 明确返回 `true` 才放开，放开后整棵子树的 `isLeftChild` 标记与左右注册表随之迁移。
+- 六个回调：`onNodeDragStart(node, event)`、`onNodeDragEnter / leave / over(draggingNode, dropNode, event)`、`onNodeDragEnd(draggingNode, dropNode | null, dropType | null, event)`、`onNodeDrop(draggingNode, dropNode, dropType, event)`。未完成放置时 `onNodeDrop` 不触发、`onNodeDragEnd` 的后两参为 `null`。`event` 是 React 合成事件，需要原生事件时取 `event.nativeEvent`（D11）。
+- 不用鼠标也能改层级：`moveNode(data, target, type)` 与拖拽走同一条路径，`data` / `target` 均接受 key、data 对象、`TreeNode` 实例三种形态。
+
+## 相关页面
+
+- 连接线的外观与两种渲染模式：[主题与样式定制](/docs/theme)
+- 命令式增删改与回写语义：[数据变更与源数据回写](/docs/guide/data)

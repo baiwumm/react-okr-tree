@@ -3,8 +3,10 @@
   "pages": [
     "index",
     "demos",
+    "node-content",
     "data",
     "controlled",
+    "interaction",
     "lazy",
     "viewport",
     "group",

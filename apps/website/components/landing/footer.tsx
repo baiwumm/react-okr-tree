@@ -1,7 +1,8 @@
-import { Github, Package } from 'lucide-react'
+import { Package } from 'lucide-react'
 import Link from 'next/link'
 import { Logo } from '@/components/logo'
 import { AnimatedBadge } from '@/components/motion/animated-badge'
+import { GithubIcon } from '@/components/ui/brand-icons'
 import { LIB_VERSION } from '@/lib/version'
 import { SITE } from '@/lib/site'
 
@@ -48,7 +49,7 @@ export function Footer() {
               aria-label="GitHub 仓库"
               className="text-muted-foreground transition-colors hover:text-foreground"
             >
-              <Github size={18} />
+              <GithubIcon className="size-[18px]" />
             </a>
             <a
               href={SITE.npm}

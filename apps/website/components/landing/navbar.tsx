@@ -1,11 +1,12 @@
 'use client'
 
-import { Github, Menu } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { Logo } from '@/components/logo'
 import { AnimatedBadge } from '@/components/motion/animated-badge'
 import { ButtonLink } from '@/components/motion/button/base'
+import { GithubIcon } from '@/components/ui/brand-icons'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LIB_VERSION } from '@/lib/version'
 import { SITE } from '@/lib/site'
@@ -55,7 +56,7 @@ export function Navbar() {
               aria-label="react-okr-tree on GitHub"
               className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
             >
-              <Github size={16} />
+              <GithubIcon className="size-4" />
             </a>
             <ThemeToggle />
             <ButtonLink href="/docs/start" size="sm" className="ms-1 font-bold">
@@ -71,7 +72,7 @@ export function Navbar() {
               aria-label="react-okr-tree on GitHub"
               className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
             >
-              <Github size={16} />
+              <GithubIcon className="size-4" />
             </a>
             <ThemeToggle />
             <button

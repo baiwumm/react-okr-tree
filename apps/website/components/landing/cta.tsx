@@ -1,8 +1,9 @@
 'use client'
 
-import { ArrowRight, Github, Package } from 'lucide-react'
+import { ArrowRight, Package } from 'lucide-react'
 import { motion } from 'motion/react'
 import { ButtonLink } from '@/components/motion/button/base'
+import { GithubIcon } from '@/components/ui/brand-icons'
 import { LIB_VERSION } from '@/lib/version'
 import { SITE } from '@/lib/site'
 
@@ -43,7 +44,7 @@ export function Cta() {
               variant="outline"
               size="lg"
             >
-              <Github size={16} />
+              <GithubIcon className="size-4" />
               Star on GitHub
             </ButtonLink>
           </div>

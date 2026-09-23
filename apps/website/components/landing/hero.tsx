@@ -1,11 +1,12 @@
 'use client'
 
-import { BookOpen, Github } from 'lucide-react'
+import { BookOpen } from 'lucide-react'
 import { motion } from 'motion/react'
 import { HeroTree } from '@/components/demo/hero-tree'
 import { AnimatedBadge } from '@/components/motion/animated-badge'
 import { ButtonLink } from '@/components/motion/button/base'
 import { TextReveal } from '@/components/motion/text-reveal'
+import { GithubIcon } from '@/components/ui/brand-icons'
 import { SITE } from '@/lib/site'
 
 /**
@@ -110,7 +111,7 @@ export function Hero() {
             variant="outline"
             size="lg"
           >
-            <Github size={16} />
+            <GithubIcon className="size-4" />
             GitHub
           </ButtonLink>
         </motion.div>

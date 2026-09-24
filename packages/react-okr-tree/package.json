@@ -1,6 +1,6 @@
 {
   "name": "react-okr-tree",
-  "version": "1.14.0",
+  "version": "1.14.1",
   "description": "React 组织架构树 / OKR 树组件，支持根节点左右双向展开（vue3-okr-tree 的 React 版本）",
   "type": "module",
   "license": "MIT",

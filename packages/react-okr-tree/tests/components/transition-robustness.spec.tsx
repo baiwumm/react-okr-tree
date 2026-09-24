@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { act, render, type RenderResult } from '@testing-library/react'
+import { act, fireEvent, render, type RenderResult } from '@testing-library/react'
 import { createRef, useState, type ReactElement, type RefObject } from 'react'
 import { OkrTree, type OkrTreeHandle } from '../../src/index'
 import type { OkrTreeProps } from '../../src/OkrTree'
@@ -157,5 +157,70 @@ describe('过渡在 rAF 被节流环境下的健壮性', () => {
 
   it('内置动画名共 6 种', () => {
     expect(BUILT_IN_ANIMATE_NAMES).toHaveLength(6)
+  })
+})
+
+/**
+ * 延迟卸载的撑高窗口只该由「展开态变了」触发。animate / animateDuration 运行中改动
+ * 一旦进了 effect 依赖，已收起的容器会再走一遍 setKeepHeight(true) + setTimeout，
+ * 凭空撑高一段时长（源项目是 `watch(isExpanded, …)`，没有这条）。
+ */
+describe('撑高窗口只由展开态变化触发', () => {
+  /** 根节点的子容器：height 有值 = 已收起并释放高度；height 为空 = 正在撑高 */
+  const rootChildrenEl = (c: ParentNode) =>
+    c.querySelector<HTMLElement>('.org-chart-node > .org-chart-node-children')!
+
+  const toggleRoot = (c: ParentNode) => {
+    act(() => {
+      fireEvent.click(c.querySelector('.org-chart-node-btn')!)
+    })
+  }
+
+  /** 真实等 ms 毫秒，并把期间到达的 setTimeout 回调（撑高窗口归零）刷进 act 里 */
+  const settle = async (ms: number) => {
+    await act(async () => {
+      await new Promise(r => setTimeout(r, ms))
+    })
+  }
+
+  const host = (animateDuration: number, animate = true) => ({
+    animate,
+    animateDuration,
+    showCollapsable: true,
+    defaultExpandAll: true,
+  })
+
+  it('收起到位后改 animateDuration / animate 开关，容器不再被重新撑高', async () => {
+    const ref = createRef<OkrTreeHandle>()
+    const { container, rerender } = render(<Host extra={host(20)} handleRef={ref} />)
+
+    toggleRoot(container)
+    expect(rootChildrenEl(container).style.height).toBe('')
+    await settle(60)
+    expect(rootChildrenEl(container).style.height).toBe('0px')
+
+    rerender(<Host extra={host(900)} handleRef={ref} />)
+    expect(rootChildrenEl(container).style.height).toBe('0px')
+    rerender(<Host extra={host(900, false)} handleRef={ref} />)
+    expect(rootChildrenEl(container).style.height).toBe('0px')
+    rerender(<Host extra={host(900)} handleRef={ref} />)
+    expect(rootChildrenEl(container).style.height).toBe('0px')
+  })
+
+  // 上一条依赖「改完值不再触发 effect」，这一条钉反面：值仍要送到下一次收起时读到
+  it('运行中改过的 animateDuration 对下一次收起生效', async () => {
+    const ref = createRef<OkrTreeHandle>()
+    const { container, rerender } = render(<Host extra={host(20)} handleRef={ref} />)
+
+    toggleRoot(container)
+    await settle(60)
+    rerender(<Host extra={host(240)} handleRef={ref} />)
+    toggleRoot(container)
+    toggleRoot(container)
+    expect(rootChildrenEl(container).style.height).toBe('')
+    await settle(90)
+    expect(rootChildrenEl(container).style.height).toBe('')
+    await settle(240)
+    expect(rootChildrenEl(container).style.height).toBe('0px')
   })
 })

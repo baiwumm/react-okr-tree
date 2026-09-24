@@ -6,6 +6,10 @@ import { useEffect, useRef, useState } from 'react'
  *
  * 首次渲染不生效：源项目用的是非 immediate 的 watch。若挂载时就置 keepHeight，
  * 折叠子树会在最初 animateDuration 毫秒里撑出高度，根节点位置与源项目不一致。
+ *
+ * 依赖只有 isExpanded：animate / duration 运行中改动只表示「下次收起时用新值」，
+ * 不该让已经收起到位的容器再走一遍撑高。两者收进 ref 供 effect 读最新值，
+ * 与源项目 `watch(isExpanded, …)` 的形状一致。
  */
 export function useDelayedCollapse(
   isExpanded: boolean,
@@ -14,19 +18,22 @@ export function useDelayedCollapse(
 ): boolean {
   const [keepHeight, setKeepHeight] = useState(false)
   const first = useRef(true)
+  const timing = useRef({ animateOn, duration })
+  timing.current.animateOn = animateOn
+  timing.current.duration = duration
 
   useEffect(() => {
     if (first.current) {
       first.current = false
       return
     }
-    if (!isExpanded && animateOn) {
+    if (!isExpanded && timing.current.animateOn) {
       setKeepHeight(true)
-      const timer = setTimeout(() => setKeepHeight(false), duration)
+      const timer = setTimeout(() => setKeepHeight(false), timing.current.duration)
       return () => clearTimeout(timer)
     }
     setKeepHeight(false)
-  }, [isExpanded, animateOn, duration])
+  }, [isExpanded])
 
   return keepHeight
 }

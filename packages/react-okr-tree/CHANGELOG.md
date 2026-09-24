@@ -20,6 +20,8 @@
 
 - **挂载期不再白建一次 OKR 左树**：字段映射同步那个 effect 的依赖是 `[props.props]`，而 React 首次挂载后必然执行一次，于是每次挂载都跑一遍 `setData(同一引用)` + `bumpAll()`——前者末尾照样 `setLeftData` 把整棵左树重建（左树节点实例全换、子节点刚登记的 `nodeEls` 指向作废的旧实例），后者让全部节点多渲染一遍（实测 `n=1500` 时增量约 +31%）。改为与 `store.props` 现值逐项比对、内容相同直接跳过；这一并同时挡住使用方行内写 `props={{ label: 'title' }}` 时每次父渲染都重建的那条路。上游 `vue3-okr-tree` 的对应 watch 没有 `immediate`，挂载期本就不跑，故只有本包需要改（它的行内字面量路径仍会随父渲染重建，已记待办）。
 
+- **运行中改 `animate` / `animateDuration` 不再把已折叠的容器凭空撑高**：`useDelayedCollapse` 的 effect 依赖原先是 `[isExpanded, animateOn, duration]`，后两项只是「下次收起时用哪个值」，一旦变化就让 effect 重跑一遍 `setKeepHeight(true)` + `setTimeout(duration)`——改一次时长就把树上每个已收起到位的容器重撑一遍高度。现在两项收进 ref、依赖只留 `isExpanded`，与上游 `vue3-okr-tree` 的 `watch(isExpanded, …)` 同形（上游形状本就正确，只有本包需要改）。两条新用例各钉一个方向：改值不再重开撑高窗口（依赖数组改回旧写法当场红）、改过的时长对下一次收起仍然生效（ref 写成只初始化不更新的冻结值当场红）。
+
 ### 首页与文档站
 
 - **首页改走 beUI 组件**：从参考站 copy-in `components/motion/**` 六件（`Button` / `ButtonLink`、`TextReveal`、`AnimatedBadge`、`Tabs`、`BouncyAccordion`）与 `lib/{utils,ease}`、`lib/hooks/use-hover-capable`，新增依赖 `motion@^12.27.5`、`clsx@^2.1.1`、`tailwind-merge@^3.4.0`（beUI 是 shadcn registry 的源码件，不是 npm 包）。Hero 眉标 / 标题 / 按钮、Capabilities 卡、Layouts、FAQ、CTA 与导航版本胶囊全部换用这几件，入场动效由自研 `fade-up` keyframes 改为 `motion` 的 `whileInView`（自带 `useReducedMotion` 降级）。

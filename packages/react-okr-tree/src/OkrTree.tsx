@@ -18,6 +18,7 @@ import './styles/style.css'
 import { OkrTreeNode } from './OkrTreeNode'
 import { CLS, HIDDEN_ANCESTOR_SELECTOR, STATE, TREEITEM_SELECTOR, themeClass } from './dom-contract'
 import { cx, cxState, reactKey } from './cx'
+import { setPositions } from './aria-set'
 import {
   OkrTreeProvider,
   useOkrTreeGroupContext,
@@ -1025,7 +1026,7 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
     })
   )
 
-  const topLevel = root.childNodes.filter(child => child.visible)
+  const topPositions = setPositions(root.childNodes)
 
   return (
     <OkrTreeProvider value={contextValue}>
@@ -1039,12 +1040,12 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
         ) : null}
         <div ref={orgChartRoot} className={treeClass} role="tree">
           {isEmpty && props.empty ? <div className={CLS.empty}>{props.empty}</div> : null}
-          {root.childNodes.map(child => (
+          {topPositions.map(({ node: child, size, pos }) => (
             <OkrTreeNode
               key={reactKey(nodeKey, child)}
               node={child}
-              ariaSetSize={topLevel.length}
-              ariaPosInSet={topLevel.indexOf(child) + 1}
+              ariaSetSize={size}
+              ariaPosInSet={pos}
             />
           ))}
         </div>

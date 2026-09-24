@@ -11,6 +11,7 @@ import {
 } from 'react'
 import { CLS, STATE, animClass } from './dom-contract'
 import { cx, cxState, reactKey } from './cx'
+import { setPositions } from './aria-set'
 import { useOkrTreeContext } from './context'
 import { useNodeVersion } from './hooks/use-node-version'
 import { usePrefersReducedMotion } from './hooks/use-reduced-motion'
@@ -457,18 +458,16 @@ function OkrTreeNodeComponent({
     ctx.emit('node-drop', dragged, node, over.type, event)
   }
 
-  const renderChildren = (list: TreeNode[], asLeft: boolean): ReactNode => {
-    const visible = list.filter(child => child.visible)
-    return list.map(child => (
+  const renderChildren = (list: TreeNode[], asLeft: boolean): ReactNode =>
+    setPositions(list).map(({ node: child, size, pos }) => (
       <OkrTreeNode
         key={reactKey(cfg.nodeKey, child)}
         node={child}
         isLeftChildNode={asLeft}
-        ariaSetSize={visible.length}
-        ariaPosInSet={visible.indexOf(child) + 1}
+        ariaSetSize={size}
+        ariaPosInSet={pos}
       />
     ))
-  }
 
   const btnRenderers = {
     renderExpandBtn: cfg.renderExpandBtn,

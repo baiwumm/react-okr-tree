@@ -279,7 +279,7 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 
 第 7 节之外另有三项，一并校准：
 
-- **「CI 各 job 没有一次历史 run 可查」→ ✅ 已消**。`ci.yml` 与 `visual.yml` 在 main 上均多次 success。`release.yml` 跑过两次：run `35579145408`（推 `v1.13.0`）publish 步被守卫标为 `skipped`、只补建 GitHub Release；**run `35711304130`（推 `v1.14.0`）publish 步 success，本包首次由 CI 经 OIDC 真实发包**，日志 `+ react-okr-tree@1.14.0` 与 `Provenance statement published to transparency log: …logIndex=2908890080`，`gh secret list` 为空即无 token 参与。
+- **「CI 各 job 没有一次历史 run 可查」→ ✅ 已消**。`ci.yml` 与 `visual.yml` 在 main 上均多次 success。`release.yml` 跑过两次：run `35579145408`（推 `v1.13.0`）publish 步被守卫标为 `skipped`、只补建 GitHub Release；**run `35711304130`（推 `v1.14.0`）publish 步 success，本包首次由 CI 经 OIDC 真实发包**，日志 `+ react-okr-tree@1.14.0` 与 `Provenance statement published to transparency log: …logIndex=2908890080`，`gh secret list` 为空即无 token 参与。**1.14.1 沿同链路复跑**（2026-09-24，run `36011695748`：publish 步 success、provenance 入 sigstore logIndex `2939668829`，GitHub Release 正文取到 CHANGELOG 的 `## 1.14.1（2026-09-24）` 段）；同批把四条 workflow 里仍在 Node 20 上的 action 升到 v5 / upload-artifact v6，CI 日志的弃用警告实测 5 行 → 0 行、Visual 1 行 → 0 行。
 - **peer-matrix 字面不符 → 仍成立**。`ci.yml:112–115` 实际钉的是 react `~18.2.0` 与 `~18.3.0`，而 §7 与 requirements 483 行写的是「React 18.2 / 19.2」；`ci.yml:101–103` 的注释解释了 19 由默认 `verify` job 覆盖，但文档字面仍未改。
 - **`wrangler deploy --dry-run` 无承载 → 仍成立**。`package.json`、`apps/website/package.json` 与全部 workflow 内 grep `wrangler` 零命中。
 
@@ -311,4 +311,4 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 
 **第 3 轮首批（G17 + G4 + G8，2026-09-24）**：`verify:dist` 45 → **66** 条 ok（CSS 段 +21，见 G17 行；上游 vue3 同批 41 → 62）；单测 278 → **281** 条（G4 一条 + G8 两条）。视觉 33 条不变、像素基线未动，**源码零改动**（三条都是测试/门禁/文档）。
 
-**第 3 轮第二批（G9 + G14 + G13 非像素半边 + 两种锁定强度，2026-09-24）**：单测 281 → **284** 条（G9 拖拽悬停一条 + 锁定强度两条），视觉套件 33 → **35** 条（G14 几何一条 + G13 焦点环一条），`verify:dist` 仍 **66** 条、**png 一张没加**（两张新用例都只读坐标与计算值）。17 条 G 项现 **已收口 13**（新增 G9 / G14）、**半收口 2**（G11、G13 剩三种 connector 形状的基线）、**仍成立 2**（G1 会动 lockfile、G12 要两条站内视觉用例）。第 1 项之外全部**源码零改动**，属测试 / 门禁 / 文档。上游 `vue3-okr-tree` 同批同形，逐条变异复测一致。
+**第 3 轮第二批（G9 + G14 + G13 非像素半边 + 两种锁定强度，2026-09-24）**：单测 281 → **284** 条（G9 拖拽悬停一条 + 锁定强度两条），视觉套件 33 → **35** 条（G14 几何一条 + G13 焦点环一条），`verify:dist` 仍 **66** 条、**png 一张没加**（两张新用例都只读坐标与计算值）。17 条 G 项现 **已收口 13**（新增 G9 / G14）、**半收口 2**（G11、G13 剩三种 connector 形状的基线）、**仍成立 2**（G1 会动 lockfile、G12 要两条站内视觉用例）。第 1 项之外全部**源码零改动**，属测试 / 门禁 / 文档。上游 `vue3-okr-tree` 同批同形，逐条变异复测一致。**这批随后以 1.14.1 发布**（上游定号为 patch：`Unreleased` 段里没有「新增」小节，对外 API 零变化；本包同号跟随），发布前本地实跑单测 284 / 视觉 35 / verify:dist 66 / size 三项达标 / publint + attw 全绿 / verify:peer-types 净，发布后 `npm audit signatures` 无 invalid 无 missing。

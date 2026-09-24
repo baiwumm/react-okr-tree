@@ -10,7 +10,7 @@ name: Release
 #
 # 版本基准：与 vue3-okr-tree 锁步，同号即同一功能面；升什么号先看上游发了什么。
 # 日常发布：改 packages/react-okr-tree/package.json 的 version 与 CHANGELOG.md → 提交 →
-#          `git tag v1.14.0 && git push origin v1.14.0`。
+#          `git tag v1.14.1 && git push origin v1.14.1`（示例取最近一次实际发过的号）。
 # 注意 version 与 tag 必须一致（下面有一步专门比对），所以升版要单独一个提交，
 # 不要和别的改动混在一起。
 # 例外：1.13.0（对齐上游的首版）由维护者手动 npm publish 首发，未走本 workflow。

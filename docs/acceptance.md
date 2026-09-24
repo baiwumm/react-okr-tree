@@ -262,7 +262,7 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 | G1   | 仍成立    | `apps/website/package.json:34` 仍是 `"@types/mdx": "^2.0.14"`                                                                                                                                                                                                                       |
 | G2   | ✅ 已收口 | `svg-connector.ts:1` 已 `import { CARD_SELECTOR }`，`:70` 用它查询卡片锚点（`1d33a4d`），不再现场用 `CLS` 拼同一条串                                                                                                                                                                            |
 | G3   | ✅ 已收口 | 同日补：`tests/components/theme.spec.tsx` 的未知 theme 警告用例现同时断言 `[react-okr-tree]` 前缀（上游 vue3 侧同批补了 `[vue3-okr-tree]`，此前两端都只断文案）                                                                                                                     |
-| G4   | 仍成立    | `tests/` 内 `defaultExpandedKeys` 与 warn 组合零命中                                                                                                                                                                                                                                |
+| G4   | ✅ 已收口 | `controlled.spec.tsx` 新增一条：`default-expanded-keys` / `default-checked-keys` / `currentNodeKey` 三条各单独挂一次并断言对应警告，外加「补齐 node-key 后三条都不许出现」的反向守卫。两条踩坑记录：① `warn` 默认按文案去重，反向挂载前不 `resetWarnings()` 拿到的是空消息表，反向守卫变永真——实测把 `if (!p.nodeKey)` 改成无条件警告时该守卫照样绿、红的是文件里另一条老用例，现每次挂载前清表，改无条件后两条用例一起红；② 旧 pooled 断言里 `current-key` 那条文案本就写着「current-key / currentNodeKey」，只传 `currentNodeKey` 时靠子串也能命中，摘掉 `|| p.currentNodeKey !== undefined` 也不会红，故按「这一次挂载的消息集合」逐条断。三条变异（摘 default-expanded-keys 分支 / 摘 currentNodeKey 半个条件 / 去掉 node-key 守卫）两仓各跑一遍，全部只红新用例。上游 `vue3-okr-tree` 同批同形                                                                                                                                                                                                                                |
 | G5   | ✅ 已收口 | 同日补：`transition-robustness.spec.tsx` 用 `it.each` 逐个断六种 `animateName` 的 `okr-anim-<name>` 类；`verify-dist.mjs` 的 CSS 侧由「只钉一组」改为逐个断 `enter-active` / `leave-active`                                                                                         |
 | G6   | ✅ 已收口 | vue3 入口现已导出 `BUILT_IN_THEMES`（`vue3-okr-tree/src/lib/index.ts:13`，1.14.0 那批），本行原记的「实测导出 17 个、**不含** `BUILT_IN_THEMES`」已过时；requirements 4.7 的「对齐」表述到此成立                                                                                    |
 | G7   | ✅ 已收口 | `packages/react-okr-tree/package.json` 现为 `1.13.0`，与 tag `v1.13.0` 一致；`release.yml` 的 tag 比对步在 run `35579145408` 实跑通过                                                                                                                                               |
@@ -287,9 +287,9 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 
 **第 2 轮修复批次后的重新计数（2026-09-24）**：17 条 G 项 = **已收口 8**（G2 / G3 / G5 / G6 / G7 / G10 / G15 / G16）、**半收口 1**（G11）、**仍成立 8**（G1 / G4 / G8 / G9 / G12 / G13 / G14 / G17）。上面那行「5 条已收口」是当时批次的快照，保留不改。
 
-**第 3 轮首批后的重新计数（2026-09-24）**：已收口 9（上一条 G17，见其行）、半收口 1（G11）、**仍成立 7**（G1 / G4 / G8 / G9 / G12 / G13 / G14）。
+**第 3 轮首批后的重新计数（2026-09-24）**：已收口 **10**（新增 G17 CSS 几何常量门禁、G4 警告族断言）、半收口 1（G11）、**仍成立 6**（G1 / G8 / G9 / G12 / G13 / G14）。
 
-剩余优先级（按代价）：G1 / G4 都是一行量级；G8 / G9 / G14 各需一条断言或一个新用例（**G9 拖拽悬停的渲染计数判据是其中最实的一条**——功能有、`draggable.spec.tsx` 11 条功能用例也在，但缺「只 bump 相关节点」的性能判据）；G13 需要新增视觉用例。（G2 与 G15 已在后续批次收口，G17 在第 3 轮首批收口，见上表。）
+剩余优先级（按代价）：G1 是一行量级（但会动 `apps/website` 的 lockfile）；G8 / G9 / G14 各需一条断言或一个新用例（**G9 拖拽悬停的渲染计数判据是其中最实的一条**——功能有、`draggable.spec.tsx` 11 条功能用例也在，但缺「只 bump 相关节点」的性能判据）；G13 需要新增视觉用例。（G2 与 G15 已在后续批次收口，G17 与 G4 在第 3 轮首批收口，见上表。）
 
 **第 2 轮（1.14.0 外部审计修复批次）里的 G15 收口**：跨实现 DOM 比对已落成常驻门禁，形态是上表建议里的「夹具固化 vue3 侧结构串」那条（CI 拿不到 vue3 产物，故走人工刷新）。两条判据分别验过强度：改 `hiddenStyle` 的 `height: '0'` → `'2px'` 只打红 geometry（4 个含折叠容器的模式），改 `CLS.labelInner` 一个字母则 structure 与 geometry 一起红（9 个模式）——即第 1 轮报告说的「含内联样式逐字一致」在旧快照口径下并不成立，style 从来不在比对范围内，这一半现在才真的有人守。夹具刷新：`pnpm gen:cross-impl`（需同机有 vue3-okr-tree 仓且已 `pnpm build`）。
 
@@ -309,4 +309,4 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 
 **第 2 轮修复批次后（2026-09-24 复跑）**：单测 **278** 条（27 个文件；273 → 278 来自 3.3 的两条撑高窗口用例、3.4 的两条吞点击用例、以及 svg 稳态计数一条），视觉套件 **33** 条（原 14；+19 来自 G15 的两条跨实现门禁：`cross-impl.spec.ts` 12 条 + `cross-impl-svg.spec.ts` 6 条，另 1 条来自组对齐修复），`verify:dist` **45** 条 ok（2.6 / 2.7 换 Terser 那批补了三种产物各自的 ignore 注释断言；上面那行的 34 是当时批次数字，已过期），`pnpm typecheck` / `eslint` / `prettier --check .` 全净。上面那行 259 是当时批次的快照，不改。
 
-**第 3 轮首批后（2026-09-24，G17 收口）**：`verify:dist` 45 → **66** 条 ok（CSS 段 +21，见 G17 行；上游 vue3 同批 41 → 62）。本轮纯门禁与文档，单测 278 / 视觉 33 条不变、像素基线未动。
+**第 3 轮首批（G17 + G4，2026-09-24）**：`verify:dist` 45 → **66** 条 ok（CSS 段 +21，见 G17 行；上游 vue3 同批 41 → 62）；单测 278 → **279** 条（G4 的警告族新用例）。视觉 33 条不变、像素基线未动，源码零改动。

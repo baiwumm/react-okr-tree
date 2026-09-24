@@ -37,6 +37,69 @@ test.describe('布局与几何', () => {
     await snap(wrap, 'okr-group-aligned.png')
   })
 
+  /**
+   * `align-root` 说的是「根节点不被子树推着走」，此前只有那条 CSS 与一张像素基线，
+   * 而展开 / 收起这个动作序列本身没有任何几何断言守着。
+   *
+   * 两件实测过的事记在这里，免得后人误判这条的射程：
+   * ① 量的是**相对树容器**的水平坐标，不是绝对 `left`：demo 卡在 `overflow-x-auto` 里，
+   *    Playwright 点击前会把目标滚进视口，第一次与第二次读取之间绝对 `left` 就从 962 跳到
+   *    591——那是横向滚动位置，不是布局。拿绝对坐标断言只会得到一条与几何无关的红。
+   * ② 它抓住的是「收起把子树整个从布局里拿走」这一类（给 `.is-hidden` 补一条
+   *    `display:none`，本条与像素基线一起红；现存实现收起走 JS 内联 `visibility:hidden`，
+   *    盒子留在原地，所以坐标才不动）。`align-root` 的**静态形状**不在本条射程内：把两侧
+   *    `flex:1 1 0` 改成 `0 0 auto`、或把根节点的 `width:100%` 改成 `auto`，本条与
+   *    `okr-group-aligned` 那张基线都照样绿——那是 `group-align.spec.ts` 的活，两条变异
+   *    实测都把它打红。
+   */
+  test('展开 / 收起不改变 OKR 根卡片的水平坐标', async ({ page }) => {
+    const wrap = demoBlock(page, 'okr-group')
+    await wrap.scrollIntoViewIfNeeded()
+    const tree = wrap.locator('.org-chart-container').first()
+    const root = tree.locator('.org-chart-node.only-both-tree-node.align-root').first()
+    const card = root.locator('> .org-chart-node-label > .org-chart-node-label-inner')
+    const measure = async () => {
+      const [box, containerLeft] = await Promise.all([
+        card.evaluate(el => {
+          const r = el.getBoundingClientRect()
+          return { left: r.left, width: r.width }
+        }),
+        tree.evaluate(el => el.getBoundingClientRect().left),
+      ])
+      return { x: box.left - containerLeft, width: box.width }
+    }
+
+    const before = await measure()
+    expect(before.width).toBeGreaterThan(50)
+
+    // 每一步都先确认真的收起 / 展开了：否则「坐标没变」可能只是因为按钮没生效
+    const rightBtn = root.locator('> .org-chart-node-label > .org-chart-node-btn')
+    const leftBtn = root.locator('> .org-chart-node-label > .org-chart-node-left-btn')
+
+    await rightBtn.click()
+    await expect(root.locator('> .org-chart-node-children')).toHaveClass(/is-hidden/)
+    const collapsedRight = await measure()
+    expect(collapsedRight.x).toBeCloseTo(before.x, 0)
+    expect(collapsedRight.width).toBeCloseTo(before.width, 0)
+
+    await rightBtn.click()
+    await expect(root.locator('> .org-chart-node-children')).not.toHaveClass(/is-hidden/)
+    expect((await measure()).x).toBeCloseTo(before.x, 0)
+
+    // 左子树那一侧是 align-root 的承重边（flex: 1 1 0 + 组内统一宽度），单独走一遍
+    await leftBtn.click()
+    await expect(root.locator('> .org-chart-node-left-children')).toHaveClass(/is-hidden/)
+    const collapsedLeft = await measure()
+    expect(collapsedLeft.x).toBeCloseTo(before.x, 0)
+    expect(collapsedLeft.width).toBeCloseTo(before.width, 0)
+
+    await leftBtn.click()
+    await expect(root.locator('> .org-chart-node-left-children')).not.toHaveClass(/is-hidden/)
+    const after = await measure()
+    expect(after.x).toBeCloseTo(before.x, 0)
+    expect(after.width).toBeCloseTo(before.width, 0)
+  })
+
   test('节点尺寸与自定义类名', async ({ page }) => {
     await snap(await demoShot(page, 'node-style'), 'node-style.png')
   })

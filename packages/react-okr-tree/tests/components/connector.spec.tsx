@@ -298,36 +298,26 @@ describe('展开 / 收起与过滤后的重绘', () => {
   })
 
   /**
-   * 元素原型链上**真正持有** getBoundingClientRect 的那一层。
-   *
-   * 必须从元素往上找，不能直接用测试模块里的 `Element.prototype`：挂载后组件与
-   * `document.createElement` 造出的元素来自另一个 realm，那里的 `Element.prototype` 是
-   * 另一个同名对象——按测试模块的原型桩会静默空转（实测计数恒为 0），「静置增量为 0」
-   * 就成了探针从没响过的假绿。上游 vue3 那边的原型桩是有效的（实测同一位置计数 10）。
-   */
-  const rectOwnerProto = (el: Element) => {
-    let p: object | null = Object.getPrototypeOf(el)
-    while (p && !Object.getOwnPropertyNames(p).includes('getBoundingClientRect')) {
-      p = Object.getPrototypeOf(p)
-    }
-    return p as unknown as { getBoundingClientRect: () => DOMRect }
-  }
-
-  /**
    * 与上游 vue3-okr-tree 的「稳态不自持重排」同形（那边是 1.3 的守卫，这边钉 sameEdges 短路）。
-   * 计数点取「该 realm 内任何元素被读 rect」：短路失效时每帧重排全树，静置窗内增量必然远超 0。
+   *
+   * 计数一律走 `spy.mock.calls.length`，**不要改成 `mockImplementation` 里自增的计数器**：
+   * 本文件的 stubCards 会对每个卡片做 `vi.spyOn(el, 'getBoundingClientRect')`，而这个方法在
+   * 元素上是继承来的——同名方法的实例级 spy 会把原型层那个 mock 的**自定义实现作废**（实测：
+   * mock 本身仍被调用、`mock.calls` 照常增长，但 `mockImplementation` 给的函数体不再执行，
+   * 自增计数器从挂载后一步都不动）。上游那边没有实例级同名 spy，所以自增计数器是有效的
+   * （实测同一位置计数 10）；两边写法看着同形，能响的东西并不相同。
+   *
+   * 顺带排除过一条错判：挂载后元素原型链上持有该方法的确实就是测试模块的 `Element.prototype`
+   * （`=== ` 为 true），不存在"另一个 realm"。
    */
   it('稳态不自持重排：静置后不再产生任何测量', async () => {
     const { container, handle } = mountSvg({ showCollapsable: true, defaultExpandedKeys: [1, 11] })
-    const rectSpy = vi.spyOn(
-      rectOwnerProto(q(container, '.org-chart-container')),
-      'getBoundingClientRect'
-    )
+    const rectSpy = vi.spyOn(Element.prototype, 'getBoundingClientRect')
     try {
       stubCards(container, V_CARDS_FULL)
       for (let i = 0; i < 4; i++) await flushFrame()
       // 探针必须在计数，否则下面的 0 是假绿
-      expect(rectSpy.mock.calls.length, 'rect 一次都没被读到——探针挂错了地方').toBeGreaterThan(0)
+      expect(rectSpy.mock.calls.length, 'rect 一次都没被读到——探针没生效').toBeGreaterThan(0)
       const settled = rectSpy.mock.calls.length
       for (let i = 0; i < 8; i++) await flushFrame()
       /**

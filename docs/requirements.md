@@ -11,7 +11,7 @@
 ## 1. 项目概述
 
 - **源项目**：`vue3-okr-tree` —— 组织架构树 / OKR 树组件。核心特性是飞书 OKR 的**根节点左右双向展开**，以及纯 CSS 伪元素绘制的连接线。它本身是 `vue-okr-tree`(Vue 2 v1.0.17) 的复刻 + 增强，已发布形态为组件库 + VitePress 文档站 + Playground。
-- **新项目**：`react-okr-tree`（npm 包名已确认可用，registry 返回 404），用 React + TypeScript 重新实现，对外 API 与源项目**逐项对齐**（命名按 React 惯例做 kebab-case→camelCase、事件→回调、插槽→render props 的机械转换），视觉与交互效果一致。
+- **新项目**：`react-okr-tree`（npm 包名已确认可用，registry 返回 404——开工时状态，现已发布至 1.14.1），用 React + TypeScript 重新实现，对外 API 与源项目**逐项对齐**（命名按 React 惯例做 kebab-case→camelCase、事件→回调、插槽→render props 的机械转换），视觉与交互效果一致。
 - **许可与复用**：两个仓库同为 MIT、同一作者。`src/lib/okr-tree/style.css` 与 `model/transition.css` **原样平移**（不改内容、只改包名注释），这是刻意的工程决策而非偷懒，理由见 3.7。
 - **交付物**：
   1. 可发布的 React 组件库：ESM + CJS + UMD + `dist/style.css` + 类型声明；
@@ -481,7 +481,7 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 
 开发依赖同样锁定：`typescript` 5.9.3、`@types/react` 19.2.2、`@types/react-dom` 19.2.2、`@types/node` 24.7.2、`@types/mdx` 2.0.14、`prettier` 3.9.6。
 
-**库侧工具链不在这张表里**（参考站没有 Vite/vitest），已定 **Vite 取最新**：`vite` 8.3.0 + `@vitejs/plugin-react` 6.1.1（其 peer 正是 `vite ^8`）、`vite-plugin-dts` 5.1.0（peer `vite >=3`）、`vitest` 5.0.1（peer 支持 `vite ^8`）、`@testing-library/react` 16.3.3 + `@testing-library/dom` 10.4.2、`@playwright/test` 1.63.0（与源项目同版，视觉基线口径一致）。`typescript` 统一 **5.9.3**——不是偏好而是硬约束：`typescript-eslint@8.70` 的 peer 是 `>=4.8.4 <6.1.0`，TS 7 用不了，且与参考站同版。完整清单见 `development-plan.md` 附录 A。CI 的 `peer-matrix` job 再用 override 分别装 React 18.2 与 19.2 各跑一遍。
+**库侧工具链不在这张表里**（参考站没有 Vite/vitest），已定 **Vite 取最新**：`vite` 8.3.0 + `@vitejs/plugin-react` 6.1.1（其 peer 正是 `vite ^8`）、`vite-plugin-dts` 5.1.0（peer `vite >=3`）、`vitest` 5.0.1（peer 支持 `vite ^8`）、`@testing-library/react` 16.3.3 + `@testing-library/dom` 10.4.2、`@playwright/test` 1.63.0（与源项目同版，视觉基线口径一致）。`typescript` 统一 **5.9.3**——不是偏好而是硬约束：`typescript-eslint@8.70` 的 peer 是 `>=4.8.4 <6.1.0`，TS 7 用不了，且与参考站同版。完整清单见 `development-plan.md` 附录 A。CI 的 `peer-matrix` job 再用 override 分别装 React 18.2 与 18.3 各跑一遍（19 由默认 `verify` job 覆盖）。
 
 工程基建照抄参考站：`lib/site.ts`（站点元信息单一来源）/ `lib/source.ts` / `lib/i18n.ts`（`UI_TRANSLATIONS`）、`app/sitemap.ts` / `robots.ts` / `not-found.tsx`、`scripts/with-memory-cap.mjs`（Windows 下 Next 构建内存兜底）、`public/fonts/maple-mono-cn-regular.woff2`（GB2312 子集自托管 + `unicode-range`，与参考站同款字体策略）。
 
@@ -507,7 +507,7 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 ### 6.4 API 表单一来源
 
 与源项目同为 6 张（Attributes / Props / Events / Methods / 渲染定制 / Group 与键盘），数据落在 `packages/react-okr-tree` 与文档站共享的 `shared/api.ts`（列内容按本文档 4.1–4.5 的 React 命名改写）。**第一天就建这个文件**（React 版 API 面比 Vue 更长，多处手写必然漂移），但三个消费出口分两步：首版由 `<ApiTable>` 组件在文档站读它渲染 + README 手写；1.1.0 再补 `gen:readme` 脚本生成 README 的 API 段落（源项目用 `<!-- API-DOC-BEGIN/END -->` 标记包裹生成段，照抄该约定）。
->
+
 > **2026-09-22 修正**：`gen:readme` 一步**作废**，本包不提供该脚本。README 的 API 一节只留分组与条数概览并指向文档站 API 页，完整表格以 `shared/api.ts` → 文档站为唯一呈现路径；两个消费出口为 `<ApiTable>` 与 `tests/api-surface.spec.tsx`。
 
 ### 6.5 部署：Cloudflare（纯静态资产）
@@ -536,7 +536,7 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 
 | 项        | 要求                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 包名      | `react-okr-tree`（npm 空闲，已核实）。仓库为 pnpm workspace：`packages/react-okr-tree`（库）+ `apps/website`（Next.js + fumadocs 文档站，见 6.1）                                                                                                                                                                                                                                                                                                                                                |
+| 包名      | `react-okr-tree`（npm 空闲，已核实——开工时状态）。仓库为 pnpm workspace：`packages/react-okr-tree`（库）+ `apps/website`（Next.js + fumadocs 文档站，见 6.1）                                                                                                                                                                                                                                                                                                                                    |
 | peer      | `react >= 18.2.0`、`react-dom >= 18.2.0`（**建议下限 18.2 而非仅 19**，理由见 11.1）、`html-to-image ^1.11.0` **optional**（`peerDependenciesMeta`），且**绝不进 `dependencies`**                                                                                                                                                                                                                                                                                                                |
 | 产物      | `dist/react-okr-tree.es.js` / `.cjs` / `.umd.js` + `dist/style.css` + `dist/index.d.ts` + `dist/index.d.cts`（`"type":"module"` 下 CJS 必须用 `.cjs` 才能 `require`）；`exports` 提供 `.` / `./style.css` / `./dist/style.css` / `./package.json`；`sideEffects` 标 `**/*.css`。**UMD 建议保留**（见 11.3），但需 external `react` / `react-dom` 并约定 globals，README 注明 CDN 场景无开发期警告                                                                                                |
 | 构建      | Vite（lib 模式）+ `@vitejs/plugin-react` + `vite-plugin-dts`（配 `@microsoft/api-extractor` 打包为单文件 d.ts）+ 构建后脚本 `post-build.mjs`（生成 `index.d.cts`）+ `verify:dist.mjs`（jsdom 里挂载三种模式、断言产物清单与 `require()` 可用）；**不做源项目的「ESM 事后压缩」一步**——Vite 8 下 ESM 顶层导出名必须保留，用 Oxc 再跑一遍只省 0.5 kB gzip，却让 sourcemap 错位                                                                                                                     |
@@ -545,7 +545,7 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 | 代码规范  | ESLint 9 + Prettier（配置沿用源项目取向：单引号、无分号、printWidth 100）；React hooks 规则必须开启（`react-hooks/exhaustive-deps` 不许关闭）                                                                                                                                                                                                                                                                                                                                                    |
 | 单测      | Vitest + jsdom + `@testing-library/react`；**逐条移植源项目 226 条用例**（components 16 个 spec / model 4 个 / ssr 1 个），模型层测试几乎可原样搬；`resetWarnings()` 测试钩子保留；覆盖率阈值 statements 80 / branches 75 / functions 80 / lines 80                                                                                                                                                                                                                                              |
 | 视觉回归  | Playwright + Chromium，基线需重新生成（源项目按平台各一套：`*-chromium-win32.png` 与 `*-chromium-linux.png`，覆盖 8 个布局/功能用例 + 6 套主题）；端口可用 `OKR_VISUAL_PORT` 覆盖（Windows 保留端口段会占用 4173）；含 `emulateMedia({media:'print'})` 计算样式断言、计算样式断言校验 `unstyled`（阴影被清掉且节点盒尺寸不变）、性能用例                                                                                                                                                         |
-| CI        | `verify`（lint / typecheck / test / build / verify:dist / publint / attw / size-limit）、`peer-matrix`（React 18.2 / 19.2）、`visual`、`release`（tag → 门禁 → `npm publish --provenance` → GitHub Release）；文档站加 `website-build`（`next build` 通过 + export 静态性断言：产物无 server chunk 残留、搜索索引已生成）与 `website-deploy`（Cloudflare，仅 main）                                                                                                                              |
+| CI        | `verify`（lint / typecheck / test / build / verify:dist / publint / attw / size-limit）、`peer-matrix`（React 18.2 / 18.3；19 由默认安装的 `verify` job 覆盖）、`visual`、`release`（tag → 门禁 → `npm publish --provenance` → GitHub Release）；文档站加 `website-build`（`next build` 通过 + export 静态性断言：产物无 server chunk 残留、搜索索引已生成）；~~`website-deploy`（Cloudflare，仅 main）~~ 已取消，部署由 Cloudflare Workers Builds 随 push 自动执行（见 development-plan 9.5③）  |
 | 体积预算  | ESM gzip ≤ 20 kB、UMD ≤ 21 kB、`style.css` ≤ 4 kB（源项目为 19/19.5/4 kB，CSS 应完全一致）                                                                                                                                                                                                                                                                                                                                                                                                       |
 | 性能基线  | 对齐源项目 `docs/perf.md` 的口径与脚本形态（2041 节点数据集；jsdom 首渲染 collapsed / expand-all、`expandAll`、`filter`+恢复、原地 push+pop、深层 label 改；真实 Chromium 首渲染 < 300 ms 门禁）。React 版预期在「局部更新」上更好，但**首渲染不得显著劣化**（建议门槛：与 Vue 版同数量级）                                                                                                                                                                                                      |
 | 文档      | README 结构对齐源项目：安装 / 快速开始 / OKR 模式 / 自定义节点内容 / 通过 ref 调用方法 / 受控状态 / 懒加载 / 画布 / 组对齐 / 键盘与可访问性 / 泛型与类型 / 主题与样式定制（含变量一览、无样式模式、打印）/ API（生成段）/ 需要注意的行为（`nodeKey` 缺失时的 `$treeNodeId` 策略 + 冻结数据边界 + R2 的原地变更说明）/ 与 vue3-okr-tree 的差异 / 开发 / License。仅中文（双语 README 是源项目明确不做项）。文档站选型与结构见 6.1–6.5（24 个 Demo 直接作为站内可交互组件，不再有独立 playground） |
@@ -614,7 +614,7 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 
 ---
 
-## 11. 建议采纳的决策（等你确认后即按此实现）
+## 11. 建议采纳的决策（全部已确认落地；本节保留当时的提案原文）
 
 ### 11.1 React peer 下限取 `>= 18.2.0`，不做「仅 19」
 
@@ -645,4 +645,5 @@ React 版 API 面（42 props + 14 回调 + 28 方法 + 渲染定制）比 Vue �
 
 ### 剩下的
 
-无阻塞项。你确认 6.5 的取舍后，我按本文档出 `docs/development-plan.md`（阶段拆分 + 里程碑），仍然一轮只推进你批准的项。
+无阻塞项。~~你确认 6.5 的取舍后，我按本文档出 `docs/development-plan.md`（阶段拆分 + 里程碑），仍然一轮只推进你批准的项。~~
+→ **已确认**：`docs/development-plan.md` 已产出并全部执行完毕，本节使命已尽；本文自此作为需求基线保留，仅接收事实性回写。

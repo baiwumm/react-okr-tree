@@ -32,7 +32,7 @@ pnpm add react-okr-tree
 npm i react-okr-tree
 ```
 
-Peer 依赖 `react >= 18.2.0` / `react-dom >= 18.2.0`（CI 在 React 18.2 / 19.2 双档矩阵下跑全量单测）。`html-to-image`（`^1.11.0`）是**可选 peer**，只用到画布 `exportImage` 时才需要装，也可以不装、改用 `exportImage({ toPng / toSvg })` 传入渲染函数。
+Peer 依赖 `react >= 18.2.0` / `react-dom >= 18.2.0`（CI 在 React 18.2 / 18.3 双档矩阵下跑全量单测，19 由默认安装档覆盖）。`html-to-image`（`^1.11.0`）是**可选 peer**，只用到画布 `exportImage` 时才需要装，也可以不装、改用 `exportImage({ toPng / toSvg })` 传入渲染函数。
 
 样式必须显式引入，否则只有结构没有外观（组件不自动注入 CSS）：
 

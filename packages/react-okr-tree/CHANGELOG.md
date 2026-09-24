@@ -22,6 +22,8 @@
 
 - **运行中改 `animate` / `animateDuration` 不再把已折叠的容器凭空撑高**：`useDelayedCollapse` 的 effect 依赖原先是 `[isExpanded, animateOn, duration]`，后两项只是「下次收起时用哪个值」，一旦变化就让 effect 重跑一遍 `setKeepHeight(true)` + `setTimeout(duration)`——改一次时长就把树上每个已收起到位的容器重撑一遍高度。现在两项收进 ref、依赖只留 `isExpanded`，与上游 `vue3-okr-tree` 的 `watch(isExpanded, …)` 同形（上游形状本就正确，只有本包需要改）。两条新用例各钉一个方向：改值不再重开撑高窗口（依赖数组改回旧写法当场红）、改过的时长对下一次收起仍然生效（ref 写成只初始化不更新的冻结值当场红）。
 
+- **平移后吞点击不再往视口元素上堆监听**：`handlePointerUp` 原先每次平移结束都 `viewportEl.current.addEventListener('click', …, { capture: true, once: true })`，而触摸平移压根不派发 click——监听于是按平移次数累积挂在元素上，直到某一次真出现 click 才被一次性摘掉（组件卸载时仍挂着）。现改记一个 `swallowNextClick` ref，由视口 div 上常驻的 `onClickCapture` 判断并消费；对外语义与改动前逐字一致（平移后紧跟的那一次 click 被吞，第二次照常送到节点），只是不再残留注册。两条新用例分别钉「吞一次且只吞一次」与「平移过程中元素上 `click` 注册数为 0」——还原成 once 监听、或把标志赋值摘掉，各打红一条（后者同时证明 React 合成事件的捕获阶段确实担起了原来那条原生捕获监听的活）。与上游 `vue3-okr-tree` 同批同形。
+
 ### 首页与文档站
 
 - **首页改走 beUI 组件**：从参考站 copy-in `components/motion/**` 六件（`Button` / `ButtonLink`、`TextReveal`、`AnimatedBadge`、`Tabs`、`BouncyAccordion`）与 `lib/{utils,ease}`、`lib/hooks/use-hover-capable`，新增依赖 `motion@^12.27.5`、`clsx@^2.1.1`、`tailwind-merge@^3.4.0`（beUI 是 shadcn registry 的源码件，不是 npm 包）。Hero 眉标 / 标题 / 按钮、Capabilities 卡、Layouts、FAQ、CTA 与导航版本胶囊全部换用这几件，入场动效由自研 `fade-up` keyframes 改为 `motion` 的 `whileInView`（自带 `useReducedMotion` 降级）。

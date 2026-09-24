@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type Ref,
@@ -214,6 +215,12 @@ function OkrTreeViewportInner(props: OkrTreeViewportProps, ref: Ref<OkrTreeViewp
     oy: number
   } | null>(null)
   const movedRef = useRef(false)
+  /**
+   * 平移结束后待吞掉的那一次 click，记成标志由 handleClickCapture 消费。
+   * 不用 addEventListener('click', …, { once: true })：触摸平移根本不派发 click，
+   * 那样每平移一次就往元素上留一个监听，按次数累积、卸载时也无人摘。
+   */
+  const swallowNextClick = useRef(false)
 
   const capturePinch = () => {
     const [a, b] = [...pointers.values()]
@@ -291,19 +298,16 @@ function OkrTreeViewportInner(props: OkrTreeViewportProps, ref: Ref<OkrTreeViewp
     }
     // 平移过则吞掉随后的一次 click，避免误触 node-click
     if (movedRef.current) {
-      const el = viewportEl.current
-      if (el) {
-        el.addEventListener(
-          'click',
-          e => {
-            e.stopPropagation()
-            e.preventDefault()
-          },
-          { capture: true, once: true }
-        )
-      }
+      swallowNextClick.current = true
       movedRef.current = false
     }
+  }
+
+  function handleClickCapture(event: ReactMouseEvent<HTMLDivElement>) {
+    if (!swallowNextClick.current) return
+    swallowNextClick.current = false
+    event.stopPropagation()
+    event.preventDefault()
   }
 
   // ---- 组内树实例登记（centerNode 定位）----
@@ -401,6 +405,7 @@ function OkrTreeViewportInner(props: OkrTreeViewportProps, ref: Ref<OkrTreeViewp
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
+        onClickCapture={handleClickCapture}
         onDoubleClick={reset}
       >
         <div

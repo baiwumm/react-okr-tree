@@ -146,6 +146,52 @@ describe('受控展开 expandedKeys（对应 v-model:expanded-keys）', () => {
     expect(onNodeExpand).toHaveBeenCalledTimes(1)
   })
 
+  /**
+   * 锁定态（requirements 第 5 节点名的「传值但不传回调」写法）实测行为：**不冻结视图**。
+   * 展开态的渲染源是 store，受控 prop 只在创建期（`OkrTree.tsx:293`）与宿主传入值变化时
+   * （`:832-837`）回灌，宿主不回写就没有第二次同步 —— 点击照常折叠。上游 vue3 侧三种写法
+   * （只绑 prop / 绑了不回写的监听 / 真受控写回）实测与此逐字相同，所以这不是复刻偏差，
+   * 是两仓共同语义。这两条钉住现状：不报错、不警告、回调照常收到新值、视图跟着交互走。
+   */
+  it('锁定态：传 expandedKeys 而不给回写时不警告，点击照常生效', () => {
+    /**
+     * 必须自己清一次去重表：`warn()` 默认按文案去重、且是**模块级**的，本文件前面的用例
+     * 已经把「expanded-keys（受控）需要同时设置 node-key」那条发掉了，不清表的话
+     * `not.toHaveBeenCalled()` 是白断的（实测把 node-key 守卫改成无条件警告，这条照样绿）。
+     */
+    resetWarnings()
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { container, handle } = renderTree({
+      data: makeData(),
+      nodeKey: 'id',
+      showCollapsable: true,
+      expandedKeys: [1],
+    })
+    expect(handle.getNode(1)!.expanded).toBe(true)
+    clickBtnOf(container, 'A')
+    expect(handle.getNode(1)!.expanded, '宿主没回写，视图仍按 store 走').toBe(false)
+    expect(warnSpy, '锁定态是合法配置，不该警告').not.toHaveBeenCalled()
+    warnSpy.mockRestore()
+  })
+
+  it('锁定态：传了回调但宿主不回写时，回调收到新值而视图不被拉回', () => {
+    const onExpandedKeysChange = vi.fn()
+    const { container, handle } = renderTree({
+      data: makeData(),
+      nodeKey: 'id',
+      showCollapsable: true,
+      expandedKeys: [1],
+      onExpandedKeysChange,
+    })
+    clickBtnOf(container, 'A')
+    expect(onExpandedKeysChange).toHaveBeenCalledTimes(1)
+    expect(
+      [...(onExpandedKeysChange.mock.calls[0][0] as TreeKey[])],
+      '收起 A 之后回调收到的新值就是空列表'
+    ).toEqual([])
+    expect(handle.getNode(1)!.expanded, 'prop 恒为 [1]，但没人回灌就不该被拉回').toBe(false)
+  })
+
   it('父组件更新 expandedKeys 后同步展开态（双向）', () => {
     const handleRef = createRef<OkrTreeHandle>()
     const stateRef = createRef<ExpandedHostState>()

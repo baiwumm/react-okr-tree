@@ -266,7 +266,7 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 | G5   | ✅ 已收口 | 同日补：`transition-robustness.spec.tsx` 用 `it.each` 逐个断六种 `animateName` 的 `okr-anim-<name>` 类；`verify-dist.mjs` 的 CSS 侧由「只钉一组」改为逐个断 `enter-active` / `leave-active`                                                                                         |
 | G6   | ✅ 已收口 | vue3 入口现已导出 `BUILT_IN_THEMES`（`vue3-okr-tree/src/lib/index.ts:13`，1.14.0 那批），本行原记的「实测导出 17 个、**不含** `BUILT_IN_THEMES`」已过时；requirements 4.7 的「对齐」表述到此成立                                                                                    |
 | G7   | ✅ 已收口 | `packages/react-okr-tree/package.json` 现为 `1.13.0`，与 tag `v1.13.0` 一致；`release.yml` 的 tag 比对步在 run `35579145408` 实跑通过                                                                                                                                               |
-| G8   | 仍成立    | `tests/` 内「锁定态 / locked」零命中                                                                                                                                                                                                                                                |
+| G8   | ✅ 已收口 | `controlled.spec.tsx` 新增两条锁定态用例，并**实测纠正了这条缺口原本的判据**：报告与 requirements 第 5 节点名的「传值但不传回调」并**不冻结视图** —— 展开态的渲染源是 store，受控 prop 只在创建期（`OkrTree.tsx:293`）与宿主传入值变化时（`:832-837`）回灌，宿主不回写就没有第二次同步，点击照常折叠（上游 vue3 侧同样三种写法实测一致，故这不是复刻偏差而是两仓共同语义；报告建议的「断视图不变」照写会得到一条红用例）。现两条用例钉现状：① 不传回调 → 不报错不警告、点击生效；② 传了回调但宿主不回写 → 回调照样收到新值（收起根节点即 `[]`）、视图不被拉回。三条变异验证：R1 摘掉 emit（红 ②）、R2 在交互回调里以 prop 为准拉回＝真冻结（**只红这两条**）、R3 去掉 node-key 守卫让锁定态也警告（红 ①）。**R3 之前 ① 的 `not.toHaveBeenCalled()` 是白断的**：`warn()` 按文案去重且去重表是模块级的，本文件前面的用例已经把那条文案发掉，不自己 `resetWarnings()` 就恒真（实测改无条件警告时它照样绿）。**仍未验**：`guide/controlled.mdx:91-93` 说「传内联字面量才完全锁定、引用稳定则保留」——探针没分出这个差别（宿主重渲染时 `data={makeData()}` 也换了引用 → 整树重建，两条路径混在一起），要证得先给宿主一份引用稳定的 data 再对比，已记待办。驱动 `_scratch/probe-locked-mutation.mjs`                                                                                                                                                                                                                                                |
 | G9   | 仍成立    | `tests/` 内 `dragOver` 与渲染计数组合 0 命中（R3 第 129 行点名的判据仍缺）                                                                                                                                                                                                          |
 | G10  | ✅ 已收口 | 同日改：恒真的 `\|\| /React/.test(umdSource)` 分支已删，现断言 UMD 的 CJS 分支确实 `require('react')`（react 未被内联），并用 `new Function('module','exports','require', src)` **真实执行** UMD，断言 `default === OkrTree` 与 `BUILT_IN_THEMES` 6 项。`pnpm verify:dist` 实跑通过 |
 | G11  | ◐ 半收口  | `public/og.png` 与 `out/og.png` 均已存在；但 `verify-export.mjs` 内 grep `og:image` / `property=` 零命中，「扫不到 og:image meta」这个检测盲区仍在                                                                                                                                  |
@@ -287,9 +287,9 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 
 **第 2 轮修复批次后的重新计数（2026-09-24）**：17 条 G 项 = **已收口 8**（G2 / G3 / G5 / G6 / G7 / G10 / G15 / G16）、**半收口 1**（G11）、**仍成立 8**（G1 / G4 / G8 / G9 / G12 / G13 / G14 / G17）。上面那行「5 条已收口」是当时批次的快照，保留不改。
 
-**第 3 轮首批后的重新计数（2026-09-24）**：已收口 **10**（新增 G17 CSS 几何常量门禁、G4 警告族断言）、半收口 1（G11）、**仍成立 6**（G1 / G8 / G9 / G12 / G13 / G14）。
+**第 3 轮首批后的重新计数（2026-09-24）**：已收口 **11**（新增 G17 CSS 几何常量门禁、G4 警告族断言、G8 锁定态用例）、半收口 1（G11）、**仍成立 5**（G1 / G9 / G12 / G13 / G14）。
 
-剩余优先级（按代价）：G1 是一行量级（但会动 `apps/website` 的 lockfile）；G8 / G9 / G14 各需一条断言或一个新用例（**G9 拖拽悬停的渲染计数判据是其中最实的一条**——功能有、`draggable.spec.tsx` 11 条功能用例也在，但缺「只 bump 相关节点」的性能判据）；G13 需要新增视觉用例。（G2 与 G15 已在后续批次收口，G17 与 G4 在第 3 轮首批收口，见上表。）
+剩余优先级（按代价）：G1 是一行量级（但会动 `apps/website` 的 lockfile）；G9 / G14 各需一个新用例（**G9 拖拽悬停的渲染计数判据是其中最实的一条**——功能有、`draggable.spec.tsx` 11 条功能用例也在，但缺「只 bump 相关节点」的性能判据）；G13 需要新增视觉用例；G12 需要两条站内视觉用例。另有一条**新暴露的待验项**：`guide/controlled.mdx:91-93` 的「两种锁定强度」（内联字面量才完全锁定）尚未实测分离，见 G8 行末尾。（G2 / G15 / G17 / G4 / G8 已收口，见上表。）
 
 **第 2 轮（1.14.0 外部审计修复批次）里的 G15 收口**：跨实现 DOM 比对已落成常驻门禁，形态是上表建议里的「夹具固化 vue3 侧结构串」那条（CI 拿不到 vue3 产物，故走人工刷新）。两条判据分别验过强度：改 `hiddenStyle` 的 `height: '0'` → `'2px'` 只打红 geometry（4 个含折叠容器的模式），改 `CLS.labelInner` 一个字母则 structure 与 geometry 一起红（9 个模式）——即第 1 轮报告说的「含内联样式逐字一致」在旧快照口径下并不成立，style 从来不在比对范围内，这一半现在才真的有人守。夹具刷新：`pnpm gen:cross-impl`（需同机有 vue3-okr-tree 仓且已 `pnpm build`）。
 
@@ -309,4 +309,4 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 
 **第 2 轮修复批次后（2026-09-24 复跑）**：单测 **278** 条（27 个文件；273 → 278 来自 3.3 的两条撑高窗口用例、3.4 的两条吞点击用例、以及 svg 稳态计数一条），视觉套件 **33** 条（原 14；+19 来自 G15 的两条跨实现门禁：`cross-impl.spec.ts` 12 条 + `cross-impl-svg.spec.ts` 6 条，另 1 条来自组对齐修复），`verify:dist` **45** 条 ok（2.6 / 2.7 换 Terser 那批补了三种产物各自的 ignore 注释断言；上面那行的 34 是当时批次数字，已过期），`pnpm typecheck` / `eslint` / `prettier --check .` 全净。上面那行 259 是当时批次的快照，不改。
 
-**第 3 轮首批（G17 + G4，2026-09-24）**：`verify:dist` 45 → **66** 条 ok（CSS 段 +21，见 G17 行；上游 vue3 同批 41 → 62）；单测 278 → **279** 条（G4 的警告族新用例）。视觉 33 条不变、像素基线未动，源码零改动。
+**第 3 轮首批（G17 + G4 + G8，2026-09-24）**：`verify:dist` 45 → **66** 条 ok（CSS 段 +21，见 G17 行；上游 vue3 同批 41 → 62）；单测 278 → **281** 条（G4 一条 + G8 两条）。视觉 33 条不变、像素基线未动，**源码零改动**（三条都是测试/门禁/文档）。

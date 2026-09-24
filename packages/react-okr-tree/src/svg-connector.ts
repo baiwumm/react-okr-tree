@@ -1,4 +1,4 @@
-import { CLS } from './dom-contract'
+import { CARD_SELECTOR } from './dom-contract'
 import type { TreeNode } from './model/node'
 import type { TreeStore } from './model/tree-store'
 import type { ConnectorShape } from './types'
@@ -67,9 +67,7 @@ export function collectCardRects(
   const measure = (node: TreeNode) => {
     if (node.visible) {
       const el = nodeEls.get(node)
-      const card = el
-        ? el.querySelector<HTMLElement>(`:scope > .${CLS.label} > .${CLS.labelInner}`)
-        : null
+      const card = el ? el.querySelector<HTMLElement>(CARD_SELECTOR) : null
       if (card) {
         const r = card.getBoundingClientRect()
         rects.set(node, {

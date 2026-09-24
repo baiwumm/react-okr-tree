@@ -277,11 +277,12 @@ function OkrTreeNodeComponent({
   function handleCheckToggle(): void {
     if (!store.showCheckbox || node.disabled) return
     node.setChecked(!node.checked, !store.checkStrictly)
+    const state = store.collectCheckState()
     ctx.emit('check', node.data, {
-      checkedNodes: store.getCheckedNodes().map(n => n.data),
-      checkedKeys: store.getCheckedKeys(),
-      halfCheckedNodes: store.getHalfCheckedNodes(),
-      halfCheckedKeys: store.getHalfCheckedKeys(),
+      checkedNodes: state.checkedNodes.map(n => n.data),
+      checkedKeys: state.checkedKeys,
+      halfCheckedNodes: state.halfCheckedNodes,
+      halfCheckedKeys: state.halfCheckedKeys,
     })
   }
 

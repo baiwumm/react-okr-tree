@@ -296,6 +296,55 @@ describe('展开 / 收起与过滤后的重绘', () => {
     await flushFrame()
     expect(paths(container).length).toBe(3)
   })
+
+  /**
+   * 元素原型链上**真正持有** getBoundingClientRect 的那一层。
+   *
+   * 必须从元素往上找，不能直接用测试模块里的 `Element.prototype`：挂载后组件与
+   * `document.createElement` 造出的元素来自另一个 realm，那里的 `Element.prototype` 是
+   * 另一个同名对象——按测试模块的原型桩会静默空转（实测计数恒为 0），「静置增量为 0」
+   * 就成了探针从没响过的假绿。上游 vue3 那边的原型桩是有效的（实测同一位置计数 10）。
+   */
+  const rectOwnerProto = (el: Element) => {
+    let p: object | null = Object.getPrototypeOf(el)
+    while (p && !Object.getOwnPropertyNames(p).includes('getBoundingClientRect')) {
+      p = Object.getPrototypeOf(p)
+    }
+    return p as unknown as { getBoundingClientRect: () => DOMRect }
+  }
+
+  /**
+   * 与上游 vue3-okr-tree 的「稳态不自持重排」同形（那边是 1.3 的守卫，这边钉 sameEdges 短路）。
+   * 计数点取「该 realm 内任何元素被读 rect」：短路失效时每帧重排全树，静置窗内增量必然远超 0。
+   */
+  it('稳态不自持重排：静置后不再产生任何测量', async () => {
+    const { container, handle } = mountSvg({ showCollapsable: true, defaultExpandedKeys: [1, 11] })
+    const rectSpy = vi.spyOn(
+      rectOwnerProto(q(container, '.org-chart-container')),
+      'getBoundingClientRect'
+    )
+    try {
+      stubCards(container, V_CARDS_FULL)
+      for (let i = 0; i < 4; i++) await flushFrame()
+      // 探针必须在计数，否则下面的 0 是假绿
+      expect(rectSpy.mock.calls.length, 'rect 一次都没被读到——探针挂错了地方').toBeGreaterThan(0)
+      const settled = rectSpy.mock.calls.length
+      for (let i = 0; i < 8; i++) await flushFrame()
+      /**
+       * 短路失效的形状就是这里：setEdges 无条件换引用 → 重渲染 → 每次提交后排一帧 →
+       * 再读一遍全树 rect。静置 8 帧的增量应当恰为 0。
+       */
+      expect(rectSpy.mock.calls.length - settled).toBe(0)
+      // 短路不能冻住覆盖层：几何真的变了仍要重绘（A→A1 实体边换成收起残枝）
+      expect(stubDs(container)).toEqual([])
+      inAct(() => handle.collapseNode(11))
+      await flushFrame()
+      expect(stubDs(container).length).toBe(1)
+      expect(rectSpy.mock.calls.length - settled).toBeGreaterThan(0)
+    } finally {
+      rectSpy.mockRestore()
+    }
+  })
 })
 
 describe('OKR 模式左树', () => {

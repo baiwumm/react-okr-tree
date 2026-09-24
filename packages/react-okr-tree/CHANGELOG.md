@@ -48,6 +48,11 @@
 - **README 的 API 一节明确为手写概览，并把三处幽灵表述改成现状**：删掉「完整表格将在 1.1.0 由 `gen:readme` 从同一份数据生成」这条从未落地的计划（本包不提供该脚本），`shared/api.ts` 头注释的「三处消费」改为两处（`<ApiTable>` + `tests/api-surface.spec.tsx`）并写明 README 只留概览，文档站 `/docs/api` 首段与 `/docs/start/repo` 的「三份真源」表同步改写。仓库内 `docs/requirements.md`（6.4、11.4）与 `docs/development-plan.md`（9.7）各追加现状修正并把 `gen:readme` 后续项标作废，`docs/acceptance.md` 指向 `README:190` 的证据指针改指章节名（精简后行号失效）。
 - 新增仓库根 `AGENTS.md`：固化「完整 API 表改 `shared/api.ts`、README 概览手写需顺手同步、单元格行内代码用 `<code>`、两端 README 骨架同步」四条约定。
 
+### 工程化（无对外行为变更）
+
+- **跨实现 DOM 比对转为常驻门禁（G15）**：新增 `tests/visual/cross-impl.spec.ts` 与 `tests/visual/fixtures/cross-impl-vue3.json`（10 个模式：三种布局、OKR 左右均收起、复选框+拖拽、animate + 时长变量、`defaultExpandedKeys` + `showNodeNum`、`theme` + `unstyled`、标签尺寸、空数据）。vue3 侧真实浏览器渲染的 outerHTML 由 `pnpm gen:cross-impl`（`scripts/gen-cross-impl-fixture.mjs`，需同机有上游仓且已 build）固化进夹具，react 侧在测试里用 `dist/*.cjs` + `renderToStaticMarkup` 现算，props 直接取夹具那份，然后两侧在同一个 Chromium 内各过一遍 DOM 往返、用同一个归一化器 diff。断言拆两条：**structure**（剔 `style` 与 `draggable`，比类名 / 层级 / `role` / `aria-*` / 文本）与 **geometry**（纳入 `style`，逐条声明取 CSSOM 规范值，于是 `height:0` 与 `height: 0px`、声明顺序这些写法差异都不算差异）。第 1 轮审计报告的「含内联样式逐字一致」是错判——仓里的 `structureHtml` 把整条 style filter 掉了，快照中 `style=` 出现 0 次，内联样式这一半此前没有任何门禁守着，现在才真的有人守。两条各自验过强度：`hiddenStyle` 的 `height: '0'` 改成 `'2px'` 只打红 geometry（4 个含折叠容器的模式），`CLS.labelInner` 改一个字母则两条一起红（9 个模式）。视觉套件 14 → **26** 条，单测数不受影响。
+- **补 `connector="svg"` 的稳态计数用例**（对齐上游 1.3 的守卫）：`tests/components/connector.spec.tsx` 新增「静置 8 帧内 rect 读取增量为 0」，把 `sameEdges` 短路从「注释里说有效」变成有人守的断言——把 `setEdges(prev => sameEdges(prev, next) ? prev : next)` 改回无条件 `setEdges(next)` 当场红（静置窗内多读 40 次）。**顺带记一条踩坑**：本文件里 `vi.spyOn(Element.prototype, 'getBoundingClientRect')` 是**静默空转**的——挂载后组件的元素来自另一个 realm，测试模块全局的 `Element.prototype` 是另一个同名对象，桩错了地方计数恒为 0，「增量为 0」就成了假绿。改为从元素往上找**真正持有该方法的那层原型**来桩，并加一条「探针必须计数 > 0」的前置断言把这类空转钉死。上游同名用例的原型桩经实测有效（同一位置计数 10），但同样缺这条自检，已记待决。单测 277 → **278** 条。
+
 ## 1.14.0（2026-09-22）
 
 跟随上游 `vue3-okr-tree` 1.14.0 同号发布（锁步约定）。上游本版本唯一的对外变更是新增 `BUILT_IN_THEMES` 导出——**本包早已导出它，故本版本对外 API 无变化**，内容全部是下面这批门禁断言补强。
@@ -60,8 +65,6 @@
 - **六种内置过渡名逐个断言**（G5）。此前只有 `okr-fade-in` 一种进测试，其余五种被删掉也不会有人发现；`verify:dist` 的 CSS 侧同步由「只钉一组」改为逐个断 `enter-active` / `leave-active`
 - **警告前缀 `[react-okr-tree]` 补断言**（G3）。此前测试只断警告文案，前缀本身零覆盖
 - 单测 252 → **259** 条（26 个文件），覆盖率维持 92.96 / 85.52 / 94.96 / 95.71
-
-- **跨实现 DOM 比对转为常驻门禁（G15）**：新增 `tests/visual/cross-impl.spec.ts` 与 `tests/visual/fixtures/cross-impl-vue3.json`（10 个模式：三种布局、OKR 左右均收起、复选框+拖拽、animate + 时长变量、`defaultExpandedKeys` + `showNodeNum`、`theme` + `unstyled`、标签尺寸、空数据）。vue3 侧真实浏览器渲染的 outerHTML 由 `pnpm gen:cross-impl`（`scripts/gen-cross-impl-fixture.mjs`，需同机有上游仓且已 build）固化进夹具，react 侧在测试里用 `dist/*.cjs` + `renderToStaticMarkup` 现算，props 直接取夹具那份，然后两侧在同一个 Chromium 内各过一遍 DOM 往返、用同一个归一化器 diff。断言拆两条：**structure**（剔 `style` 与 `draggable`，比类名 / 层级 / `role` / `aria-*` / 文本）与 **geometry**（纳入 `style`，逐条声明取 CSSOM 规范值，于是 `height:0` 与 `height: 0px`、声明顺序这些写法差异都不算差异）。第 1 轮审计报告的「含内联样式逐字一致」是错判——仓里的 `structureHtml` 把整条 style filter 掉了，快照中 `style=` 出现 0 次，内联样式这一半此前没有任何门禁守着，现在才真的有人守。两条各自验过强度：`hiddenStyle` 的 `height: '0'` 改成 `'2px'` 只打红 geometry（4 个含折叠容器的模式），`CLS.labelInner` 改一个字母则两条一起红（9 个模式）。视觉套件 14 → **26** 条，单测数不受影响。
 
 ## 1.13.0（2026-09-21）
 

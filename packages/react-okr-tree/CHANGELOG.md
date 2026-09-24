@@ -10,6 +10,8 @@
 
 - **OKR 左树顶层的结构性增删不再只改模型**：`setLeftData` 把左树挂到右树首节点时原先浅拷贝 `[...leftRoot.childNodes]`，而左树顶层节点的 `parent` 正是 `leftRoot`——`remove` / `append` / `insertBefore` 与拖拽落点全都改在 `leftRoot` 的数组上，渲染读的 `firstRoot.leftChildNodes` 却是另一份，于是删掉的节点仍留在画面里（且已从 `nodesMap` 注销，按 key 再也碰不到它）、新增的节点看不见。改为与上游同形共用同一个数组（`shareLeftChildNodes`），并把 `leftRoot` 的结构性通知转给真正渲染这份列表的 `firstRoot`（`forwardStructuralNotify` + `notifyTarget`）：**只共数组引用不转通知，模型改了画面照样不动，两半缺一不可**（各做过一次只留一半的实验，都是三条用例全红）。上游 `vue3-okr-tree` 本就共用引用，同批补了一组同形用例当基线。
 
+- **`contains` 把 OKR 左子树算进子树范围**：`moveNode` 的自环硬守卫与 `dropValid` 都靠 `TreeStore.contains()` 回答「目标是不是被拖节点的后代」，但它只递归 `childNodes`，而 OKR 左子树挂在 `leftChildNodes` 上——于是 `moveNode(OKR 根, 其左子树内的节点, 'inner')` 放行，根与左子树互相指向，`getVisibleNodes` 这类同时走两侧的遍历不再收敛。现一并递归 `leftChildNodes`；同时钉一条「右树节点仍可移进左子树」的用例，防止把 `reassignSide` 那条合法的跨侧路径一起堵死。与上游 `vue3-okr-tree` 同批同形。
+
 ### 首页与文档站
 
 - **首页改走 beUI 组件**：从参考站 copy-in `components/motion/**` 六件（`Button` / `ButtonLink`、`TextReveal`、`AnimatedBadge`、`Tabs`、`BouncyAccordion`）与 `lib/{utils,ease}`、`lib/hooks/use-hover-capable`，新增依赖 `motion@^12.27.5`、`clsx@^2.1.1`、`tailwind-merge@^3.4.0`（beUI 是 shadcn registry 的源码件，不是 npm 包）。Hero 眉标 / 标题 / 按钮、Capabilities 卡、Layouts、FAQ、CTA 与导航版本胶囊全部换用这几件，入场动效由自研 `fade-up` keyframes 改为 `motion` 的 `whileInView`（自带 `useReducedMotion` 降级）。

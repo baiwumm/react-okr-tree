@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { act, render } from '@testing-library/react'
 import { createRef } from 'react'
-import { OkrTree, type OkrTreeHandle } from '../../src/index'
+import { OkrTree, type OkrTreeHandle, type TreeNodeData } from '../../src/index'
 
 // leftData 首项是包装根，它不进画面，它的 children 才是左树顶层（与 OkrTreeGroup 的用法一致）
-const makeLeftData = () => [
+// 显式标注 TreeNodeData：否则字面量会让泛型 T 收敛成「必须带 children」的形状，data 就过不了类型检查
+const makeLeftData = (): TreeNodeData[] => [
   {
     id: 100,
     label: 'LRoot',

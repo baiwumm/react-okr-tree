@@ -759,7 +759,17 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
 
   // 字段映射：label / disabled 为动态读取本就即时生效；children 字段变更需按新映射增量重建
   useEffect(() => {
-    store.props = { ...DEFAULT_PROPS, ...(props.props ?? {}) }
+    const next: TreeOptionProps = { ...DEFAULT_PROPS, ...(props.props ?? {}) }
+    // 与 store 上的现值逐项比对再决定是否重建：
+    // ① 挂载期这次赋的是构造时（tree-store.ts:130）算过的同一份内容，原先会白跑一次
+    //    setData(同引用) + bumpAll —— 整棵 OKR 左树重建、全部节点多渲染一次；
+    // ② 使用方行内写 props={{ label: 'title' }} 时依赖每帧都是新引用，内容比对也顺手挡掉。
+    const keys = Object.keys(next) as (keyof TreeOptionProps)[]
+    const stored = store.props
+    const same =
+      keys.length === Object.keys(stored).length && keys.every(key => stored[key] === next[key])
+    if (same) return
+    store.props = next
     store.setData(props.data)
     bumpAll()
     // eslint-disable-next-line react-hooks/exhaustive-deps

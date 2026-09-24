@@ -3,6 +3,7 @@ import { render, type RenderResult } from '@testing-library/react'
 import { createRef } from 'react'
 import { OkrTree, type OkrTreeHandle } from '../../src/index'
 import type { OkrTreeProps } from '../../src/OkrTree'
+import { TreeStore } from '../../src/model/tree-store'
 import { resetWarnings } from '../../src/model/util'
 
 const makeData = () => [
@@ -186,5 +187,35 @@ describe('渲染定制类 props 的运行时同步', () => {
     )
     // 折叠圆盘里的子节点数：showNodeNum 是运行时才打开的，必须立刻出现
     expect(withNum.container.querySelector('.org-chart-node-btn-text')?.textContent).toBe('2')
+  })
+})
+
+describe('挂载期不做无谓的字段映射同步（2.2）', () => {
+  const baseProps: OkrTreeProps = {
+    data: [{ id: 1, label: 'R' }],
+    leftData: [{ id: 100, label: 'LRoot', children: [{ id: 101, label: 'L1' }] }],
+    onlyBothTree: true,
+    direction: 'horizontal',
+    nodeKey: 'id',
+  }
+
+  it('挂载只走构造期那一次 setLeftData', () => {
+    const spy = vi.spyOn(TreeStore.prototype, 'setLeftData')
+    render(<OkrTree {...baseProps} />)
+    // 修复前：挂载后的 effect 无条件再跑一次 setData(同引用)，把整棵 OKR 左树重建、
+    // 再 bumpAll 让全部节点多渲染一遍
+    expect(spy).toHaveBeenCalledTimes(1)
+    spy.mockRestore()
+  })
+
+  it('行内 props={{...}} 重复渲染不重建，但真改了映射仍要重建', () => {
+    const spy = vi.spyOn(TreeStore.prototype, 'setLeftData')
+    const utils = render(<OkrTree {...baseProps} props={{ label: 'title' }} />)
+    const afterMount = spy.mock.calls.length
+    utils.rerender(<OkrTree {...baseProps} props={{ label: 'title' }} />)
+    expect(spy.mock.calls.length).toBe(afterMount)
+    utils.rerender(<OkrTree {...baseProps} props={{ label: 'name' }} />)
+    expect(spy.mock.calls.length).toBe(afterMount + 1)
+    spy.mockRestore()
   })
 })

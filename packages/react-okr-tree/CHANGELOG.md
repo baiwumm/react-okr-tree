@@ -12,6 +12,8 @@
 
 - **`contains` 把 OKR 左子树算进子树范围**：`moveNode` 的自环硬守卫与 `dropValid` 都靠 `TreeStore.contains()` 回答「目标是不是被拖节点的后代」，但它只递归 `childNodes`，而 OKR 左子树挂在 `leftChildNodes` 上——于是 `moveNode(OKR 根, 其左子树内的节点, 'inner')` 放行，根与左子树互相指向，`getVisibleNodes` 这类同时走两侧的遍历不再收敛。现一并递归 `leftChildNodes`；同时钉一条「右树节点仍可移进左子树」的用例，防止把 `reassignSide` 那条合法的跨侧路径一起堵死。与上游 `vue3-okr-tree` 同批同形。
 
+- **挂载期不再白建一次 OKR 左树**：字段映射同步那个 effect 的依赖是 `[props.props]`，而 React 首次挂载后必然执行一次，于是每次挂载都跑一遍 `setData(同一引用)` + `bumpAll()`——前者末尾照样 `setLeftData` 把整棵左树重建（左树节点实例全换、子节点刚登记的 `nodeEls` 指向作废的旧实例），后者让全部节点多渲染一遍（实测 `n=1500` 时增量约 +31%）。改为与 `store.props` 现值逐项比对、内容相同直接跳过；这一并同时挡住使用方行内写 `props={{ label: 'title' }}` 时每次父渲染都重建的那条路。上游 `vue3-okr-tree` 的对应 watch 没有 `immediate`，挂载期本就不跑，故只有本包需要改（它的行内字面量路径仍会随父渲染重建，已记待办）。
+
 ### 首页与文档站
 
 - **首页改走 beUI 组件**：从参考站 copy-in `components/motion/**` 六件（`Button` / `ButtonLink`、`TextReveal`、`AnimatedBadge`、`Tabs`、`BouncyAccordion`）与 `lib/{utils,ease}`、`lib/hooks/use-hover-capable`，新增依赖 `motion@^12.27.5`、`clsx@^2.1.1`、`tailwind-merge@^3.4.0`（beUI 是 shadcn registry 的源码件，不是 npm 包）。Hero 眉标 / 标题 / 按钮、Capabilities 卡、Layouts、FAQ、CTA 与导航版本胶囊全部换用这几件，入场动效由自研 `fade-up` keyframes 改为 `motion` 的 `whileInView`（自带 `useReducedMotion` 降级）。

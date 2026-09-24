@@ -275,7 +275,7 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 | G14  | 仍成立    | `tests/` 内 `alignRoot` 与几何断言组合 0 命中                                                                                                                                                                                                                                       |
 | G15  | ✅ 已收口 | 两条常驻门禁共 15 个模式。**DOM**：`tests/visual/cross-impl.spec.ts` + `tests/visual/fixtures/cross-impl-vue3.json`（10 个非 svg 模式）——vue3 侧真实浏览器渲染的 outerHTML 固化成夹具，react 侧用 `dist/*.cjs` + `renderToStaticMarkup` 现算，两侧在同一个 Chromium 里各过一遍 DOM 往返后 diff，拆成 **structure**（剔 style 与 draggable）与 **geometry**（含 style，按 CSSOM 逐条声明取规范值）两条断言——原先设想的「含内联样式逐字一致」直接比属性串做不到。**SVG 连线 d 值**：`tests/visual/cross-impl-svg.spec.ts`（5 个 `connector="svg"` 模式，同一份夹具的 `paths` 字段）——d 是挂载后量布局算的，SSR 与 jsdom 都拿不到，故 react 侧也起真实浏览器（`fixtures/cross-impl-svg-entry.tsx` + `vite.cross-impl-svg.config.mjs` 打成自包含 IIFE，由视觉套件 globalSetup 现构建），逐条 path 比指令序列 + 数字容差 0.01px，并自检视口 / dpr 与夹具捕获时一致。夹具由 `pnpm gen:cross-impl` 刷新（需同机有 vue3 仓并先 build）                                                                                                                                                                                                        |
 | G16  | ✅ 已收口 | `find *-chromium-linux.png` = 15 张（`d8aef8c`）；`visual.yml` 在 main 上连续 3 次 success                                                                                                                                                                                          |
-| G17  | 仍成立    | `scripts/` / `tests/` / `.github/workflows/` 内 grep `transition.css` 零命中，无 diff 门禁                                                                                                                                                                                          |
+| G17  | ✅ 已收口 | 跨仓**产物逐字 diff** 这条路实测走不通（两仓 `style.css` 只差头注释与 `@import` 路径、`transition.css` 全等，但压缩器会把同声明体的相邻规则合并、重排声明、把 `transparent` 写成 `0 0`、`.3s height` 写成 `height .3s`、颜色折成 `#fffffff0`），故按原建议的轻量做法钉几何值：两仓 `verify:dist` 的 CSS 段各加 **21** 条（六个几何变量的兜底值「处处存在且处处同值」12 条 + 左树短头三元组/`-1px`/`!important` 恰一次 5 条 + `okr-unstyled` 五类选择器 1 条 + `.is-measuring` 必须排在 `.is-measured` 之前等 2 条 + 补齐两端此前各缺一半的「无残留硬编码」1 条）。CSS 段两端现共 **33** 条、逐条同序同字面，唯一差别是消息里内插的实测数字（`--okr-line-width` 使用数 22 ↔ 21，正是 react 压缩器合并了两条同体 `:after` 规则）。五条变异在两仓各跑一遍、全部打红：兜底值 `20px→24px`、两条规则顺序颠倒、五类选择器降成四类、`calc(100% - 11px)→-12px`、`width:12px→14px`。探针 `_scratch/probe-css-mutation.mjs` / `probe-css-mutation-react.mjs` / `probe-css-gate-parity.mjs`                                                                                                                                                                                          |
 
 第 7 节之外另有三项，一并校准：
 
@@ -287,7 +287,9 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 
 **第 2 轮修复批次后的重新计数（2026-09-24）**：17 条 G 项 = **已收口 8**（G2 / G3 / G5 / G6 / G7 / G10 / G15 / G16）、**半收口 1**（G11）、**仍成立 8**（G1 / G4 / G8 / G9 / G12 / G13 / G14 / G17）。上面那行「5 条已收口」是当时批次的快照，保留不改。
 
-剩余优先级（按代价）：G1 / G4 都是一行量级；G8 / G9 / G14 各需一条断言或一个新用例（**G9 拖拽悬停的渲染计数判据是其中最实的一条**——功能有、`draggable.spec.tsx` 11 条功能用例也在，但缺「只 bump 相关节点」的性能判据）；G13 / G17 需要新增视觉用例或跨仓库 diff 门禁。（G2 与 G15 已在后续批次收口，见上表。）
+**第 3 轮首批后的重新计数（2026-09-24）**：已收口 9（上一条 G17，见其行）、半收口 1（G11）、**仍成立 7**（G1 / G4 / G8 / G9 / G12 / G13 / G14）。
+
+剩余优先级（按代价）：G1 / G4 都是一行量级；G8 / G9 / G14 各需一条断言或一个新用例（**G9 拖拽悬停的渲染计数判据是其中最实的一条**——功能有、`draggable.spec.tsx` 11 条功能用例也在，但缺「只 bump 相关节点」的性能判据）；G13 需要新增视觉用例。（G2 与 G15 已在后续批次收口，G17 在第 3 轮首批收口，见上表。）
 
 **第 2 轮（1.14.0 外部审计修复批次）里的 G15 收口**：跨实现 DOM 比对已落成常驻门禁，形态是上表建议里的「夹具固化 vue3 侧结构串」那条（CI 拿不到 vue3 产物，故走人工刷新）。两条判据分别验过强度：改 `hiddenStyle` 的 `height: '0'` → `'2px'` 只打红 geometry（4 个含折叠容器的模式），改 `CLS.labelInner` 一个字母则 structure 与 geometry 一起红（9 个模式）——即第 1 轮报告说的「含内联样式逐字一致」在旧快照口径下并不成立，style 从来不在比对范围内，这一半现在才真的有人守。夹具刷新：`pnpm gen:cross-impl`（需同机有 vue3-okr-tree 仓且已 `pnpm build`）。
 
@@ -306,3 +308,5 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 第二批收口后的门禁数字：单测 **259** 条（26 个文件，原 252），覆盖率维持 92.96 / 85.52 / 94.96 / 95.71，`verify:dist` 全过（含新的 UMD 真实执行 3 条与 CSS 六组动画逐个断言）。
 
 **第 2 轮修复批次后（2026-09-24 复跑）**：单测 **278** 条（27 个文件；273 → 278 来自 3.3 的两条撑高窗口用例、3.4 的两条吞点击用例、以及 svg 稳态计数一条），视觉套件 **33** 条（原 14；+19 来自 G15 的两条跨实现门禁：`cross-impl.spec.ts` 12 条 + `cross-impl-svg.spec.ts` 6 条，另 1 条来自组对齐修复），`verify:dist` **45** 条 ok（2.6 / 2.7 换 Terser 那批补了三种产物各自的 ignore 注释断言；上面那行的 34 是当时批次数字，已过期），`pnpm typecheck` / `eslint` / `prettier --check .` 全净。上面那行 259 是当时批次的快照，不改。
+
+**第 3 轮首批后（2026-09-24，G17 收口）**：`verify:dist` 45 → **66** 条 ok（CSS 段 +21，见 G17 行；上游 vue3 同批 41 → 62）。本轮纯门禁与文档，单测 278 / 视觉 33 条不变、像素基线未动。

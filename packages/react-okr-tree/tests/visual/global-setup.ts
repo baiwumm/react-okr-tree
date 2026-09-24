@@ -29,6 +29,16 @@ const jobs = [
       resolve('dist/react-okr-tree.es.js'),
     ],
   },
+  {
+    out: resolve('test-results/cross-impl-svg-fixture/cross-impl-svg-fixture.js'),
+    config: resolve('tests/visual/fixtures/vite.cross-impl-svg.config.mjs'),
+    sources: [
+      resolve('tests/visual/fixtures/cross-impl-svg-entry.tsx'),
+      resolve('tests/visual/fixtures/vite.cross-impl-svg.config.mjs'),
+      resolve('src/svg-connector.ts'),
+      resolve('dist/react-okr-tree.es.js'),
+    ],
+  },
 ]
 
 function newestMtime(paths: string[]) {

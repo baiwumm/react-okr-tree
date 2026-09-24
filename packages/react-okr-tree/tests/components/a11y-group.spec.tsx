@@ -347,11 +347,19 @@ describe('OkrTreeGroup', () => {
   it('测量组内左子树容器最大宽度并写入 --okr-group-left-width', async () => {
     // jsdom 无布局：按左容器内节点数模拟宽度
     const original = Element.prototype.getBoundingClientRect
+    /**
+     * 每次读宽度都记一笔「此刻组上有没有 is-measuring」——这条才是本用例的主判据：
+     * 测量态若不落到 DOM，读回的是 .is-measured 钉住的分配宽度，组对齐宽度会被首量钉死。
+     * 上游 vue3-okr-tree 同形判据；把 measure 里的 classList 操作摘掉，这里就变 [false, false]。
+     */
+    const measuringAtRead: boolean[] = []
     vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
       this: Element
     ) {
       const rect = original.call(this)
       if (this.classList.contains('org-chart-node-left-children')) {
+        const g = document.querySelector('.okr-tree-group')
+        measuringAtRead.push(!!g && g.classList.contains('is-measuring'))
         return { ...rect, width: this.querySelectorAll('.org-chart-node').length * 100 } as DOMRect
       }
       return rect
@@ -370,6 +378,10 @@ describe('OkrTreeGroup', () => {
     // 第二棵树左侧 2 个节点 → 200px（组内最大值）
     expect(group.style.getPropertyValue('--okr-group-left-width')).toBe('200px')
     expect(typeof groupRef.current!.refresh).toBe('function')
+    expect(measuringAtRead.length, '一次 rect 都没读到——探针没生效').toBeGreaterThan(0)
+    expect(measuringAtRead, '读 rect 时 is-measuring 不在 DOM 上（量到的是分配宽度）').toEqual(
+      measuringAtRead.map(() => true)
+    )
   })
 
   it('align=false 时不测量；组内无 OKR 树时不加 is-measured', async () => {

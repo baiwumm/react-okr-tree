@@ -339,7 +339,7 @@ kebab-case → camelCase 的机械转换（`node-key`→`nodeKey`、`show-collap
 
 - props：`align`（boolean，默认 `true`，`false` 时各树独立排布并清除已写入的宽度）、`children`、`className` / `style`。
 - handle：`refresh()`。
-- 机制：给组容器加 `is-measuring` 类（左容器临时 `flex:0 0 auto; width:max-content`）→ 逐个 `Math.ceil(getBoundingClientRect().width)` 取最大 → 写内联 `--okr-group-left-width: Npx` + `is-measured` 类。
+- 机制：给组容器加 `is-measuring` 类（左容器临时 `flex:0 0 auto; width:max-content`）→ 逐个 `Math.ceil(getBoundingClientRect().width)` 取最大 → 写内联 `--okr-group-left-width: Npx` + `is-measured` 类。两条实现约束（都是实测踩出来的，与上游 vue3-okr-tree 同形）：临时测量态必须**直接操作 DOM 的 class** 而不是走组件状态（走状态要等异步提交，读取却在同一同步块里，那个类根本没落到 DOM 上 → 量到的永远是分配宽度）；加 `is-measuring` 时必须**同时摘掉 `is-measured`**（两条规则同特异度而钉宽那条排在后面，只加不摘等于没加）。违反任一一条的后果是「组对齐宽度被首量钉死，之后再也涨不上去」。
 - 触发时机：成员挂载 / 更新 / 卸载、组上的 `ResizeObserver`、`document.fonts.ready`；请求需**按帧去重**（源项目用 `nextTick`，React 用微任务/rAF）。要求成员树开启 `alignRoot`（默认）。
 
 ### 4.6 `OkrTreeViewport`

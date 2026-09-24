@@ -64,6 +64,7 @@ export default function App() {
 三步，都在 DOM 契约里，值得知道以便排查：
 
 1. 给组容器临时加 `is-measuring` 类，让左子树容器按 `flex: 0 0 auto; width: max-content` 排布——此时读到的是「不受挤压的自然宽度」。
+   这一步同时会**摘掉** `is-measured`：它的 `width: var(--okr-group-left-width)` 与上面那条同特异度却排在后面，两个类同时在场时钉宽赢，只加不摘就量的还是上一轮钉住的值。整套动作在同一个同步任务里完成（直接操作 DOM 的 class，不走组件状态），所以不会绘制中间态、也不闪。
 2. 对组内每个左子树容器取 `Math.ceil(getBoundingClientRect().width)`，求最大值。
 3. 移除 `is-measuring`，在组根容器上写内联 `--okr-group-left-width: Npx` 并加 `is-measured` 类；左容器改为按这个统一宽度排布。
 

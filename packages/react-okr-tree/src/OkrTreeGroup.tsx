@@ -38,14 +38,24 @@ function OkrTreeGroupInner(props: OkrTreeGroupProps, ref: Ref<OkrTreeGroupHandle
   const align = props.align !== false
   const groupEl = useRef<HTMLDivElement | null>(null)
   const [measured, setMeasured] = useState(false)
-  const [measuring, setMeasuring] = useState(false)
   const [groupLeftWidth, setGroupLeftWidth] = useState(0)
   const alignRef = useRef(align)
   alignRef.current = align
 
   /**
-   * 测量：给组加 is-measuring 类（左容器临时按 max-content 排布），
-   * 读取各成员左子树容器的自然宽度取最大值，再统一写回 --okr-group-left-width。
+   * 测量：临时让左容器按 max-content 排布（is-measuring 那条规则），读取各成员左子树
+   * 容器的自然宽度取最大值，再统一写回 --okr-group-left-width。
+   *
+   * 两个坑，都是与上游同批实测踩出来的（详见 vue3-okr-tree 的 OkrTreeGroup 注释）：
+   * 1. 测量态必须**直接写 DOM**。绑到 state 上的话 DOM 要等一次异步提交才更新，而读取就在
+   *    同一个同步块里 —— 那个类从来没生效过，读到的一直是当前分配宽度。
+   * 2. 加 is-measuring 的同时必须摘掉 is-measured：style.css 里 .is-measured 的钉宽规则
+   *    （width: var(--okr-group-left-width)）排在 .is-measuring 的 max-content 之后且特异度
+   *    相同，两个类同时在场时钉宽赢 —— 只加不摘等于没加。
+   * 后果原本是首量之后宽度再也涨不上去（.is-measured 把左容器钉住，下一轮又把那个钉住的值
+   * 当「自然宽度」读回来）。同步 add → 读（读 rect 自带强制布局）→ 复原在一个任务内完成，
+   * 浏览器不绘制中间态，所以不闪；刻意不用「置 state 后等一帧」，那会让测量跨帧并与
+   * 「渲染 → useEffect 再请求测量」绕成自持环。
    */
   const measure = useCallback(() => {
     const el = groupEl.current
@@ -55,7 +65,9 @@ function OkrTreeGroupInner(props: OkrTreeGroupProps, ref: Ref<OkrTreeGroupHandle
       setMeasured(false)
       return
     }
-    setMeasuring(true)
+    const wasMeasured = el.classList.contains(STATE.isMeasured)
+    el.classList.remove(STATE.isMeasured)
+    el.classList.add(STATE.isMeasuring)
     let max = 0
     try {
       for (const left of lefts) {
@@ -63,7 +75,8 @@ function OkrTreeGroupInner(props: OkrTreeGroupProps, ref: Ref<OkrTreeGroupHandle
         if (w > max) max = w
       }
     } finally {
-      setMeasuring(false)
+      el.classList.remove(STATE.isMeasuring)
+      if (wasMeasured) el.classList.add(STATE.isMeasured)
     }
     if (max > 0) {
       setGroupLeftWidth(prev => (prev === max ? prev : max))
@@ -120,11 +133,7 @@ function OkrTreeGroupInner(props: OkrTreeGroupProps, ref: Ref<OkrTreeGroupHandle
     <OkrTreeGroupProvider value={contextValue}>
       <div
         ref={groupEl}
-        className={cx(
-          CLS.group,
-          cxState({ [STATE.isMeasured]: measured, [STATE.isMeasuring]: measuring }),
-          props.className
-        )}
+        className={cx(CLS.group, cxState({ [STATE.isMeasured]: measured }), props.className)}
         style={
           {
             ...(measured ? { '--okr-group-left-width': `${groupLeftWidth}px` } : {}),

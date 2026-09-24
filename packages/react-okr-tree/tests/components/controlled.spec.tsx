@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { act, fireEvent, render, type RenderResult } from '@testing-library/react'
-import { createRef, useState, type ReactElement, type RefObject } from 'react'
+import { createRef, useMemo, useState, type ReactElement, type RefObject } from 'react'
 import { OkrTree, resetWarnings, type OkrTreeHandle, type OkrTreeProps } from '../../src/index'
 import type { TreeKey, TreeNodeData } from '../../src/types'
 
@@ -99,6 +99,30 @@ function ExpandedHost({
   )
 }
 
+/**
+ * 锁定强度宿主：`data` 钉成稳定引用，`expandedKeys` 每次渲染现场向 `keysOf()` 取一次。
+ *
+ * `data` 必须稳定：上一批探针就是栽在这里——宿主重渲染时 `data={makeData()}` 同时换了引用，
+ * 走的是整树重建那条路，两种锁定强度混在一起分不出来（两个分支的观测结果逐字相同，正是被
+ * 整树重建主导的那种「相同」）。`hostRef.bump()` 用来制造一次「与树无关」的宿主重渲染。
+ */
+function LockHost({
+  keysOf,
+  handleRef,
+  hostRef,
+}: {
+  keysOf: () => TreeKey[]
+  handleRef: RefObject<OkrTreeHandle | null>
+  hostRef: RefObject<{ bump: () => void } | null>
+}): ReactElement {
+  const [, setTick] = useState(0)
+  const data = useMemo(makeData, [])
+  hostRef.current = { bump: () => setTick(t => t + 1) }
+  return (
+    <OkrTree ref={handleRef} data={data} nodeKey="id" showCollapsable expandedKeys={keysOf()} />
+  )
+}
+
 /** 受控选中宿主：currentKey 提升到父组件 state（等价 v-model:current-key） */
 function CurrentHost({
   data,
@@ -190,6 +214,60 @@ describe('受控展开 expandedKeys（对应 v-model:expanded-keys）', () => {
       '收起 A 之后回调收到的新值就是空列表'
     ).toEqual([])
     expect(handle.getNode(1)!.expanded, 'prop 恒为 [1]，但没人回灌就不该被拉回').toBe(false)
+  })
+
+  /**
+   * 锁定态的**第二种强度**：文档站 `guide/controlled.mdx` 里「写成每次渲染新建的数组字面量
+   * → 完全锁定；引用稳定的数组 → 交互结果保留到 prop 真的变化为止」这条说法此前只是文档，
+   * 没有用例钉过（第 2 批探针想验，被 `data` 换引用引发的整树重建盖住了）。
+   * 机制就是 `OkrTree.tsx:832-837` 那条 effect 的依赖比较——React 的依赖按 `Object.is` 比，
+   * 所以“变化”就是换引用，原地改内容不算。上游 vue3 同批测过，三条分支观测逐字相同
+   * （vue3 另有一种：数组是 `ref` 包着的响应式对象时，`deep: true` 能收到原地变更——
+   * 那是框架差，本包没有对应机制，故不在此处构造）。
+   */
+  it('锁定态·内联字面量：宿主一重渲染就把交互结果拉回（＝完全锁定）', () => {
+    const handleRef = createRef<OkrTreeHandle>()
+    const hostRef = createRef<{ bump: () => void }>()
+    const { container } = render(
+      <LockHost keysOf={() => [1]} handleRef={handleRef} hostRef={hostRef} />
+    )
+    const handle = handleRef.current!
+    expect(handle.getNode(1)!.expanded).toBe(true)
+
+    clickBtnOf(container, 'A')
+    expect(handle.getNode(1)!.expanded, '交互本身照常生效').toBe(false)
+
+    act(() => hostRef.current!.bump())
+    expect(handle.getNode(1)!.expanded, '引用变了 ⇒ 按 prop 回灌，折叠被拉回').toBe(true)
+    // 拉回不是一次性的：还能再收，收完不动 prop 就不会又被拉回（本包 effect 只在依赖变化时跑）
+    clickBtnOf(container, 'A')
+    expect(handle.getNode(1)!.expanded).toBe(false)
+  })
+
+  it('锁定态·引用稳定的数组：不回灌到 prop 真的换引用为止（原地改内容不算）', () => {
+    let keys: TreeKey[] = [1]
+    const handleRef = createRef<OkrTreeHandle>()
+    const hostRef = createRef<{ bump: () => void }>()
+    const { container } = render(
+      <LockHost keysOf={() => keys} handleRef={handleRef} hostRef={hostRef} />
+    )
+    const handle = handleRef.current!
+
+    clickBtnOf(container, 'A')
+    expect(handle.getNode(1)!.expanded).toBe(false)
+
+    act(() => hostRef.current!.bump())
+    expect(handle.getNode(1)!.expanded, '引用没变 ⇒ effect 不跑，折叠结果保留').toBe(false)
+
+    keys.push(2)
+    act(() => hostRef.current!.bump())
+    expect(handle.getNode(2)!.expanded, '依赖按 Object.is 比，原地 push 不算变化').toBe(false)
+    expect(handle.getNode(1)!.expanded).toBe(false)
+
+    keys = [1, 2]
+    act(() => hostRef.current!.bump())
+    expect(handle.getNode(1)!.expanded, '换引用 ⇒ 按新 prop 回灌，根节点重新展开').toBe(true)
+    expect(handle.getNode(2)!.expanded).toBe(true)
   })
 
   it('父组件更新 expandedKeys 后同步展开态（双向）', () => {

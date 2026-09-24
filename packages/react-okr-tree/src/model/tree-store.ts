@@ -299,9 +299,15 @@ export class TreeStore {
     const firstRoot = this.root.childNodes[0]
     const leftRoot = this.isLeftChilds.childNodes[0]
     if (firstRoot) {
-      // 源项目在这里让两个数组共用同一引用；React 版改成拷贝内容，
-      // 因为临时左树根之后不再被任何人原地改动，等价且不会出现幽灵别名。
-      firstRoot.replaceLeftChildNodes(leftRoot ? [...leftRoot.childNodes] : createChildNodes())
+      if (leftRoot) {
+        // 与源项目同形：共用同一个左树顶层数组。左树顶层的增删都打在 leftRoot 上，
+        // 而渲染这份列表的是 firstRoot，所以同时把通知转过去——只共数组引用不转通知，
+        // 模型改了画面也不会动。
+        leftRoot.forwardStructuralNotify(firstRoot)
+        firstRoot.shareLeftChildNodes(leftRoot)
+      } else {
+        firstRoot.replaceLeftChildNodes(createChildNodes())
+      }
       firstRoot.leftExpanded = leftRoot ? leftRoot.leftExpanded : true
     }
   }

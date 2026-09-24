@@ -70,6 +70,8 @@ export class TreeNode implements Subscribable {
   private _loading = false
   private _childNodes: TreeNode[] = []
   private _leftChildNodes: TreeNode[] = []
+  /** 结构性通知的转发目标：OKR 左树顶层挂在右树首节点上，渲染方是首节点（见 TreeStore.setLeftData） */
+  private notifyTarget: TreeNode | null = null
 
   constructor(options: TreeNodeOptions, isLeftChild = false) {
     this.isLeftChild = isLeftChild
@@ -95,7 +97,13 @@ export class TreeNode implements Subscribable {
   /** 主动通知（供 TreeStore 的批量操作与组件登记使用） */
   notify(): void {
     this.notifier.notify()
+    this.notifyTarget?.bumpRenderVersion()
     this.store?.notifyMutation()
+  }
+
+  /** 只自增版本号、不再级联：供 notifyTarget 转发用，避免重复触发 notifyMutation */
+  bumpRenderVersion(): void {
+    this.notifier.notify()
   }
 
   get parent(): TreeNode | null {
@@ -228,6 +236,21 @@ export class TreeNode implements Subscribable {
   replaceLeftChildNodes(next: TreeNode[]): void {
     this._leftChildNodes.splice(0, this._leftChildNodes.length, ...next)
     this.notify()
+  }
+
+  /**
+   * 与 source 共用同一个左树顶层数组（对齐上游 vue3 的 `firstRoot.leftChildNodes = leftRoot.childNodes`）。
+   * 左树顶层的增删走的是 source 的 insertChild / removeChild，两边各存一份就会脱钩：
+   * 模型删掉了、渲染数组还在。
+   */
+  shareLeftChildNodes(source: TreeNode): void {
+    this._leftChildNodes = source._childNodes
+    this.notify()
+  }
+
+  /** 把本节点的结构性通知额外打到 target 上——target 才是真正渲染这份列表的那个节点 */
+  forwardStructuralNotify(target: TreeNode): void {
+    this.notifyTarget = target
   }
 
   get key(): TreeKey | undefined {

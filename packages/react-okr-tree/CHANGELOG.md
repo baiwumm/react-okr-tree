@@ -8,6 +8,8 @@
 
 - **换绑 data 引用不再把整棵后代摘出注册表**：`data` 数组引用保持不变、只把某一层对象换成同 key 的新对象（轮询接口的典型局部更新）时，`TreeNode.updateChildren()` 的换绑分支原先调递归版 `store.deregisterNode()`——它连带删掉该节点全部后代在 `nodesMap` 里的登记，而复用路径不会重新登记，于是这些后代的 `getNode` / `getNodePath` / `setCurrentKey` / `remove` / `moveNode` 等按 key 的公开方法全部静默无操作，而节点仍照常渲染、仍可点击。改用新增的 `deregisterNodeSelf()`（只摘本节点）：该分支的匹配条件本就是 key 相等，后代的实例与 key 都没变，留在注册表里才是正确状态；真正被移除的节点仍由尾部注销循环递归清理。与上游 `vue3-okr-tree` 同批同形修复。
 
+- **OKR 左树顶层的结构性增删不再只改模型**：`setLeftData` 把左树挂到右树首节点时原先浅拷贝 `[...leftRoot.childNodes]`，而左树顶层节点的 `parent` 正是 `leftRoot`——`remove` / `append` / `insertBefore` 与拖拽落点全都改在 `leftRoot` 的数组上，渲染读的 `firstRoot.leftChildNodes` 却是另一份，于是删掉的节点仍留在画面里（且已从 `nodesMap` 注销，按 key 再也碰不到它）、新增的节点看不见。改为与上游同形共用同一个数组（`shareLeftChildNodes`），并把 `leftRoot` 的结构性通知转给真正渲染这份列表的 `firstRoot`（`forwardStructuralNotify` + `notifyTarget`）：**只共数组引用不转通知，模型改了画面照样不动，两半缺一不可**（各做过一次只留一半的实验，都是三条用例全红）。上游 `vue3-okr-tree` 本就共用引用，同批补了一组同形用例当基线。
+
 ### 首页与文档站
 
 - **首页改走 beUI 组件**：从参考站 copy-in `components/motion/**` 六件（`Button` / `ButtonLink`、`TextReveal`、`AnimatedBadge`、`Tabs`、`BouncyAccordion`）与 `lib/{utils,ease}`、`lib/hooks/use-hover-capable`，新增依赖 `motion@^12.27.5`、`clsx@^2.1.1`、`tailwind-merge@^3.4.0`（beUI 是 shadcn registry 的源码件，不是 npm 包）。Hero 眉标 / 标题 / 按钮、Capabilities 卡、Layouts、FAQ、CTA 与导航版本胶囊全部换用这几件，入场动效由自研 `fade-up` keyframes 改为 `motion` 的 `whileInView`（自带 `useReducedMotion` 降级）。

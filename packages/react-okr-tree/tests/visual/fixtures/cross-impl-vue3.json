@@ -1,0 +1,337 @@
+{
+  "source": {
+    "package": "vue3-okr-tree",
+    "version": "1.14.0",
+    "capturedAt": "2026-09-24",
+    "chromium": "153.0.8010.12",
+    "generator": "scripts/gen-cross-impl-fixture.mjs"
+  },
+  "modes": [
+    {
+      "name": "垂直模式",
+      "props": {
+        "data": [
+          {
+            "id": 1,
+            "label": "Root",
+            "children": [
+              {
+                "id": 2,
+                "label": "B",
+                "children": [
+                  {
+                    "id": 3,
+                    "label": "C"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "label": "D"
+              }
+            ]
+          }
+        ],
+        "nodeKey": "id",
+        "showCollapsable": true
+      },
+      "html": "<div class=\"org-chart-container\"><!----><div class=\"org-chart-node-children vertical show-collapsable one-branch\" role=\"tree\"><!----><div class=\"org-chart-node collapsed\" data-level=\"1\" role=\"treeitem\" tabindex=\"0\" aria-level=\"1\" aria-selected=\"false\" aria-expanded=\"false\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label is-root-label is-not-left-child\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->Root</div><div class=\"org-chart-node-btn\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children is-hidden\" role=\"group\" style=\"visibility: hidden; height: 0px; overflow: hidden;\"><div class=\"org-chart-node collapsed\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-expanded=\"false\" aria-setsize=\"2\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->B</div><div class=\"org-chart-node-btn\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children is-hidden\" role=\"group\" style=\"visibility: hidden; height: 0px; overflow: hidden;\"><div class=\"org-chart-node collapsed is-leaf\" data-level=\"3\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"3\" aria-selected=\"false\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->C</div><!----></div><!----></div></div></div><div class=\"org-chart-node collapsed is-leaf\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-setsize=\"2\" aria-posinset=\"2\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->D</div><!----></div><!----></div></div></div></div></div>"
+    },
+    {
+      "name": "水平模式",
+      "props": {
+        "data": [
+          {
+            "id": 1,
+            "label": "Root",
+            "children": [
+              {
+                "id": 2,
+                "label": "B",
+                "children": [
+                  {
+                    "id": 3,
+                    "label": "C"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "label": "D"
+              }
+            ]
+          }
+        ],
+        "nodeKey": "id",
+        "showCollapsable": true,
+        "direction": "horizontal"
+      },
+      "html": "<div class=\"org-chart-container\"><!----><div class=\"org-chart-node-children horizontal show-collapsable one-branch\" role=\"tree\"><!----><div class=\"org-chart-node collapsed\" data-level=\"1\" role=\"treeitem\" tabindex=\"0\" aria-level=\"1\" aria-selected=\"false\" aria-expanded=\"false\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label is-root-label is-not-left-child\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->Root</div><div class=\"org-chart-node-btn\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children is-hidden\" role=\"group\" style=\"visibility: hidden; height: 0px; overflow: hidden;\"><div class=\"org-chart-node collapsed\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-expanded=\"false\" aria-setsize=\"2\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->B</div><div class=\"org-chart-node-btn\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children is-hidden\" role=\"group\" style=\"visibility: hidden; height: 0px; overflow: hidden;\"><div class=\"org-chart-node collapsed is-leaf\" data-level=\"3\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"3\" aria-selected=\"false\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->C</div><!----></div><!----></div></div></div><div class=\"org-chart-node collapsed is-leaf\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-setsize=\"2\" aria-posinset=\"2\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->D</div><!----></div><!----></div></div></div></div></div>"
+    },
+    {
+      "name": "OKR 双向（全展开）",
+      "props": {
+        "data": [
+          {
+            "id": 1,
+            "label": "Root",
+            "children": [
+              {
+                "id": 2,
+                "label": "B",
+                "children": [
+                  {
+                    "id": 3,
+                    "label": "C"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "label": "D"
+              }
+            ]
+          }
+        ],
+        "leftData": [
+          {
+            "id": 1,
+            "label": "Root",
+            "children": [
+              {
+                "id": 12,
+                "label": "L"
+              }
+            ]
+          }
+        ],
+        "nodeKey": "id",
+        "showCollapsable": true,
+        "onlyBothTree": true,
+        "direction": "horizontal",
+        "defaultExpandAll": true
+      },
+      "html": "<div class=\"org-chart-container\"><!----><div class=\"org-chart-node-children horizontal show-collapsable one-branch\" role=\"tree\"><!----><div class=\"org-chart-node only-both-tree-node align-root\" data-level=\"1\" role=\"treeitem\" tabindex=\"0\" aria-level=\"1\" aria-selected=\"false\" aria-expanded=\"true\" aria-setsize=\"1\" aria-posinset=\"1\"><div class=\"org-chart-node-left-children\" role=\"group\"><div class=\"org-chart-node is-leaf is-left-child-node\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->L</div><!----></div><!----></div></div><div class=\"org-chart-node-label is-root-label\"><div class=\"org-chart-node-left-btn expanded\" aria-hidden=\"true\"><!----></div><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->Root</div><div class=\"org-chart-node-btn expanded\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children\" role=\"group\"><div class=\"org-chart-node\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-expanded=\"true\" aria-setsize=\"2\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->B</div><div class=\"org-chart-node-btn expanded\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children\" role=\"group\"><div class=\"org-chart-node is-leaf\" data-level=\"3\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"3\" aria-selected=\"false\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->C</div><!----></div><!----></div></div></div><div class=\"org-chart-node is-leaf\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-setsize=\"2\" aria-posinset=\"2\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->D</div><!----></div><!----></div></div></div></div></div>"
+    },
+    {
+      "name": "OKR 双向（左右均收起，含左树收起态）",
+      "props": {
+        "data": [
+          {
+            "id": 1,
+            "label": "Root",
+            "children": [
+              {
+                "id": 2,
+                "label": "B",
+                "children": [
+                  {
+                    "id": 3,
+                    "label": "C"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "label": "D"
+              }
+            ]
+          }
+        ],
+        "leftData": [
+          {
+            "id": 1,
+            "label": "Root",
+            "children": [
+              {
+                "id": 12,
+                "label": "L"
+              }
+            ]
+          }
+        ],
+        "nodeKey": "id",
+        "showCollapsable": true,
+        "onlyBothTree": true,
+        "direction": "horizontal"
+      },
+      "html": "<div class=\"org-chart-container\"><!----><div class=\"org-chart-node-children horizontal show-collapsable one-branch\" role=\"tree\"><!----><div class=\"org-chart-node collapsed only-both-tree-node align-root\" data-level=\"1\" role=\"treeitem\" tabindex=\"0\" aria-level=\"1\" aria-selected=\"false\" aria-expanded=\"false\" aria-setsize=\"1\" aria-posinset=\"1\"><div class=\"org-chart-node-left-children is-hidden\" role=\"group\" style=\"visibility: hidden; height: 0px; overflow: hidden;\"><div class=\"org-chart-node collapsed is-leaf is-left-child-node\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->L</div><!----></div><!----></div></div><div class=\"org-chart-node-label is-root-label\"><div class=\"org-chart-node-left-btn\" aria-hidden=\"true\"><!----></div><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->Root</div><div class=\"org-chart-node-btn\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children is-hidden\" role=\"group\" style=\"visibility: hidden; height: 0px; overflow: hidden;\"><div class=\"org-chart-node collapsed\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-expanded=\"false\" aria-setsize=\"2\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->B</div><div class=\"org-chart-node-btn\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children is-hidden\" role=\"group\" style=\"visibility: hidden; height: 0px; overflow: hidden;\"><div class=\"org-chart-node collapsed is-leaf\" data-level=\"3\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"3\" aria-selected=\"false\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->C</div><!----></div><!----></div></div></div><div class=\"org-chart-node collapsed is-leaf\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-setsize=\"2\" aria-posinset=\"2\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->D</div><!----></div><!----></div></div></div></div></div>"
+    },
+    {
+      "name": "复选框 + 拖拽 + 全展开",
+      "props": {
+        "data": [
+          {
+            "id": 1,
+            "label": "Root",
+            "children": [
+              {
+                "id": 2,
+                "label": "B",
+                "children": [
+                  {
+                    "id": 3,
+                    "label": "C"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "label": "D"
+              }
+            ]
+          }
+        ],
+        "nodeKey": "id",
+        "showCollapsable": true,
+        "showCheckbox": true,
+        "draggable": true,
+        "defaultExpandAll": true
+      },
+      "html": "<div class=\"org-chart-container\"><!----><div class=\"org-chart-node-children vertical show-collapsable one-branch\" role=\"tree\"><!----><div class=\"org-chart-node\" data-level=\"1\" role=\"treeitem\" tabindex=\"0\" aria-level=\"1\" aria-selected=\"false\" aria-expanded=\"true\" aria-checked=\"false\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label is-root-label is-not-left-child\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"true\" style=\"width: auto; height: auto;\"><span class=\"org-chart-node-checkbox\" aria-hidden=\"true\"></span>Root</div><div class=\"org-chart-node-btn expanded\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children\" role=\"group\"><div class=\"org-chart-node\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-expanded=\"true\" aria-checked=\"false\" aria-setsize=\"2\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"true\" style=\"width: auto; height: auto;\"><span class=\"org-chart-node-checkbox\" aria-hidden=\"true\"></span>B</div><div class=\"org-chart-node-btn expanded\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children\" role=\"group\"><div class=\"org-chart-node is-leaf\" data-level=\"3\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"3\" aria-selected=\"false\" aria-checked=\"false\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"true\" style=\"width: auto; height: auto;\"><span class=\"org-chart-node-checkbox\" aria-hidden=\"true\"></span>C</div><!----></div><!----></div></div></div><div class=\"org-chart-node is-leaf\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-checked=\"false\" aria-setsize=\"2\" aria-posinset=\"2\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"true\" style=\"width: auto; height: auto;\"><span class=\"org-chart-node-checkbox\" aria-hidden=\"true\"></span>D</div><!----></div><!----></div></div></div></div></div>"
+    },
+    {
+      "name": "animate + 过渡时长变量",
+      "props": {
+        "data": [
+          {
+            "id": 1,
+            "label": "Root",
+            "children": [
+              {
+                "id": 2,
+                "label": "B",
+                "children": [
+                  {
+                    "id": 3,
+                    "label": "C"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "label": "D"
+              }
+            ]
+          }
+        ],
+        "nodeKey": "id",
+        "showCollapsable": true,
+        "defaultExpandAll": true,
+        "animate": true,
+        "animateName": "okr-fade-in",
+        "animateDuration": 300
+      },
+      "html": "<div class=\"org-chart-container\"><!----><div class=\"org-chart-node-children vertical show-collapsable one-branch\" role=\"tree\"><!----><div class=\"org-chart-node\" data-level=\"1\" role=\"treeitem\" tabindex=\"0\" aria-level=\"1\" aria-selected=\"false\" aria-expanded=\"true\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label is-root-label is-not-left-child\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->Root</div><div class=\"org-chart-node-btn expanded\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children is-animated okr-anim-okr-fade-in\" role=\"group\" style=\"--okr-anim-duration: 300ms;\"><div class=\"org-chart-node\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-expanded=\"true\" aria-setsize=\"2\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->B</div><div class=\"org-chart-node-btn expanded\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children is-animated okr-anim-okr-fade-in\" role=\"group\" style=\"--okr-anim-duration: 300ms;\"><div class=\"org-chart-node is-leaf\" data-level=\"3\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"3\" aria-selected=\"false\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->C</div><!----></div><!----></div></div></div><div class=\"org-chart-node is-leaf\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-setsize=\"2\" aria-posinset=\"2\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->D</div><!----></div><!----></div></div></div></div></div>"
+    },
+    {
+      "name": "水平 + defaultExpandedKeys（折叠态按钮数字）",
+      "props": {
+        "data": [
+          {
+            "id": 1,
+            "label": "Root",
+            "children": [
+              {
+                "id": 2,
+                "label": "B",
+                "children": [
+                  {
+                    "id": 3,
+                    "label": "C"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "label": "D"
+              }
+            ]
+          }
+        ],
+        "nodeKey": "id",
+        "showCollapsable": true,
+        "direction": "horizontal",
+        "defaultExpandedKeys": [
+          1
+        ],
+        "showNodeNum": true
+      },
+      "html": "<div class=\"org-chart-container\"><!----><div class=\"org-chart-node-children horizontal show-collapsable one-branch\" role=\"tree\"><!----><div class=\"org-chart-node collapsed\" data-level=\"1\" role=\"treeitem\" tabindex=\"0\" aria-level=\"1\" aria-selected=\"false\" aria-expanded=\"true\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label is-root-label is-not-left-child\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->Root</div><div class=\"org-chart-node-btn expanded\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children\" role=\"group\"><div class=\"org-chart-node collapsed\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-expanded=\"false\" aria-setsize=\"2\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->B</div><div class=\"org-chart-node-btn\" aria-hidden=\"true\"><span class=\"org-chart-node-btn-text\">1</span></div></div><div class=\"org-chart-node-children is-hidden\" role=\"group\" style=\"visibility: hidden; height: 0px; overflow: hidden;\"><div class=\"org-chart-node collapsed is-leaf\" data-level=\"3\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"3\" aria-selected=\"false\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->C</div><!----></div><!----></div></div></div><div class=\"org-chart-node collapsed is-leaf\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-setsize=\"2\" aria-posinset=\"2\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->D</div><!----></div><!----></div></div></div></div></div>"
+    },
+    {
+      "name": "theme=dark + unstyled",
+      "props": {
+        "data": [
+          {
+            "id": 1,
+            "label": "Root",
+            "children": [
+              {
+                "id": 2,
+                "label": "B",
+                "children": [
+                  {
+                    "id": 3,
+                    "label": "C"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "label": "D"
+              }
+            ]
+          }
+        ],
+        "nodeKey": "id",
+        "showCollapsable": true,
+        "defaultExpandAll": true,
+        "theme": "dark",
+        "unstyled": true
+      },
+      "html": "<div class=\"org-chart-container okr-theme-dark okr-unstyled\"><!----><div class=\"org-chart-node-children vertical show-collapsable one-branch\" role=\"tree\"><!----><div class=\"org-chart-node\" data-level=\"1\" role=\"treeitem\" tabindex=\"0\" aria-level=\"1\" aria-selected=\"false\" aria-expanded=\"true\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label is-root-label is-not-left-child\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->Root</div><div class=\"org-chart-node-btn expanded\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children\" role=\"group\"><div class=\"org-chart-node\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-expanded=\"true\" aria-setsize=\"2\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->B</div><div class=\"org-chart-node-btn expanded\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children\" role=\"group\"><div class=\"org-chart-node is-leaf\" data-level=\"3\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"3\" aria-selected=\"false\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->C</div><!----></div><!----></div></div></div><div class=\"org-chart-node is-leaf\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-setsize=\"2\" aria-posinset=\"2\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: auto; height: auto;\"><!---->D</div><!----></div><!----></div></div></div></div></div>"
+    },
+    {
+      "name": "标签尺寸（内联样式面）",
+      "props": {
+        "data": [
+          {
+            "id": 1,
+            "label": "Root",
+            "children": [
+              {
+                "id": 2,
+                "label": "B",
+                "children": [
+                  {
+                    "id": 3,
+                    "label": "C"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "label": "D"
+              }
+            ]
+          }
+        ],
+        "nodeKey": "id",
+        "showCollapsable": true,
+        "defaultExpandAll": true,
+        "labelWidth": 220,
+        "labelHeight": 60
+      },
+      "html": "<div class=\"org-chart-container\"><!----><div class=\"org-chart-node-children vertical show-collapsable one-branch\" role=\"tree\"><!----><div class=\"org-chart-node\" data-level=\"1\" role=\"treeitem\" tabindex=\"0\" aria-level=\"1\" aria-selected=\"false\" aria-expanded=\"true\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label is-root-label is-not-left-child\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: 220px; height: 60px;\"><!---->Root</div><div class=\"org-chart-node-btn expanded\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children\" role=\"group\"><div class=\"org-chart-node\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-expanded=\"true\" aria-setsize=\"2\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: 220px; height: 60px;\"><!---->B</div><div class=\"org-chart-node-btn expanded\" aria-hidden=\"true\"><!----></div></div><div class=\"org-chart-node-children\" role=\"group\"><div class=\"org-chart-node is-leaf\" data-level=\"3\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"3\" aria-selected=\"false\" aria-setsize=\"1\" aria-posinset=\"1\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: 220px; height: 60px;\"><!---->C</div><!----></div><!----></div></div></div><div class=\"org-chart-node is-leaf\" data-level=\"2\" role=\"treeitem\" tabindex=\"-1\" aria-level=\"2\" aria-selected=\"false\" aria-setsize=\"2\" aria-posinset=\"2\"><!----><div class=\"org-chart-node-label\"><!----><div class=\"org-chart-node-label-inner\" draggable=\"false\" style=\"width: 220px; height: 60px;\"><!---->D</div><!----></div><!----></div></div></div></div></div>"
+    },
+    {
+      "name": "空数据",
+      "props": {
+        "data": [],
+        "nodeKey": "id"
+      },
+      "html": "<div class=\"org-chart-container\"><!----><div class=\"org-chart-node-children vertical\" role=\"tree\"><!----></div></div>"
+    }
+  ]
+}

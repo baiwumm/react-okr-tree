@@ -61,6 +61,8 @@
 - **警告前缀 `[react-okr-tree]` 补断言**（G3）。此前测试只断警告文案，前缀本身零覆盖
 - 单测 252 → **259** 条（26 个文件），覆盖率维持 92.96 / 85.52 / 94.96 / 95.71
 
+- **跨实现 DOM 比对转为常驻门禁（G15）**：新增 `tests/visual/cross-impl.spec.ts` 与 `tests/visual/fixtures/cross-impl-vue3.json`（10 个模式：三种布局、OKR 左右均收起、复选框+拖拽、animate + 时长变量、`defaultExpandedKeys` + `showNodeNum`、`theme` + `unstyled`、标签尺寸、空数据）。vue3 侧真实浏览器渲染的 outerHTML 由 `pnpm gen:cross-impl`（`scripts/gen-cross-impl-fixture.mjs`，需同机有上游仓且已 build）固化进夹具，react 侧在测试里用 `dist/*.cjs` + `renderToStaticMarkup` 现算，props 直接取夹具那份，然后两侧在同一个 Chromium 内各过一遍 DOM 往返、用同一个归一化器 diff。断言拆两条：**structure**（剔 `style` 与 `draggable`，比类名 / 层级 / `role` / `aria-*` / 文本）与 **geometry**（纳入 `style`，逐条声明取 CSSOM 规范值，于是 `height:0` 与 `height: 0px`、声明顺序这些写法差异都不算差异）。第 1 轮审计报告的「含内联样式逐字一致」是错判——仓里的 `structureHtml` 把整条 style filter 掉了，快照中 `style=` 出现 0 次，内联样式这一半此前没有任何门禁守着，现在才真的有人守。两条各自验过强度：`hiddenStyle` 的 `height: '0'` 改成 `'2px'` 只打红 geometry（4 个含折叠容器的模式），`CLS.labelInner` 改一个字母则两条一起红（9 个模式）。视觉套件 14 → **26** 条，单测数不受影响。
+
 ## 1.13.0（2026-09-21）
 
 首个发布版本，版本号直接取所对齐的上游版本（此前的 0.1.0 / 1.0.0 规划号从未发布到 npm）：

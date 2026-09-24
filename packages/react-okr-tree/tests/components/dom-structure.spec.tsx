@@ -11,8 +11,9 @@ import type { OkrTreeProps } from '../../src/OkrTree'
  * 选择器、键盘导航的可见节点查询、SVG 连接线的卡片锚点都靠字符串工作。这里把渲染结果锁进
  * 快照，任何会改变 DOM 形状的重构都必须显式更新基线。
  *
- * 与 vue3-okr-tree 的**跨实现**比对（同一份数据两边渲染再 diff）在阶段 9.2 做——
- * 那时才有 Playwright，可以起源项目 playground 的静态产物取真实 DOM。
+ * 与 vue3-okr-tree 的**跨实现**比对在 `tests/visual/cross-impl.spec.ts`（G15，已收口）：
+ * 同一份 props 两边渲染、两侧都过一遍 DOM 往返再用同一个归一化器 diff。注意这里剔掉
+ * `style` 之后，内联样式那一半只有那边的 geometry 断言在守——本文件的快照覆盖不到它。
  */
 const data = [
   {

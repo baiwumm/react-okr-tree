@@ -273,7 +273,7 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 | G12  | 仍成立    | `tests/` 内 `search` 零命中、`.dark` 零命中                                                                                                                                                                                                                                         |
 | G13  | 仍成立    | `tests/visual/` 内 `orthogonal` / `straight` / 焦点环零命中                                                                                                                                                                                                                         |
 | G14  | 仍成立    | `tests/` 内 `alignRoot` 与几何断言组合 0 命中                                                                                                                                                                                                                                       |
-| G15  | 仍成立    | 未见跨实现比对承载（需 vue3 产物 + 你的决策）                                                                                                                                                                                                                                       |
+| G15  | ✅ 已收口 | `tests/visual/cross-impl.spec.ts` + `tests/visual/fixtures/cross-impl-vue3.json`（10 个模式）：vue3 侧真实浏览器渲染的 outerHTML 固化成夹具，react 侧用 `dist/*.cjs` + `renderToStaticMarkup` 现算，两侧在同一个 Chromium 里各过一遍 DOM 往返后 diff。比对拆成 **structure**（剔 style 与 draggable）与 **geometry**（含 style，按 CSSOM 逐条声明取规范值）两条断言——原先设想的「含内联样式逐字一致」直接比属性串做不到。夹具由 `pnpm gen:cross-impl` 刷新（需同机有 vue3 仓并先 build）                                                                                                                                                                                                        |
 | G16  | ✅ 已收口 | `find *-chromium-linux.png` = 15 张（`d8aef8c`）；`visual.yml` 在 main 上连续 3 次 success                                                                                                                                                                                          |
 | G17  | 仍成立    | `scripts/` / `tests/` / `.github/workflows/` 内 grep `transition.css` 零命中，无 diff 门禁                                                                                                                                                                                          |
 
@@ -285,6 +285,8 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 
 小结（同日第二批收口后）：G17 条里 **5 条已收口（G3 / G5 / G7 / G10 / G16）、1 条半收口（G11）、11 条仍成立**；表外 3 项里 1 项已消。**没有出现「声称做了、其实没实现」的功能级假 ✅** 这一条经复验仍然成立——剩余缺口全部是断言/门禁缺失，不是实现缺失。
 
-剩余优先级（按代价）：G1 / G2 / G4 都是一行量级；G8 / G9 / G14 各需一条断言或一个新用例（**G9 拖拽悬停的渲染计数判据是其中最实的一条**——功能有、`draggable.spec.tsx` 11 条功能用例也在，但缺「只 bump 相关节点」的性能判据）；G13 / G17 需要新增视觉用例或跨仓库 diff 门禁；G15 的 DOM 跨实现比对需要上游产物与你的决策。
+剩余优先级（按代价）：G1 / G2 / G4 都是一行量级；G8 / G9 / G14 各需一条断言或一个新用例（**G9 拖拽悬停的渲染计数判据是其中最实的一条**——功能有、`draggable.spec.tsx` 11 条功能用例也在，但缺「只 bump 相关节点」的性能判据）；G13 / G17 需要新增视觉用例或跨仓库 diff 门禁。
+
+**第 2 轮（1.14.0 外部审计修复批次）里的 G15 收口**：跨实现 DOM 比对已落成常驻门禁，形态是上表建议里的「夹具固化 vue3 侧结构串」那条（CI 拿不到 vue3 产物，故走人工刷新）。两条判据分别验过强度：改 `hiddenStyle` 的 `height: '0'` → `'2px'` 只打红 geometry（4 个含折叠容器的模式），改 `CLS.labelInner` 一个字母则 structure 与 geometry 一起红（9 个模式）——即第 1 轮报告说的「含内联样式逐字一致」在旧快照口径下并不成立，style 从来不在比对范围内，这一半现在才真的有人守。夹具刷新：`pnpm gen:cross-impl`（需同机有 vue3-okr-tree 仓且已 `pnpm build`）。
 
 第二批收口后的门禁数字：单测 **259** 条（26 个文件，原 252），覆盖率维持 92.96 / 85.52 / 94.96 / 95.71，`verify:dist` 全过（含新的 UMD 真实执行 3 条与 CSS 六组动画逐个断言）。

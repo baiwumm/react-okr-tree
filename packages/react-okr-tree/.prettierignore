@@ -8,3 +8,7 @@ dev/dist/
 # 一旦被格式化，与源文件的 diff 就失去了「只改了头部注释」这个可核对性，
 # 而且 prettier 的书写风格可能改动伪元素选择器的换行与缩进。
 src/styles/
+
+# 跨实现比对的 vue3 侧夹具是脚本产出的数据文件（`pnpm gen:cross-impl` 每次整体重写），
+# 格式化只会让「生成器输出」与「仓库形态」两个写者互相打红。
+tests/visual/fixtures/cross-impl-vue3.json

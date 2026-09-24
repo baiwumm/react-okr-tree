@@ -42,8 +42,8 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.node } },
   },
   {
-    // benchmark / gen-og 跑在 Node 里，但 page.evaluate 与 jsdom 会读浏览器全局，按浏览器环境放行
-    files: ['scripts/benchmark.mjs', 'scripts/gen-og.mjs'],
+    // benchmark / gen-og / gen-cross-impl 跑在 Node 里，但 page.evaluate 与 jsdom 会读浏览器全局，按浏览器环境放行
+    files: ['scripts/benchmark.mjs', 'scripts/gen-og.mjs', 'scripts/gen-cross-impl-fixture.mjs'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {

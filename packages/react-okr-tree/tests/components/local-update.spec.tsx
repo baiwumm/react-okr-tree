@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render } from '@testing-library/react'
 import { createRef } from 'react'
 import { OkrTree, type OkrTreeHandle } from '../../src/index'
@@ -31,6 +31,59 @@ const collectAll = (handle: OkrTreeHandle) => {
   const all: { id: number; rev: number }[] = []
   handle.store.forEachNode(n => all.push({ id: n.id, rev: n.getSnapshot() }))
   return all
+}
+
+/** 同上但带 label：拖拽用例按名字比对被 bump 的节点，失败时不必在一堆自增 id 里查表 */
+const collectLabeled = (handle: OkrTreeHandle) => {
+  const all: { label: string; rev: number }[] = []
+  handle.store.forEachNode(n => all.push({ label: n.label, rev: n.getSnapshot() }))
+  return all
+}
+
+/** 放置分区挂在 label 外层，拖拽起点 / 终点是内层卡片 */
+const labelOf = (n: HTMLElement) => n.querySelector<HTMLElement>(':scope > .org-chart-node-label')!
+const innerOf = (n: HTMLElement) =>
+  n.querySelector<HTMLElement>(':scope > .org-chart-node-label > .org-chart-node-label-inner')!
+const nodeByLabel = (c: ParentNode, label: string) =>
+  Array.from(c.querySelectorAll<HTMLElement>('.org-chart-node')).find(
+    n => innerOf(n).textContent?.trim() === label
+  )!
+
+/**
+ * jsdom 未实现 DragEvent（testing-library 会退化成普通 Event 而丢掉 clientX / clientY），
+ * 分区判定读的正是这两个坐标，故用同名 MouseEvent 挂一个 DataTransfer 桩。
+ */
+const fireDrag = (el: HTMLElement, type: string, coord = { clientX: 0, clientY: 0 }) => {
+  const event = new MouseEvent(type, { bubbles: true, cancelable: true, ...coord })
+  const payload: Record<string, string> = {}
+  Object.defineProperty(event, 'dataTransfer', {
+    value: {
+      effectAllowed: '',
+      dropEffect: '',
+      setData: (t: string, v: string) => {
+        payload[t] = v
+      },
+      getData: (t: string) => payload[t] ?? '',
+    },
+  })
+  act(() => {
+    el.dispatchEvent(event)
+  })
+}
+
+/** 分区按 label 方框的 25% / 50% / 25% 算，X、Y 喂同一个值以兼容两种 direction */
+const mockRect = (el: HTMLElement) => {
+  vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({
+    top: 0,
+    left: 0,
+    width: 100,
+    height: 100,
+    bottom: 100,
+    right: 100,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  } as DOMRect)
 }
 
 describe('局部更新', () => {
@@ -95,6 +148,50 @@ describe('局部更新', () => {
     expect(ids).toContain(nodeIdsOf(focused)!)
     expect(focused.tabIndex).toBe(0)
     expect(first.tabIndex).toBe(-1)
+  })
+
+  it('拖拽悬停换目标时，只有撤下与挂上放置指示的两个节点重渲染', () => {
+    const ref = createRef<OkrTreeHandle>()
+    const { container } = render(
+      <OkrTree data={buildData(6, 2)} nodeKey="id" showCollapsable draggable ref={ref} />
+    )
+    const handle = ref.current!
+    const changedSince = (before: { label: string; rev: number }[]) =>
+      collectLabeled(handle)
+        .filter((n, i) => n.rev !== before[i].rev)
+        .map(n => n.label)
+    const hoverOver = (label: string, offset: number) => {
+      const target = labelOf(nodeByLabel(container, label))
+      mockRect(target)
+      fireDrag(target, 'dragover', { clientX: offset, clientY: offset })
+      return target
+    }
+
+    // dragging 只写在 ref 上，没有任何渲染状态读它 ⇒ dragstart 一个节点都不 bump
+    const beforeStart = collectLabeled(handle)
+    fireDrag(innerOf(nodeByLabel(container, 'branch-0')), 'dragstart')
+    expect(changedSince(beforeStart)).toEqual([])
+
+    // 首次悬停：只有挂上指示的那个节点 bump
+    let before = collectLabeled(handle)
+    expect(hoverOver('branch-1', 50).className).toContain('drop-inner')
+    expect(changedSince(before)).toEqual(['branch-1'])
+
+    // 同一节点同一分区反复 dragover：setDragOver 同值早退，零 bump
+    before = collectLabeled(handle)
+    hoverOver('branch-1', 50)
+    expect(changedSince(before)).toEqual([])
+
+    // 换目标：旧节点撤下 + 新节点挂上，恰好这两个，其余 16 个节点不动
+    before = collectLabeled(handle)
+    expect(hoverOver('branch-2', 10).className).toContain('drop-prev')
+    expect(changedSince(before).sort()).toEqual(['branch-1', 'branch-2'])
+    expect(labelOf(nodeByLabel(container, 'branch-1')).className).not.toContain('drop-inner')
+
+    // dragEnter 只转发事件，不碰放置指示状态
+    before = collectLabeled(handle)
+    fireDrag(labelOf(nodeByLabel(container, 'branch-3')), 'dragenter')
+    expect(changedSince(before)).toEqual([])
   })
 
   it('勾选父节点会联动整棵子树（此时全量 bump 是预期行为）', () => {

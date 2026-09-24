@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+### 性能
+
+- **同层整批换引用时 `updateChildren` 的 key 回退降为线性**：回退原本是 `oldNodes.find(n => !used.has(n) && n.key === k)`，同层 s 项全部换引用时第 i 项平均要扫 i 次 ⇒ 该层退化到 O(s²)。现改成一次建好的 `Map<key, TreeNode[]>` 索引。两处语义刻意保住——键不做 `String` 归一（原判断是 `===`，`11` 与 `'11'` 不该互配）、桶存数组而非单值（同层重复 key 时第二项要能命中第二个旧节点），各有一条用例钉住，换成朴素的 `Map<string, TreeNode>` 就当场红。量化取上游 `vue3-okr-tree` 的实测（把 `key` getter 包住计数）：`s=3200` 整轮换引用时 key 访问 16,005 次（=5s），旧实现按公式为 5,121,600 次（`s(s+1)/2`）；本包为同形实现，未单独复测计时。
+
 ### 修复
 
 - **换绑 data 引用不再把整棵后代摘出注册表**：`data` 数组引用保持不变、只把某一层对象换成同 key 的新对象（轮询接口的典型局部更新）时，`TreeNode.updateChildren()` 的换绑分支原先调递归版 `store.deregisterNode()`——它连带删掉该节点全部后代在 `nodesMap` 里的登记，而复用路径不会重新登记，于是这些后代的 `getNode` / `getNodePath` / `setCurrentKey` / `remove` / `moveNode` 等按 key 的公开方法全部静默无操作，而节点仍照常渲染、仍可点击。改用新增的 `deregisterNodeSelf()`（只摘本节点）：该分支的匹配条件本就是 key 相等，后代的实例与 key 都没变，留在注册表里才是正确状态；真正被移除的节点仍由尾部注销循环递归清理。与上游 `vue3-okr-tree` 同批同形修复。

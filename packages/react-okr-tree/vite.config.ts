@@ -31,6 +31,24 @@ export default defineConfig({
     },
     cssCodeSplit: false,
     sourcemap: true,
+    /**
+     * 压缩器钉成 Terser：`src/viewport.ts` 里那三条 `@vite-ignore` / `webpackIgnore` /
+     * `turbopackIgnore` 必须活到**发布出去的产物**里（Next 16 的 Turbopack 只认后两家，
+     * 缺了就是下游构建期 Module not found）。esbuild / oxc 都会把注解吃掉，Terser 可以按
+     * 正则保留。上游 vue3-okr-tree 同改动，两仓就此对齐；门禁见 scripts/verify-dist.mjs。
+     */
+    minify: 'terser',
+    terserOptions: {
+      /**
+       * `directives: false` 必须显式给：terser 默认会把「非 use strict / use asm」的指令
+       * 当无用表达式丢掉，而 RSC 边界的 `'use client';` banner 正是这种指令——实测不带这个
+       * 选项时三种产物首行都没了它，verify:dist 的 R8 断言当场三项全红。
+       */
+      compress: { directives: false },
+      format: {
+        comments: /vite-ignore|webpackIgnore|turbopackIgnore/,
+      },
+    },
     rollupOptions: {
       external: [
         'react',

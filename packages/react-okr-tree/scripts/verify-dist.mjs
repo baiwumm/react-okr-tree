@@ -220,28 +220,31 @@ assert(
  * optional peer（html-to-image）在产物里要同时满足三件事，缺一都会在下游炸：
  * 1. 说明符经变量传递，不出现静态 import/require —— 否则 Vite/Rollup 会把可选依赖
  *    内联成额外 chunk，或让没装它的消费者连加载都过不了；
- * 2. ESM 产物保留三家打包器的 ignore 注释 —— Next 16 的 Turbopack 只认
- *    `webpackIgnore` / `turbopackIgnore`，只有 `@vite-ignore` 时它会在**构建期**
- *    直接报 Module not found（文档站是第一个撞上的真实消费者）；
- * 3. CJS / UMD 同理不得出现静态 require。
+ * 2. **三种产物**都保留三家打包器的 ignore 注释 —— Next 16 的 Turbopack 只认
+ *    `webpackIgnore` / `turbopackIgnore`，只有 `@vite-ignore` 时它会在**构建期**直接报
+ *    Module not found（文档站是第一个撞上的真实消费者）。这里原先只断 ESM，而 cjs / umd
+ *    走 esbuild 压缩后三条注释一条不剩（实测 grep 计数全为 0），等于三条路径只守住了
+ *    一条；压缩器换成 terser + `format.comments` 白名单后三种都留得住，断言随之铺开。
+ * 3. ESM 仍有动态 import 调用点（防止哪天被摇掉或改成顶层 await）。
  */
 const esSource = readFileSync(distEs, 'utf8')
-assert(
-  /@vite-ignore/.test(esSource) &&
-    /webpackIgnore:\s*true/.test(esSource) &&
-    /turbopackIgnore:\s*true/.test(esSource),
-  'ESM 保留可选 peer 的动态导入与三家 ignore 注释'
-)
 for (const [name, src] of [
-  ['es', esSource],
-  ['cjs', readFileSync(distCjs, 'utf8')],
-  ['umd', umdSource],
+  ['ESM', esSource],
+  ['.cjs', readFileSync(distCjs, 'utf8')],
+  ['.umd', umdSource],
 ]) {
+  assert(
+    /@vite-ignore/.test(src) &&
+      /webpackIgnore:\s*true/.test(src) &&
+      /turbopackIgnore:\s*true/.test(src),
+    `${name} 保留可选 peer 的三家打包器 ignore 注释`
+  )
   assert(
     !/(?:require|import)\(\s*(["`'])html-to-image\1/.test(src),
     `${name} 未静态引入可选 peer（说明符走变量）`
   )
 }
+assert(/import\(/.test(esSource), 'ESM 保留 html-to-image 的动态 import 调用点')
 
 if (failures.length) {
   console.error(`[verify:dist] ${failures.length} 项失败`)

@@ -24,6 +24,10 @@
 
 - **平移后吞点击不再往视口元素上堆监听**：`handlePointerUp` 原先每次平移结束都 `viewportEl.current.addEventListener('click', …, { capture: true, once: true })`，而触摸平移压根不派发 click——监听于是按平移次数累积挂在元素上，直到某一次真出现 click 才被一次性摘掉（组件卸载时仍挂着）。现改记一个 `swallowNextClick` ref，由视口 div 上常驻的 `onClickCapture` 判断并消费；对外语义与改动前逐字一致（平移后紧跟的那一次 click 被吞，第二次照常送到节点），只是不再残留注册。两条新用例分别钉「吞一次且只吞一次」与「平移过程中元素上 `click` 注册数为 0」——还原成 once 监听、或把标志赋值摘掉，各打红一条（后者同时证明 React 合成事件的捕获阶段确实担起了原来那条原生捕获监听的活）。与上游 `vue3-okr-tree` 同批同形。
 
+- **产物三种格式都保住 html-to-image 的三条 ignore 注释，压缩器由 Oxc 换为 Terser**：可选 peer 靠变量说明符的动态 import 避开打包，但 bundler 只认注释——`@vite-ignore` 管 Vite/Rollup，Next 16 的 Turbopack 只认 `webpackIgnore` / `turbopackIgnore`。此前 `verify:dist` 只断 ESM 那份，而 **CJS / UMD 走 Oxc 压缩后三条注释一条不剩**（实测 grep 计数全为 0）——即三条引入路径只守住了一条。现改 `build.minify: 'terser'` + `format.comments` 白名单，ESM / `.cjs` / `.umd` 三种产物全部保留，门禁随之从「只断 ESM」铺开成 7 条（每种格式各断「注释齐全」+「未静态引入」，另断 ESM 仍有 `import(` 调用点），`verify:dist` 42 → **45** 条 ok。
+  - 换压缩器踩到一条隐蔽回归：**Terser 会把 `'use client'` banner 当无用表达式删掉**（三种产物首行全空，`verify:dist` 的 R8 断言当场三项全红）。它不是注释，`format.comments` 管不到，必须配 `terserOptions.compress.directives: false`。已写进 `docs/requirements.md` R8。
+  - 顺带收口第 1 轮报告的 2.7：本包 ES 产物此前是**未压缩**的（65 kB / 2,030 行），gzip 比自身压缩档多 10.8%；换 Terser 之后 ESM gzip **18.65 → 16.91 kB**（预算 20 kB，余量 6.7% → 15.5%），"保注释就得放弃体积" 这个二选一本就不成立。新增 devDependency `terser`。上游 `vue3-okr-tree` 同批同形（那边还顺手删掉了 `post-build.mjs` 里的 esbuild 补压）。
+
 ### 首页与文档站
 
 - **首页改走 beUI 组件**：从参考站 copy-in `components/motion/**` 六件（`Button` / `ButtonLink`、`TextReveal`、`AnimatedBadge`、`Tabs`、`BouncyAccordion`）与 `lib/{utils,ease}`、`lib/hooks/use-hover-capable`，新增依赖 `motion@^12.27.5`、`clsx@^2.1.1`、`tailwind-merge@^3.4.0`（beUI 是 shadcn registry 的源码件，不是 npm 包）。Hero 眉标 / 标题 / 按钮、Capabilities 卡、Layouts、FAQ、CTA 与导航版本胶囊全部换用这几件，入场动效由自研 `fade-up` keyframes 改为 `motion` 的 `whileInView`（自带 `useReducedMotion` 降级）。

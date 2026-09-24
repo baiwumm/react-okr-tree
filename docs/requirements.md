@@ -221,6 +221,7 @@ src/
 - 交互相关的 effect（ResizeObserver、`document.fonts.ready`、pointer/wheel 监听）只在挂载后注册。
 - `exportImage`、`html-to-image` 动态 import、`scrollToNode` 均为客户端专属。
 - RSC 边界：产物首行要带 `'use client'`（App Router 下消费者可直接在 server component 里 import）。实现走 **Rollup `output.banner`** 而不是逐个源文件写指令：本包是 lib 模式、三种格式各打成单文件，逐文件写指令在打包后会被剥掉；而事后用脚本补又会让 sourcemap 整体错一行。banner 里的**分号不能省**——Oxc 压缩会把 banner 与下一行并成一行，`"use client"(function(e,t){…}` 就成了「把字符串当函数调用」，UMD 在加载期直接 TypeError（`verify:dist` 有断言：指令必须以 `;` 或换行收尾）。
+  - **换压缩器要重验这条**：为保住 html-to-image 的三条 ignore 注释，`build.minify` 已从默认的 Oxc 换成 `terser`，而 Terser 会把 `'use client'` 当成无用表达式**整条删掉**（实测三种产物首行全空，`verify:dist` 的 R8 断言当场三项全红）。必须配 `terserOptions.compress.directives: false` 才留得住——它不是注释、`format.comments` 白名单管不到它。
 - 冒烟用例覆盖与源项目对齐：三套布局、OKR 左树、受控 props、`renderNode` / `empty`、`OkrTreeGroup` / `OkrTreeViewport` 包裹。
 - **实现约束（SSR 用例抓到的一条）**：受控初始值（`expandedKeys` / `currentKey`）必须在 store 创建期同步应用，不能只放 effect——effect 在服务端不执行，首屏渲染结果会与「受控」语义不符，客户端首帧也会闪一下非受控状态。创建期赋值不违反 R1 第 7 条，因为那时还没有订阅者。
 

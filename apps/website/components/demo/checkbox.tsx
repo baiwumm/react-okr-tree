@@ -18,6 +18,9 @@ import { EventLog, LOG_LIMIT, type LogLine } from './event-log'
  * 也就没法「派生出勾选态」。本例把结果写进日志面板。
  * OKR 模式下左右两树勾选独立维护，方法按 key 对两树同时生效。
  */
+/** 初始勾选的 key：必须是模块级稳定引用——写进行内字面量会在宿主每次重渲染时重新应用，把用户刚勾的抹掉 */
+const DEFAULT_CHECKED_KEYS = [3, 4]
+
 export function CheckboxDemo() {
   const data = useMemo(keyedData, [])
   const handle = useRef<OkrTreeHandle>(null)
@@ -48,7 +51,7 @@ export function CheckboxDemo() {
       'setCheckedKeys',
       checkStrictly
         ? '勾选 [7, 8]（独立模式：父节点 6 不受影响）'
-        : '勾选 [7, 8]（联动模式：父节点 6 自动变半选）'
+        : '勾选 [7, 8]（联动模式：6 的两个子节点全被选中，于是 6 变全选、根 1 变半选）'
     )
   }
 
@@ -89,7 +92,7 @@ export function CheckboxDemo() {
         showCollapsable
         showCheckbox
         checkStrictly={checkStrictly}
-        defaultCheckedKeys={[3, 4]}
+        defaultCheckedKeys={DEFAULT_CHECKED_KEYS}
         onCheck={handleCheck}
         onCheckChange={handleCheckChange}
       />

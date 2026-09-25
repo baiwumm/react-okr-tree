@@ -2,6 +2,10 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。**版本号自 1.13.0 起与 [`vue3-okr-tree`](https://github.com/baiwumm/vue3-okr-tree) 锁步发布**：同号即同一功能面，版本决策（patch / minor / major）永远先在上游发生，本包跟随——上游发版后对齐移植，无对应变更也发同号空版本；特性面差异只发生在机制层（见 `docs/requirements.md` 第 8 节的 D1–D12）。
 
+## 1.15.0（2026-09-26）
+
+跟随上游 `vue3-okr-tree` 1.15.0 同号发布（锁步约定）。上游本批两项内容，本包均无对等变更：**`DEFAULT_PROPS` 补导出**——本包自首个线上版本起就已导出它（`index.ts` 的 `export { TreeStore, DEFAULT_PROPS }`），两仓导出面 19 ↔ 19 至此完全对齐；**Vue Devtools 面板**——React DevTools 不提供第三方自定义面板 API，无对等物。故本版本**对外 API 零变化、零代码变更**，仅版本号锁步与文档更正（`docs/acceptance.md` §6.5 的导出面不对称记录已就地更正）。
+
 ## 1.14.2（2026-09-25）
 
 跟随上游同号的一批四条修复（拖拽第六事件的载荷与丢失、OKR 左子树过滤把整棵树筛空、defaultCheckedKeys 按引用重放回滚用户勾选、画布平移甩出边界后卡死平移态）。对外 API 形状零变化。唯一改到可观察行为的是 defaultCheckedKeys 的运行时判据（引用 → 内容），段首已单独点出。

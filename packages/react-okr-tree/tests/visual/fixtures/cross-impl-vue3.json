@@ -1,8 +1,8 @@
 {
   "source": {
     "package": "vue3-okr-tree",
-    "version": "1.14.0",
-    "capturedAt": "2026-09-24",
+    "version": "1.14.1",
+    "capturedAt": "2026-09-25",
     "chromium": "153.0.8010.12",
     "generator": "scripts/gen-cross-impl-fixture.mjs",
     "viewport": {

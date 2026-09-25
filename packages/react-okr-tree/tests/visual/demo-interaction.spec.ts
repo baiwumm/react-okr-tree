@@ -546,9 +546,34 @@ test.describe('懒加载与画布', () => {
     await child.click()
     await expect(nodeByLabel(block, 'xxx科技有有限公司-A')).toHaveClass(/is-current/)
 
-    // 居中到深处节点：祖先被展开、状态文案跟着走（放在最后，前面的点击坐标不受它影响）
+    // 居中到深处节点：祖先被展开、状态文案跟着走
     await block.getByRole('button', { name: 'centerNode(121)' }).click()
     await expect(status).toContainText('已居中到 id=121')
+
+    /**
+     * 松手落在画布外（2026-09-25 修的那条，与源项目同形）：元素侧收不到 pointerup，
+     * 手势必须照样收尾——之后不按键的悬停不能再拖动画布，这一次也不该武装「吞一次点击」。
+     */
+    await viewport.getByRole('button', { name: '重置' }).click()
+    const box2 = (await viewport.boundingBox())!
+    const y2 = box2.y + box2.height - 14
+    await page.mouse.move(box2.x + 30, y2)
+    await page.mouse.down()
+    await page.mouse.move(box2.x + 130, y2, { steps: 6 })
+    await page.mouse.move(box2.x + 170, box2.y - 40, { steps: 4 })
+    await page.mouse.up()
+    await expect(viewport).not.toHaveClass(/is-panning/)
+    const styleAfterRelease = await canvas.getAttribute('style')
+    expect(styleAfterRelease).toMatch(/translate\(1\d\dpx/)
+    await page.mouse.move(box2.x + 300, y2, { steps: 6 })
+    await page.mouse.move(box2.x + 420, y2, { steps: 6 })
+    await expect(canvas).toHaveAttribute('style', styleAfterRelease!)
+    // 画布外松手不该武装「吞一次点击」：回到画布里的第一次点击就得管用，
+    // 工具栏的复位点击正是那一次（被吞掉的话偏移会停在原处）
+    await viewport.getByRole('button', { name: '重置' }).click()
+    await expect(canvas).toHaveAttribute('style', /translate\(0px, 0px/)
+    await child.click()
+    await expect(nodeByLabel(block, 'xxx科技有有限公司-A')).toHaveClass(/is-current/)
 
     await assertClean(errors)
   })

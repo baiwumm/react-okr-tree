@@ -285,7 +285,14 @@ function OkrTreeViewportInner(props: OkrTreeViewportProps, ref: Ref<OkrTreeViewp
     }
   }
 
-  function handlePointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+  /**
+   * @param armSwallow 是否武装「吞掉随后一次 click」。只有松手落点在画布内时才该武装：
+   * 落点在画布外，浏览器不会在画布里派发那次 click，武装了就会吃掉用户下一次正常点击。
+   */
+  function handlePointerUp(
+    event: ReactPointerEvent<HTMLDivElement> | PointerEvent,
+    armSwallow = true
+  ) {
     pointers.delete(event.pointerId)
     if (pointers.size < 2) pinchStart.current = null
     if (pointers.size === 1) {
@@ -297,10 +304,21 @@ function OkrTreeViewportInner(props: OkrTreeViewportProps, ref: Ref<OkrTreeViewp
       setPanning(false)
     }
     // 平移过则吞掉随后的一次 click，避免误触 node-click
-    if (movedRef.current) {
-      swallowNextClick.current = true
-      movedRef.current = false
-    }
+    if (armSwallow && movedRef.current) swallowNextClick.current = true
+    movedRef.current = false
+  }
+
+  /**
+   * 松手落在画布外时，元素上的 `onPointerUp` 根本收不到（没挂 pointer capture，浏览器也不补派发），
+   * 于是 `panStart` 与 `is-panning` 都留在原地——之后**不带按键**的悬停移动会继续拖着画布走。
+   * 这里挂一个常驻 window 监听收尾（常驻而非按次添加，避免 1.14.1 修掉的监听堆叠换一种形式回来）。
+   */
+  function handleWindowPointerUp(event: PointerEvent) {
+    const el = viewportEl.current
+    if (el && event.target instanceof Node && el.contains(event.target)) return
+    // 只看 ref：常驻监听闭包里读 state 会拿到首帧值，而 panStart 非空就是「手势还没收尾」
+    if (!panStart.current && !pinchStart.current) return
+    handlePointerUp(event, false)
   }
 
   function handleClickCapture(event: ReactMouseEvent<HTMLDivElement>) {
@@ -366,9 +384,15 @@ function OkrTreeViewportInner(props: OkrTreeViewportProps, ref: Ref<OkrTreeViewp
   }
 
   useEffect(() => {
+    window.addEventListener('pointerup', handleWindowPointerUp)
+    window.addEventListener('pointercancel', handleWindowPointerUp)
     // 初始受控值越界时钳制
     if (props.zoom !== undefined && props.zoom !== clampZoom(props.zoom, minZoom, maxZoom)) {
       applyZoom(props.zoom)
+    }
+    return () => {
+      window.removeEventListener('pointerup', handleWindowPointerUp)
+      window.removeEventListener('pointercancel', handleWindowPointerUp)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

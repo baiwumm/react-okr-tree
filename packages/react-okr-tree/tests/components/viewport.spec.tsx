@@ -159,6 +159,18 @@ const firePointer = (
   })
 }
 
+/**
+ * 一次平移到「松手落在画布外」的形态：元素侧的 onPointerUp 收不到那一次，
+ * 只有 window 上的常驻监听能收尾（浏览器在 down / up 目标不同时不会在画布里派发 click）。
+ */
+const panAndReleaseOutside = (el: Element) => {
+  firePointer(el, 'pointerdown', { pointerId: 1, clientX: 0, clientY: 0 })
+  firePointer(el, 'pointermove', { pointerId: 1, clientX: 60, clientY: 40 })
+  act(() => {
+    window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, bubbles: true }))
+  })
+}
+
 describe('纯函数：clampZoom / computeFit', () => {
   it('clampZoom 钳制到 [min, max]', () => {
     expect(clampZoom(0.5, 0.2, 4)).toBe(0.5)
@@ -297,6 +309,18 @@ describe('OkrTreeViewport：拖拽平移', () => {
       y: 30,
     })
   })
+
+  it('松手落在画布外：手势照样收尾，之后不按键的悬停不再拖动画布', () => {
+    const { container, vp } = mountViewport()
+    const el = viewportElOf(container)
+    panAndReleaseOutside(el)
+
+    // 卡住的 is-panning 与残留的 panStart 是一件事的两面：都清掉了才不会再被悬推动
+    expect(el.classList.contains('is-panning')).toBe(false)
+    expect(vp.getOffset()).toEqual({ x: 60, y: 40 })
+    firePointer(el, 'pointermove', { pointerId: 1, clientX: 400, clientY: 300 })
+    expect(vp.getOffset()).toEqual({ x: 60, y: 40 })
+  })
 })
 
 /**
@@ -326,6 +350,18 @@ describe('OkrTreeViewport：平移后吞掉一次 click', () => {
     expect(onNodeClick).not.toHaveBeenCalled()
     act(() => {
       fireEvent.click(label)
+    })
+    expect(onNodeClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('画布外松手不武装吞点击：紧接着的第一次点击照常送到节点', () => {
+    const onNodeClick = vi.fn()
+    const { container } = mountWithNodeClick(onNodeClick)
+    panAndReleaseOutside(viewportElOf(container))
+    // 松手在画布外，浏览器不会在画布里补出一次 click 来消费这个标志；
+    // 若把它武装上，用户回到画布里的第一次正常点击就会被无故吃掉
+    act(() => {
+      fireEvent.click(q(container, '.org-chart-node-label-inner'))
     })
     expect(onNodeClick).toHaveBeenCalledTimes(1)
   })

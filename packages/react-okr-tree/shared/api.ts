@@ -107,7 +107,7 @@ export const attributesSection: ApiSection = {
     ['checkStrictly', '父子不联动：勾选只作用于自身，无半选传播', 'boolean', '—', 'false'],
     [
       'defaultCheckedKeys',
-      '初始勾选的 key 数组（需 <code>nodeKey</code>）。运行时变更 = 先清空再按新列表应用；data 重建后不恢复',
+      '初始勾选的 key 数组（需 <code>nodeKey</code>）。运行时按<strong>内容</strong>比较：列表真的变了才先清空再按新列表应用（宿主只是换了个等值数组引用时不重放，不会抹掉用户改过的勾选）；data 重建后不恢复',
       'array',
       '—',
       '—',

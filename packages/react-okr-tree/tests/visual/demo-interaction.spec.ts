@@ -371,6 +371,19 @@ test.describe('过滤与实例方法', () => {
     expect(await labelsIn(block)).toHaveLength(before.length)
     await expect(status).toContainText('空值已放行')
 
+    // 只命中左子树的关键字：共用的根节点必须留在页面上。旧行为是根被判不可见，
+    // 于是连刚命中的左子树一起从 DOM 卸载，整棵树凭空消失（getVisibleNodes 也读 0）
+    await block.getByRole('button', { name: '左', exact: true }).click()
+    const leftOnly = await labelsIn(block)
+    expect(leftOnly).toContain('(左)销售部')
+    expect(leftOnly).toContain('xxx科技有有限公司')
+    expect(leftOnly).not.toContain('销售部')
+    // 左右合计 9 = 左树命中的 8 个 + 共用的那一个根（右树侧零命中）
+    await expect(status).toContainText('左右合计 9 个可见节点，其中左树 8 个')
+
+    await block.getByRole('button', { name: '左', exact: true }).click()
+    expect(await labelsIn(block)).toHaveLength(before.length)
+
     await assertClean(errors)
   })
 
@@ -693,14 +706,17 @@ test.describe('交互档（accordion / expand-on-click-node / checkbox / draggab
     await expect(logRow(block, 'onNodeDrop →').first()).toContainText('研发-前端')
     expect(await childLabels(dev)).toEqual(['研发-后端', 'UI 设计'])
     expect(await childLabels(sales)).toEqual(['销售一部', '销售二部', '研发-前端'])
-    // 实测：react 侧成功放置后**不发** onNodeDragEnd（handleDrop 先把 draggingNode 清掉，
-    // dragend 的 `dragging !== node` 守卫因此短路）。源项目同场景会发一条 dropNode/dropType
-    // 均为 null 的 drag-end——两仓的第六个事件各坏在不同位置，见本轮报告。
-    await expect(logRow(block, 'onNodeDragEnd')).toHaveCount(0)
+    // 2026-09-25 修载荷后：drag-end 由 handleDrop 在 node-drop 之后立刻补发（跨父级移动会把
+    // 源元素卸载重建，浏览器真到的那一次送不到宿主手上），所以成功放置这里报的是「放置完成」。
+    await expect(logRow(block, 'onNodeDragEnd').first()).toContainText('放置完成')
 
     // 2) allowDrop 拦住以财务部（id 9）为目标的放置：不该多出 onNodeDrop，但拖得起、drag-end 有记录
     const finance = nodeByLabel(block, '财务部')
     const backend = nodeByLabel(block, '研发-后端')
+    // 上一步移走节点后布局会重排，源与目标都可能跑出窗口（boundingBox 越界时 dragTo
+    // 静默什么都不做），两个端点都先滚进视口
+    await innerOf(backend).scrollIntoViewIfNeeded()
+    await innerOf(finance).scrollIntoViewIfNeeded()
     const dropsBefore = await logRow(block, 'onNodeDrop →').count()
     await innerOf(backend).dragTo(innerOf(finance), { targetPosition: { x: 12, y: 12 } })
     await expect(logRow(block, 'onNodeDrop →')).toHaveCount(dropsBefore)

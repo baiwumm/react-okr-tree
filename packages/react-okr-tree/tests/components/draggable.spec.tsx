@@ -149,6 +149,66 @@ describe('draggable 基础', () => {
     expect(onNodeDragEnd).toHaveBeenCalledTimes(1)
   })
 
+  it('成功放置后 onNodeDragEnd 报出真实落点（不是 null 载荷）', () => {
+    const onNodeDragEnd = vi.fn()
+    const onNodeDrop = vi.fn()
+    const { container } = renderTree({
+      data: makeData(),
+      draggable: true,
+      nodeKey: 'id',
+      onNodeDrop,
+      onNodeDragEnd,
+    })
+    // B 拖进 A 的 inner 区：drop 先派发，dragend 紧随其后
+    dragDrop(container, 'B', 'A', 50)
+    expect(onNodeDrop).toHaveBeenCalledTimes(1)
+    expect(onNodeDragEnd).toHaveBeenCalledTimes(1)
+    // 旧实现这里两个参数恒为 null——handleDrop 在 dragend 之前就把 dragOver 清了，
+    // 于是宿主侧每次成功拖动只能记一句「未完成放置」，第六个事件的载荷等于没有
+    const [, dropNode, dropType] = onNodeDragEnd.mock.calls[0]
+    expect(onNodeDragEnd.mock.calls[0][0].key).toBe(12)
+    expect(dropNode.key).toBe(11)
+    expect(dropType).toBe('inner')
+  })
+
+  it('连续两次放置：每次都收到一对 drop / drag-end（手势状态不泄漏到下一轮）', () => {
+    const onNodeDragEnd = vi.fn()
+    const onNodeDrop = vi.fn()
+    const { container } = renderTree({
+      data: makeData(),
+      draggable: true,
+      nodeKey: 'id',
+      onNodeDrop,
+      onNodeDragEnd,
+    })
+    dragDrop(container, 'B', 'A', 50)
+    dragDrop(container, 'C', 'A', 50)
+    expect(onNodeDrop).toHaveBeenCalledTimes(2)
+    expect(onNodeDragEnd).toHaveBeenCalledTimes(2)
+    expect(onNodeDragEnd.mock.calls.map((c: any[]) => [c[0].key, c[1]?.key, c[2]])).toEqual([
+      [12, 11, 'inner'],
+      [13, 11, 'inner'],
+    ])
+  })
+
+  it('被 allowDrop 拒掉的放置：onNodeDragEnd 仍然报 null', () => {
+    const onNodeDragEnd = vi.fn()
+    const onNodeDrop = vi.fn()
+    const { container } = renderTree({
+      data: makeData(),
+      draggable: true,
+      nodeKey: 'id',
+      allowDrop: () => false,
+      onNodeDrop,
+      onNodeDragEnd,
+    })
+    dragDrop(container, 'B', 'A', 50)
+    expect(onNodeDrop).not.toHaveBeenCalled()
+    expect(onNodeDragEnd).toHaveBeenCalledTimes(1)
+    expect(onNodeDragEnd.mock.calls[0][1]).toBeNull()
+    expect(onNodeDragEnd.mock.calls[0][2]).toBeNull()
+  })
+
   it('allowDrag 返回 false：不可拖拽且不触发 onNodeDragStart', () => {
     const onNodeDragStart = vi.fn()
     const { container } = renderTree({

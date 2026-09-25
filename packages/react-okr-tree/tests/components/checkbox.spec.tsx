@@ -247,6 +247,28 @@ describe('default-checked-keys 与方法', () => {
     expect(handle.isChecked(13)).toBe(true)
     expect(handle.getCheckedKeys()).toEqual([13])
   })
+
+  it('default-checked-keys 换引用不换内容：不把用户改过的勾选整片抹回去', () => {
+    const { handle, setProps } = renderTree({
+      data: makeData(),
+      showCheckbox: true,
+      defaultCheckedKeys: [111],
+      nodeKey: 'id',
+    })
+    inAct(() => handle.getNode(13)!.setChecked(true))
+    expect(handle.getCheckedKeys()).toEqual([111, 13])
+
+    // 宿主每次渲染新建一个等值数组（行内字面量、漏了 useMemo 的派生表达式都会这样）：
+    // 内容没变就不该重放默认勾选——旧实现在这里把用户刚勾的 13 抹掉了
+    setProps({ defaultCheckedKeys: [111] })
+    expect(handle.isChecked(13)).toBe(true)
+    expect(handle.isChecked(111)).toBe(true)
+
+    // 内容真的变了才重放：先清空，再按新列表勾选
+    setProps({ defaultCheckedKeys: [12] })
+    expect(handle.isChecked(13)).toBe(false)
+    expect(handle.getCheckedKeys()).toEqual([12, 121])
+  })
 })
 
 describe('check / check-change 事件', () => {

@@ -43,7 +43,14 @@ describe('virtual 开启（vertical，宽度模型）', () => {
   it('达标行只渲染窗口内节点，行末占位块的宽度等于未渲染兄弟的总宽', async () => {
     const ref = createRef<OkrTreeHandle>()
     const { container } = render(
-      <OkrTree ref={ref} data={makeData(3000)} nodeKey="id" labelWidth={100} defaultExpandAll virtual />
+      <OkrTree
+        ref={ref}
+        data={makeData(3000)}
+        nodeKey="id"
+        labelWidth={100}
+        defaultExpandAll
+        virtual
+      />
     )
     await waitFor(() => expect(countNodes(container)).toBe(6))
     const spacer = container.querySelector<HTMLElement>('.okr-v-spacer')
@@ -61,7 +68,14 @@ describe('virtual 开启（vertical，宽度模型）', () => {
     Element.prototype.scrollIntoView = scrollSpy
     const ref = createRef<OkrTreeHandle>()
     const { container } = render(
-      <OkrTree ref={ref} data={makeData(3000)} nodeKey="id" labelWidth={100} defaultExpandAll virtual />
+      <OkrTree
+        ref={ref}
+        data={makeData(3000)}
+        nodeKey="id"
+        labelWidth={100}
+        defaultExpandAll
+        virtual
+      />
     )
     await waitFor(() => expect(countNodes(container)).toBeLessThan(60))
     let ok = false
@@ -88,7 +102,9 @@ describe('virtual 开启（vertical，宽度模型）', () => {
         labelWidth={100}
         defaultExpandAll
         virtual
-        filterNodeMethod={(v: string, d: TreeNodeData) => String((d as Record<string, unknown>).label).includes(v)}
+        filterNodeMethod={(v: string, d: TreeNodeData) =>
+          String((d as Record<string, unknown>).label).includes(v)
+        }
       />
     )
     await waitFor(() => expect(countNodes(container)).toBeLessThan(60))
@@ -120,7 +136,9 @@ describe('virtual 开启（vertical，宽度模型）', () => {
         })),
       },
     ]
-    const { container, rerender } = render(<OkrTree ref={ref} data={data} nodeKey="id" labelWidth={100} virtual />)
+    const { container, rerender } = render(
+      <OkrTree ref={ref} data={data} nodeKey="id" labelWidth={100} virtual />
+    )
     await waitFor(() => expect(countNodes(container)).toBeLessThan(30))
     act(() => {
       ref.current!.expandAll()
@@ -137,7 +155,9 @@ describe('virtual 开启（vertical，宽度模型）', () => {
   it('未给数字型 labelWidth：输出开发期警告，行退回全量渲染', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     resetWarnings()
-    const { container } = render(<OkrTree data={makeData(200)} nodeKey="id" defaultExpandAll virtual />)
+    const { container } = render(
+      <OkrTree data={makeData(200)} nodeKey="id" defaultExpandAll virtual />
+    )
     await waitFor(() => expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('labelWidth')))
     expect(countNodes(container)).toBe(201)
     expect(container.querySelectorAll('.okr-v-spacer')).toHaveLength(0)
@@ -178,7 +198,9 @@ describe('virtual 开启（horizontal，高度模型）', () => {
         virtual
       />
     )
-    await waitFor(() => expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('labelHeight')))
+    await waitFor(() =>
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('labelHeight'))
+    )
     warnSpy.mockRestore()
   })
 

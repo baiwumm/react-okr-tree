@@ -153,8 +153,7 @@ export function computeWindowState(options: {
   if (crossB < viewA - VIRTUAL_CROSS_MARGIN || crossA > viewB + VIRTUAL_CROSS_MARGIN) {
     return minWindow(items, prefix, total)
   }
-  const lo =
-    (ctx.axis === 'x' ? view.left - rect.left : view.top - rect.top) - VIRTUAL_OVERSCAN_PX
+  const lo = (ctx.axis === 'x' ? view.left - rect.left : view.top - rect.top) - VIRTUAL_OVERSCAN_PX
   const hi =
     (ctx.axis === 'x' ? view.right - rect.left : view.bottom - rect.top) + VIRTUAL_OVERSCAN_PX
   let start = 0

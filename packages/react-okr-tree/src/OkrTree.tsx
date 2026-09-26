@@ -21,12 +21,7 @@ import { OkrTreeNode } from './OkrTreeNode'
 import { CLS, HIDDEN_ANCESTOR_SELECTOR, STATE, TREEITEM_SELECTOR, themeClass } from './dom-contract'
 import { cx, cxState, reactKey } from './cx'
 import { setPositions } from './aria-set'
-import {
-  computeWindowState,
-  hNodeHeight,
-  vNodeWidth,
-  type OkrTreeVirtualContext,
-} from './virtual'
+import { computeWindowState, hNodeHeight, vNodeWidth, type OkrTreeVirtualContext } from './virtual'
 import {
   OkrTreeProvider,
   useOkrTreeGroupContext,
@@ -643,7 +638,15 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
       }
       if (target) focusElement(target)
     },
-    [virtualOn, modelOrderedVisibleItems, nodeEls, elNodes, revealVirtualNode, focusElement, visibleTreeItems]
+    [
+      virtualOn,
+      modelOrderedVisibleItems,
+      nodeEls,
+      elNodes,
+      revealVirtualNode,
+      focusElement,
+      visibleTreeItems,
+    ]
   )
 
   const focusParent = useCallback(

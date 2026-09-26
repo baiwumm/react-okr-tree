@@ -512,7 +512,9 @@ function OkrTreeNodeComponent({
     ctx.virtual?.axis === 'y' ? { height: `${size}px` } : { width: `${size}px` }
   const spacerClass = ctx.virtual?.axis === 'y' ? 'okr-h-spacer' : 'okr-v-spacer'
   const spacerEl = (size: number, key: string): ReactNode =>
-    size > 0 ? <div key={key} className={spacerClass} style={spacerStyle(size)} aria-hidden="true" /> : null
+    size > 0 ? (
+      <div key={key} className={spacerClass} style={spacerStyle(size)} aria-hidden="true" />
+    ) : null
 
   const renderChildren = (
     list: TreeNode[],

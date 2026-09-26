@@ -26,6 +26,11 @@ globalThis.HTMLElement = dom.window.HTMLElement
 globalThis.SVGElement = dom.window.SVGElement
 globalThis.Element = dom.window.Element
 globalThis.Node = dom.window.Node
+// virtual 的行几何路径要读 getComputedStyle 与 rAF（vitest 的 jsdom 环境自带，裸 jsdom 只给前者）。
+// rAF 这里用 setTimeout 顶替：只为让代码跑到，不参与计时口径。与上游 vue3 侧同一处理。
+globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window)
+globalThis.requestAnimationFrame = cb => setTimeout(() => cb(performance.now()), 16)
+globalThis.cancelAnimationFrame = id => clearTimeout(id)
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 const { createElement, act } = await import('react')
@@ -60,6 +65,7 @@ async function measure(label, fn, rounds = 3) {
     `| ${label} | ${fmt(best)} ms（${rounds} 轮取最优，末轮 ${fmt(last.ms)} ms） | ` +
       (last.note || '')
   )
+  last.best = best
   return last
 }
 
@@ -74,6 +80,7 @@ function mountTree(props) {
   const rootEl = createRoot(el)
   const render = () => act(() => rootEl.render(createElement(OkrTree, { ...props, ref })))
   return {
+    el,
     render,
     get handle() {
       return handle
@@ -197,6 +204,61 @@ await measure('首渲染（全部展开，约 2041 个节点 DOM）', async () =
 
   tree.unmount()
 }
+
+// ---- 万级（1.16.0 已知边界的记账场景，不设门禁）：1 父 + 10000 平铺子节点 ----
+// 与上游 vue3 侧同形状、同口径：两条只差一个 virtual。差值就是 DOM 渲染与布局侧的成本，
+// 余下的全是 store 构建（逐节点 new TreeNode + 写注册表），它发生在渲染之前，virtual 碰不到。
+const FLAT = 10000
+
+/** 1 父 + count 个平铺子节点：virtual 场景的形状（同层兄弟越多，窗口化收益越大） */
+function makeFlatData(count) {
+  return [
+    {
+      id: 1,
+      label: '根',
+      children: Array.from({ length: count }, (_, i) => ({ id: i + 2, label: `节点-${i + 2}` })),
+    },
+  ]
+}
+
+/** 挂一次万级树，返回耗时与渲染节点数（后者用来先证明窗口化真的生效） */
+async function mountFlat(extraProps) {
+  const t0 = performance.now()
+  const tree = mountTree({
+    data: makeFlatData(FLAT),
+    nodeKey: 'id',
+    defaultExpandAll: true,
+    ...extraProps,
+  })
+  tree.render()
+  const t1 = performance.now()
+  const rendered = tree.el.querySelectorAll('.org-chart-node').length
+  tree.unmount()
+  return { ms: t1 - t0, note: `渲染 ${rendered} 个节点` }
+}
+
+// 全量那条在 jsdom 上要十几秒，一轮足够看出量级，两轮只是把 bench 拖慢一倍
+const flatFull = await measure(
+  `万级首渲染（1 + ${FLAT} 平铺，virtual: false）`,
+  () => mountFlat({}),
+  1
+)
+const flatVirtual = await measure(
+  '万级首渲染（同数据，virtual: true，要求数字型 labelWidth）',
+  () => mountFlat({ virtual: true, labelWidth: 120 }),
+  2
+)
+if (flatFull.ms <= flatVirtual.best) {
+  throw new Error(
+    `万级场景无效：virtual 版（${flatVirtual.best.toFixed(0)} ms）不比全量版（${flatFull.ms.toFixed(0)} ms）快，` +
+      '要么窗口化没生效，要么数据形状不对，别把这张表当结论'
+  )
+}
+console.log(
+  `| 万级：DOM 渲染侧成本（上两条之差） | ${fmt(flatFull.ms - flatVirtual.best)} ms | ` +
+    `virtual 省掉的只有这么多；余下 ${fmt(flatVirtual.best)} ms 是 store 构建，` +
+    '与 virtual / 全量渲染无关 |'
+)
 
 console.log('\n> 环境：Node ' + process.version + '，jsdom 模拟 DOM，dist/react-okr-tree.es.js。')
 console.log('> jsdom 无真实布局/样式，数值仅用于横向对比与回归告警，不代表浏览器真实帧率。')

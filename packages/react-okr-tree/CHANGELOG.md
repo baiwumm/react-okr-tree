@@ -2,6 +2,12 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。**版本号自 1.13.0 起与 [`vue3-okr-tree`](https://github.com/baiwumm/vue3-okr-tree) 锁步发布**：同号即同一功能面，版本决策（patch / minor / major）永远先在上游发生，本包跟随——上游发版后对齐移植，无对应变更也发同号空版本；特性面差异只发生在机制层（见 `docs/requirements.md` 第 8 节的 D1–D12）。
 
+## Unreleased
+
+- **万级平铺的性能记账（库源码零改动）**：`pnpm bench` 新增两条万级场景（1 父 + 10000 平铺子节点，只差 `virtual`），`docs/perf.md` 补同名一节。实测本包 978 ms（渲染 10001 个节点）→ 111 ms（渲染 13 个），也就是 `virtual` 压掉了 99.87% 的渲染节点、只降 89% 的首帧，剩下那 111 ms 是挂载期的模型侧成本。**同一形状上游是 10953 ms / 5494 ms，约 50 倍的差**——上游已用它的 bench 排除掉深侦听与响应式代理两项嫌疑，这条差异记为上游侧待查项、本包不跟进。不设门禁（`tests/visual/perf.spec.ts` 守的是既有的 2040 节点浏览器验收线）。
+- **`@types/mdx` 改精确版本（审计 G1）**：`apps/website/package.json` 里唯一一处 `^` 依赖 `^2.0.14` → `2.0.14`，lockfile 同步，与附录 A「全部精确版本」的约定对齐。
+- **`verify:export` 补 image meta 死链扫描（审计 G11 收口）**：死链检查原先只扫 `href` / `src`，而 `app/layout.tsx` 声明的 `images: ['/og.png']` 渲染成 `<meta property="og:image" content="…">`——图丢了线上是社交卡片空白，CI 照样全绿（审计记录的检测盲区）。现在 image 类 meta 逐个取 `content`，摘掉 `SITE_URL` 前缀后走同一套 `resolveLocal`（Next 会把 metadata 里的相对 URL 解析成绝对 URL，不剥前缀一条都扫不到），资产清单同时补 `og.png`。**先钉命中数再钉死链**（实测导出里 44 条 image meta），否则 meta 形状一变正则失配，死链那条就成了永真。变异复测：挪走 `out/og.png` → 两条判据同时红，还原 → 全绿。顺带修了这脚本一处老毛病：失败只报数量不报是哪一条，现在逐条打 `FAIL: <判据>`。
+
 ## 1.16.0（2026-09-26）
 
 跟随上游 `vue3-okr-tree` 1.16.0 同号发布（锁步约定）：**`virtual` 虚拟滚动**（上游 2.x 清单 #15 收官）同批同形移植。同层可见兄弟数 ≥ 50 的行只渲染视口内窗口，DOM 数量与滚动流畅度不再随总数增长（1 父 + 10000 平铺子节点渲染节点 10001 → 13）。实现与上游逐条对应：等尺寸占位块顶住未渲染兄弟的位置（float 行总宽与连接线走向逐像素等价，行首 / 行末边界帽语义由占位块自然继承）、展开行子容器按宽度模型显式定宽（float shrink-to-fit 的 min-content 钳制会折断连线）、折叠行不渲染占位块、aria 与 `getVisibleNodes()` 按全量可见列表、`scrollToNode` 与键盘漫游对窗口外目标**先揭示再定位**。机制层差异：Vue 侧靠 computed 自动追踪后代宽度变化，React 侧在 `onExpandChange` / `filter` / 数据变更时 bump 度量时钟（virtual 下渲染节点有界，整树重渲染代价可控），窗口在渲染期经 `computeWindowState` 纯函数重算；揭示用 `flushSync` 同步提交，`scrollToNode` 的 el 查找不依赖提交时序。要求数字型 `labelWidth`（horizontal 另要求 `labelHeight`），auto 退回全量渲染并警告；创建期快照。已知边界同上游：万级首帧大头在 store 构建（与 virtual 无关），产物 +2 kB gzip（预算 20/21 内）。文档站新增「虚拟滚动」demo（`components/demo/virtual.tsx`）与交互断言。

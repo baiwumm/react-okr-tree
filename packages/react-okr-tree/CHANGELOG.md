@@ -2,6 +2,10 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。**版本号自 1.13.0 起与 [`vue3-okr-tree`](https://github.com/baiwumm/vue3-okr-tree) 锁步发布**：同号即同一功能面，版本决策（patch / minor / major）永远先在上游发生，本包跟随——上游发版后对齐移植，无对应变更也发同号空版本；特性面差异只发生在机制层（见 `docs/requirements.md` 第 8 节的 D1–D12）。
 
+## 1.16.0（2026-09-26）
+
+跟随上游 `vue3-okr-tree` 1.16.0 同号发布（锁步约定）：**`virtual` 虚拟滚动**（上游 2.x 清单 #15 收官）同批同形移植。同层可见兄弟数 ≥ 50 的行只渲染视口内窗口，DOM 数量与滚动流畅度不再随总数增长（1 父 + 10000 平铺子节点渲染节点 10001 → 13）。实现与上游逐条对应：等尺寸占位块顶住未渲染兄弟的位置（float 行总宽与连接线走向逐像素等价，行首 / 行末边界帽语义由占位块自然继承）、展开行子容器按宽度模型显式定宽（float shrink-to-fit 的 min-content 钳制会折断连线）、折叠行不渲染占位块、aria 与 `getVisibleNodes()` 按全量可见列表、`scrollToNode` 与键盘漫游对窗口外目标**先揭示再定位**。机制层差异：Vue 侧靠 computed 自动追踪后代宽度变化，React 侧在 `onExpandChange` / `filter` / 数据变更时 bump 度量时钟（virtual 下渲染节点有界，整树重渲染代价可控），窗口在渲染期经 `computeWindowState` 纯函数重算；揭示用 `flushSync` 同步提交，`scrollToNode` 的 el 查找不依赖提交时序。要求数字型 `labelWidth`（horizontal 另要求 `labelHeight`），auto 退回全量渲染并警告；创建期快照。已知边界同上游：万级首帧大头在 store 构建（与 virtual 无关），产物 +2 kB gzip（预算 20/21 内）。文档站新增「虚拟滚动」demo（`components/demo/virtual.tsx`）与交互断言。
+
 ## 1.15.0（2026-09-26）
 
 跟随上游 `vue3-okr-tree` 1.15.0 同号发布（锁步约定）。上游本批两项内容，本包均无对等变更：**`DEFAULT_PROPS` 补导出**——本包自首个线上版本起就已导出它（`index.ts` 的 `export { TreeStore, DEFAULT_PROPS }`），两仓导出面 19 ↔ 19 至此完全对齐；**Vue Devtools 面板**——React DevTools 不提供第三方自定义面板 API，无对等物。故本版本**对外 API 零变化、零代码变更**，仅版本号锁步与文档更正（`docs/acceptance.md` §6.5 的导出面不对称记录已就地更正）。

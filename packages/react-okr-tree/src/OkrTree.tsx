@@ -4,6 +4,7 @@ import {
   useEffect,
   useImperativeHandle,
   useMemo,
+  useReducer,
   useRef,
   useState,
   type CSSProperties,
@@ -14,11 +15,18 @@ import {
   type ReactNode,
   type Ref,
 } from 'react'
+import { flushSync } from 'react-dom'
 import './styles/style.css'
 import { OkrTreeNode } from './OkrTreeNode'
 import { CLS, HIDDEN_ANCESTOR_SELECTOR, STATE, TREEITEM_SELECTOR, themeClass } from './dom-contract'
 import { cx, cxState, reactKey } from './cx'
 import { setPositions } from './aria-set'
+import {
+  computeWindowState,
+  hNodeHeight,
+  vNodeWidth,
+  type OkrTreeVirtualContext,
+} from './virtual'
 import {
   OkrTreeProvider,
   useOkrTreeGroupContext,
@@ -134,6 +142,12 @@ export interface OkrTreeProps<T extends TreeNodeData = TreeNodeData> {
   load?: TreeLoadFunction
   /** data 深度侦听开关（创建期生效），见 requirements R2 */
   deepWatch?: boolean
+  /**
+   * 虚拟滚动（1.16.0 新增，创建期生效）：同层可见兄弟数 ≥ 阈值（50）的行只渲染视口内
+   * 窗口，用等尺寸占位块保持布局与连接线逐像素等价。要求数字型 labelWidth
+   * （horizontal 布局还要求 labelHeight），auto 尺寸下达标行退回全量渲染。
+   */
+  virtual?: boolean
   /** 受控展开态（需 nodeKey）；未传 = 非受控 */
   expandedKeys?: TreeKey[]
   onExpandedKeysChange?: (keys: TreeKey[]) => void
@@ -387,6 +401,110 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
     store.bumpAll()
   }, [store])
 
+  // ---- 虚拟滚动（virtual）：滚动 / resize / viewport 变换 → tick 广播，行组件重算窗口 ----
+  const [virtualTick, bumpVirtualTick] = useReducer((x: number) => x + 1, 0)
+  const [virtualReveal, setVirtualReveal] = useState<{ node: TreeNode; n: number } | null>(null)
+  const revealSeq = useRef(0)
+  const virtualViewRect = useRef<DOMRect | null>(null)
+  const scrollRootRef = useRef<HTMLElement | null>(null)
+  const measureRafRef = useRef(0)
+  /** virtual 是否开启（创建期快照：useState 初始化只读一次，运行时变更不支持） */
+  const [virtualOn] = useState(() => !!props.virtual)
+
+  /** 从计算样式解析 --okr-* 间距变量（用户可能覆盖默认值，模型必须跟上） */
+  const readGapVar = (el: HTMLElement | null, name: string, fallback: number): number => {
+    if (!el || typeof getComputedStyle !== 'function') return fallback
+    const parsed = Number.parseFloat(getComputedStyle(el).getPropertyValue(name).trim())
+    return Number.isFinite(parsed) ? parsed : fallback
+  }
+
+  const measureVirtual = useCallback(() => {
+    if (!virtualOn) return
+    if (measureRafRef.current) return
+    measureRafRef.current = requestAnimationFrame(() => {
+      measureRafRef.current = 0
+      const rootEl = scrollRootRef.current
+      if (!rootEl || typeof rootEl.getBoundingClientRect !== 'function') return
+      virtualViewRect.current = rootEl.getBoundingClientRect()
+      setVirtualReveal(prev => (prev ? null : prev))
+      bumpVirtualTick()
+    })
+  }, [virtualOn])
+
+  /** 让某个节点必然渲染（scrollToNode / 键盘漫游在窗口外定位目标前调用）。
+   * flushSync 同步提交：调用返回后揭示窗口已在 DOM 上，调用方的 el 查找不依赖提交时序 */
+  const revealVirtualNode = useCallback(
+    (node: TreeNode) => {
+      if (!virtualOn) return
+      const entry = { node, n: ++revealSeq.current }
+      flushSync(() => {
+        setVirtualReveal(entry)
+      })
+    },
+    [virtualOn]
+  )
+
+  useEffect(() => {
+    if (!virtualOn) return
+    // 间距变量从最终计算样式读取（挂在主题/祖先上的覆盖也能拿到）
+    gapsRef.current.gapSibling = readGapVar(orgChartRoot.current, '--okr-gap-sibling', 5)
+    gapsRef.current.gapNodeY = readGapVar(orgChartRoot.current, '--okr-gap-node-y', 10)
+    // 找最近的滚动祖先（overflow: auto/scroll/overlay）
+    let cur = orgChartRoot.current?.parentElement ?? null
+    while (cur && cur !== document.body) {
+      const s = getComputedStyle(cur)
+      if (/(auto|scroll|overlay)/.test(s.overflowX + s.overflowY)) {
+        scrollRootRef.current = cur
+        break
+      }
+      cur = cur.parentElement
+    }
+    if (!scrollRootRef.current) scrollRootRef.current = document.documentElement
+    // scroll 不冒泡但捕获阶段可达：document 上的捕获监听能收到任意后代的滚动
+    document.addEventListener('scroll', measureVirtual, { capture: true, passive: true })
+    window.addEventListener('resize', measureVirtual)
+    // viewport 的平移/缩放直接写 canvas 的 transform，不走滚动：盯住 style 变更
+    const canvas = orgChartRoot.current?.closest('.okr-viewport-canvas')
+    let observer: MutationObserver | null = null
+    if (canvas && typeof MutationObserver !== 'undefined') {
+      observer = new MutationObserver(measureVirtual)
+      observer.observe(canvas, { attributes: true, attributeFilter: ['style'] })
+    }
+    const initial = requestAnimationFrame(() => measureVirtual())
+    return () => {
+      document.removeEventListener('scroll', measureVirtual, { capture: true })
+      window.removeEventListener('resize', measureVirtual)
+      observer?.disconnect()
+      cancelAnimationFrame(initial)
+      if (measureRafRef.current) cancelAnimationFrame(measureRafRef.current)
+      measureRafRef.current = 0
+    }
+  }, [virtualOn, measureVirtual])
+
+  const gapsRef = useRef({ gapSibling: 5, gapNodeY: 10 })
+  /**
+   * virtual 上下文：tick / reveal 是 React state，进入 deps 后 bump 即换 context 身份，
+   * 整树消费者重渲染并重算窗口（渲染期 getTick / getReveal 读到的都是本次 state）。
+   */
+  const virtualCtx = useMemo<OkrTreeVirtualContext | undefined>(
+    () =>
+      virtualOn
+        ? {
+            axis: store.direction === 'horizontal' ? 'y' : 'x',
+            getTick: () => virtualTick,
+            getViewRect: () => virtualViewRect.current,
+            getReveal: () => virtualReveal,
+            labelW:
+              typeof propsRef.current.labelWidth === 'number' ? propsRef.current.labelWidth : 0,
+            labelH:
+              typeof propsRef.current.labelHeight === 'number' ? propsRef.current.labelHeight : 0,
+            gapSibling: gapsRef.current.gapSibling,
+            gapNodeY: gapsRef.current.gapNodeY,
+          }
+        : undefined,
+    [store, virtualOn, virtualTick, virtualReveal]
+  )
+
   // ---- 节点根元素登记 ----
   const registerNodeEl = useCallback(
     (node: TreeNode, el: HTMLElement) => {
@@ -441,13 +559,77 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
   const focusNode = useCallback(
     (node: TreeNode) => {
       const el = nodeEls.get(node)
-      if (el) focusElement(el)
+      if (el) {
+        focusElement(el)
+        return
+      }
+      // virtual：目标可能还没渲染，先揭示（强制窗口收编）再聚焦
+      if (virtualOn) {
+        revealVirtualNode(node)
+        setTimeout(() => {
+          const late = nodeEls.get(node)
+          if (late) focusElement(late)
+        }, 0)
+      }
     },
-    [nodeEls, focusElement]
+    [nodeEls, focusElement, virtualOn, revealVirtualNode]
   )
+
+  /** virtual 模式的模型序可见列表（前序遍历，与 DOM 顺序一致） */
+  const modelOrderedVisibleItems = useCallback((): TreeNode[] => {
+    const list: TreeNode[] = []
+    const walk = (children: TreeNode[], isLeftBranch: boolean) => {
+      for (const child of children) {
+        if (!child.visible) continue
+        list.push(child)
+        const leftKids =
+          store.onlyBothTree && store.direction === 'horizontal'
+            ? isLeftBranch
+              ? child.childNodes
+              : child.leftChildNodes
+            : []
+        if (leftKids.length > 0 && child.leftExpanded) walk(leftKids, true)
+        if (!isLeftBranch && child.childNodes.length > 0 && child.expanded) {
+          walk(child.childNodes, false)
+        }
+      }
+    }
+    walk(root.childNodes, false)
+    return list
+  }, [store, root])
 
   const moveFocus = useCallback(
     (from: HTMLElement | null, step: 1 | -1 | 'first' | 'last') => {
+      // virtual：DOM 里只有窗口内条目，按模型序漫游才能跨出窗口边界
+      if (virtualOn) {
+        const items = modelOrderedVisibleItems()
+        if (!items.length) return
+        const focusTarget = (target: TreeNode | undefined) => {
+          if (!target) return
+          const el = nodeEls.get(target)
+          if (el) {
+            focusElement(el)
+            return
+          }
+          revealVirtualNode(target)
+          setTimeout(() => {
+            const late = nodeEls.get(target)
+            if (late) focusElement(late)
+          }, 0)
+        }
+        if (step === 'first') {
+          focusTarget(items[0])
+        } else if (step === 'last') {
+          focusTarget(items[items.length - 1])
+        } else {
+          const current = from ? elNodes.get(from) : null
+          const index = current ? items.indexOf(current) : -1
+          const next = index + step
+          if (!current || next < 0 || next >= items.length) return
+          focusTarget(items[next])
+        }
+        return
+      }
       const items = visibleTreeItems()
       if (!items.length) return
       let target: HTMLElement | undefined
@@ -461,7 +643,7 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
       }
       if (target) focusElement(target)
     },
-    [visibleTreeItems, focusElement]
+    [virtualOn, modelOrderedVisibleItems, nodeEls, elNodes, revealVirtualNode, focusElement, visibleTreeItems]
   )
 
   const focusParent = useCallback(
@@ -488,6 +670,12 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
     if (node) node.notify()
   }, [])
 
+  /** virtual：展开/过滤等模型变化会改宽度模型，bump 度量时钟让行组件重算窗口 */
+  const onExpandChangeAndMeasure = useCallback(() => {
+    syncExpandedKeys()
+    if (virtualOn) measureVirtual()
+  }, [syncExpandedKeys, virtualOn, measureVirtual])
+
   const contextValue = useMemo<OkrTreeContextValue>(
     () => ({
       store,
@@ -495,7 +683,7 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
       configRef,
       emit,
       hasContextmenuListener: () => !!propsRef.current.onNodeContextMenu,
-      onExpandChange: syncExpandedKeys,
+      onExpandChange: onExpandChangeAndMeasure,
       onCurrentChange: syncCurrentKey,
       registerNodeEl,
       unregisterNodeEl,
@@ -509,12 +697,13 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
       setDraggingNode,
       getDragOver: () => dragOverRef.current,
       setDragOver,
+      virtual: virtualCtx,
     }),
     [
       store,
       root,
       emit,
-      syncExpandedKeys,
+      onExpandChangeAndMeasure,
       syncCurrentKey,
       registerNodeEl,
       unregisterNodeEl,
@@ -525,6 +714,8 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
       focusParent,
       setDraggingNode,
       setDragOver,
+      // virtual 的 tick / reveal bump 经 virtualCtx 身份变化传导到整树消费者
+      virtualCtx,
     ]
   )
 
@@ -619,6 +810,14 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
       if (p.defaultCheckedKeys) warn('default-checked-keys 需要同时设置 node-key，否则不会生效。')
     }
     if (p.lazy && !p.load) warn('lazy 需要同时提供 load 函数，否则未加载节点无法展开。')
+    if (p.virtual && typeof p.labelWidth !== 'number') {
+      warn(
+        '开启 virtual 需要数字型 labelWidth（占位块尺寸来自宽度模型，auto 宽度不可知）；当前行会退回全量渲染。'
+      )
+    }
+    if (p.virtual && p.direction === 'horizontal' && typeof p.labelHeight !== 'number') {
+      warn('horizontal 布局开启 virtual 还需要数字型 labelHeight，否则达标行退回全量渲染。')
+    }
     if (!p.lazy && p.load) warn('传入 load 但未开启 lazy，load 不会生效。')
     if (p.connector !== undefined && p.connector !== 'css' && p.connector !== 'svg') {
       warn(`connector 仅支持 "css" / "svg"，收到 "${p.connector}"，将按 "css" 渲染。`)
@@ -866,6 +1065,8 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
     if (propsRef.current.onlyBothTree) store.filter(value, 'leftChildNodes')
     syncExpandedKeys()
     bumpAll()
+    // virtual：可见性变化改宽度模型，bump 度量时钟让行组件重算窗口
+    if (virtualOn) measureVirtual()
   }
 
   function getNodeEl(d: TreeNode | TreeKey | TreeNodeData): HTMLElement | null {
@@ -948,7 +1149,16 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
       await Promise.all(pending.map(pendingNode => pendingNode.whenLoaded()))
     }
     await new Promise(resolve => requestAnimationFrame(() => resolve(null)))
-    const el = nodeEls.get(node)
+    let el = nodeEls.get(node)
+    // virtual：目标在窗口外时先揭示（强制渲染其邻近区间）。
+    // React 的提交时机不与 rAF 对齐，用有界 macrotask 重试等提交完成（微任务先于宏任务）
+    if (!el && virtualOn) {
+      revealVirtualNode(node)
+      for (let i = 0; i < 10 && !nodeEls.get(node); i++) {
+        await new Promise(resolve => setTimeout(resolve, 0))
+      }
+      el = nodeEls.get(node)
+    }
     if (!el || typeof el.scrollIntoView !== 'function') return false
     el.scrollIntoView({
       behavior: prefersReducedMotion() ? 'auto' : 'smooth',
@@ -1026,7 +1236,19 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
     })
   )
 
-  const topPositions = setPositions(root.childNodes)
+  // ---- 根行的虚拟窗口（virtual 关闭时 state 为 null，维持全量渲染） ----
+  const topVisible = root.childNodes.filter(child => child.visible)
+  const topWin = computeWindowState({
+    ctx: virtualCtx,
+    items: topVisible,
+    containerEl: orgChartRoot.current,
+    sizeOf: (n, c) => (c.axis === 'x' ? vNodeWidth(n, c) : hNodeHeight(n, c)),
+  })
+  const topEntries = topWin
+    ? setPositions(topVisible).slice(topWin.start, topWin.end)
+    : setPositions(root.childNodes)
+  const topSpacer = (size: number) =>
+    virtualCtx?.axis === 'y' ? { height: `${size}px` } : { width: `${size}px` }
 
   return (
     <OkrTreeProvider value={contextValue}>
@@ -1040,7 +1262,14 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
         ) : null}
         <div ref={orgChartRoot} className={treeClass} role="tree">
           {isEmpty && props.empty ? <div className={CLS.empty}>{props.empty}</div> : null}
-          {topPositions.map(({ node: child, size, pos }) => (
+          {topWin && topWin.leadSize > 0 ? (
+            <div
+              className={virtualCtx?.axis === 'y' ? 'okr-h-spacer' : 'okr-v-spacer'}
+              style={topSpacer(topWin.leadSize)}
+              aria-hidden="true"
+            />
+          ) : null}
+          {topEntries.map(({ node: child, size, pos }) => (
             <OkrTreeNode
               key={reactKey(nodeKey, child)}
               node={child}
@@ -1048,6 +1277,13 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
               ariaPosInSet={pos}
             />
           ))}
+          {topWin && topWin.trailSize > 0 ? (
+            <div
+              className={virtualCtx?.axis === 'y' ? 'okr-h-spacer' : 'okr-v-spacer'}
+              style={topSpacer(topWin.trailSize)}
+              aria-hidden="true"
+            />
+          ) : null}
         </div>
       </div>
     </OkrTreeProvider>

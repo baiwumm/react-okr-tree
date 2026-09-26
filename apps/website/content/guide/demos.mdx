@@ -27,6 +27,7 @@ import { OkrContentDemo } from '@/components/demo/okr-content'
 import { OkrGroupDemo } from '@/components/demo/okr-group'
 import { OkrNodeNumDemo } from '@/components/demo/okr-node-num'
 import { ViewportDemo } from '@/components/demo/viewport'
+import { VirtualDemo } from '@/components/demo/virtual'
 
 这 24 个用例与源项目 `playground/components/demos/` 一一对应（编号见[开发计划](/docs/start/repo)的阶段 8 契约表），
 用来做「特性是否对齐」的人工核对。每个用例下面折叠的源码**就是这一块正在跑的组件文件本身**：
@@ -145,4 +146,8 @@ import { ViewportDemo } from '@/components/demo/viewport'
 
 <DemoBlock title="SVG 连接线" description="<code>connector=&quot;svg&quot;</code> 换成覆盖层路径，布局零改动；三种形状在收起子树时会跟着重绘。" file="components/demo/connector.tsx">
   <ConnectorDemo />
+</DemoBlock>
+
+<DemoBlock title="虚拟滚动" description="<code>virtual</code>：同层可见兄弟数 ≥ 50 的行只渲染视口内窗口，占位块保持布局与连接线逐像素等价。要求数字型 <code>labelWidth</code>；创建期快照，切换走 <code>key</code> 重挂载。" file="components/demo/virtual.tsx">
+  <VirtualDemo />
 </DemoBlock>

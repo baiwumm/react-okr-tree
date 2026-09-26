@@ -12,6 +12,13 @@ import {
 import { CLS, STATE, animClass } from './dom-contract'
 import { cx, cxState, reactKey } from './cx'
 import { setPositions } from './aria-set'
+import {
+  computeWindowState,
+  hNodeHeight,
+  vNodeWidth,
+  type OkrTreeVirtualContext,
+  type VirtualWindowState,
+} from './virtual'
 import { useOkrTreeContext } from './context'
 import { useNodeVersion } from './hooks/use-node-version'
 import { usePrefersReducedMotion } from './hooks/use-reduced-motion'
@@ -96,14 +103,47 @@ function OkrTreeNodeComponent({
     (keepHeight
       ? { visibility: 'hidden' }
       : { visibility: 'hidden', height: '0', overflow: 'hidden' }) as CSSProperties
+  // ---- 虚拟滚动（virtual）：行窗口化（virtual 关闭时上下文不存在，全部维持全量渲染） ----
+  const childrenRef = useRef<HTMLDivElement | null>(null)
+  const leftChildrenRef = useRef<HTMLDivElement | null>(null)
+  /** 窗口化与占位块尺寸都以「可见兄弟」为口径（被 filter 隐藏的不占位） */
+  const visibleRight = node.childNodes.filter(child => child.visible)
+  const visibleLeft = leftChildNodes.filter(child => child.visible)
+  const sizeOf = (n: TreeNode, c: OkrTreeVirtualContext) =>
+    c.axis === 'x' ? vNodeWidth(n, c) : hNodeHeight(n, c)
+  const rightWin = computeWindowState({
+    ctx: ctx.virtual,
+    items: visibleRight,
+    containerEl: childrenRef.current,
+    sizeOf,
+  })
+  const leftWin = computeWindowState({
+    ctx: ctx.virtual,
+    items: visibleLeft,
+    containerEl: leftChildrenRef.current,
+    sizeOf,
+  })
+
   const leftChildrenStyle = {
     ...animVar,
     ...(node.leftExpanded ? {} : hiddenStyle(keepLeftHeight)),
   } as CSSProperties
-  const childrenStyle = {
-    ...animVar,
-    ...(node.expanded ? {} : hiddenStyle(keepRightHeight)),
-  } as CSSProperties
+  const childrenStyle = (() => {
+    const base = {
+      ...animVar,
+      ...(node.expanded ? {} : hiddenStyle(keepRightHeight)),
+    } as CSSProperties
+    /**
+     * 展开且窗口化时给子容器显式宽度（模型行宽）：float 行的 shrink-to-fit 取
+     * min(max(min-content, 可用宽), max-content)，单个巨宽占位块会把容器钉在
+     * min-content 上、把渲染节点挤到第二行折断连线。折叠时不设宽也不渲染占位块
+     * ——隐藏容器的 min-content 必须与全量渲染一致（折叠的父节点宽度 ≈ 叶子宽）。
+     */
+    if (rightWin && node.expanded && ctx.virtual?.axis === 'x') {
+      return { ...base, width: `${rightWin.totalSize}px` } as CSSProperties
+    }
+    return base
+  })()
   const animClassList = animateOn ? [STATE.isAnimated, animClass(store.animateName)] : []
 
   const showNodeBtn = isLeftChildNode
@@ -468,16 +508,45 @@ function OkrTreeNodeComponent({
     ctx.emit('node-drag-end', dragged, node, over.type, event)
   }
 
-  const renderChildren = (list: TreeNode[], asLeft: boolean): ReactNode =>
-    setPositions(list).map(({ node: child, size, pos }) => (
-      <OkrTreeNode
-        key={reactKey(cfg.nodeKey, child)}
-        node={child}
-        isLeftChildNode={asLeft}
-        ariaSetSize={size}
-        ariaPosInSet={pos}
-      />
-    ))
+  const spacerStyle = (size: number): CSSProperties =>
+    ctx.virtual?.axis === 'y' ? { height: `${size}px` } : { width: `${size}px` }
+  const spacerClass = ctx.virtual?.axis === 'y' ? 'okr-h-spacer' : 'okr-v-spacer'
+  const spacerEl = (size: number, key: string): ReactNode =>
+    size > 0 ? <div key={key} className={spacerClass} style={spacerStyle(size)} aria-hidden="true" /> : null
+
+  const renderChildren = (
+    list: TreeNode[],
+    asLeft: boolean,
+    win: VirtualWindowState | null,
+    expanded: boolean
+  ): ReactNode => {
+    // 折叠行不渲染占位块：隐藏容器的 min-content 必须与全量渲染一致（见 childrenStyle 注释）
+    if (!win || !expanded) {
+      return setPositions(list).map(({ node: child, size, pos }) => (
+        <OkrTreeNode
+          key={reactKey(cfg.nodeKey, child)}
+          node={child}
+          isLeftChildNode={asLeft}
+          ariaSetSize={size}
+          ariaPosInSet={pos}
+        />
+      ))
+    }
+    const slice = setPositions(list).slice(win.start, win.end)
+    return [
+      spacerEl(win.leadSize, 'lead') as ReactNode,
+      ...slice.map(({ node: child, size, pos }) => (
+        <OkrTreeNode
+          key={reactKey(cfg.nodeKey, child)}
+          node={child}
+          isLeftChildNode={asLeft}
+          ariaSetSize={size}
+          ariaPosInSet={pos}
+        />
+      )),
+      spacerEl(win.trailSize, 'trail') as ReactNode,
+    ]
+  }
 
   const btnRenderers = {
     renderExpandBtn: cfg.renderExpandBtn,
@@ -564,6 +633,7 @@ function OkrTreeNodeComponent({
     >
       {showLeftChildNode ? (
         <div
+          ref={leftChildrenRef}
           className={cx(
             CLS.leftChildren,
             animClassList,
@@ -572,7 +642,7 @@ function OkrTreeNodeComponent({
           style={leftChildrenStyle}
           role="group"
         >
-          {renderChildren(leftChildNodes, true)}
+          {renderChildren(visibleLeft, true, leftWin, node.leftExpanded)}
         </div>
       ) : null}
 
@@ -616,11 +686,12 @@ function OkrTreeNodeComponent({
 
       {!isLeftChildNode && node.childNodes.length > 0 ? (
         <div
+          ref={childrenRef}
           className={cx(CLS.children, animClassList, cxState({ [STATE.isHidden]: !node.expanded }))}
           style={childrenStyle}
           role="group"
         >
-          {renderChildren(node.childNodes, false)}
+          {renderChildren(visibleRight, false, rightWin, node.expanded)}
         </div>
       ) : null}
     </div>

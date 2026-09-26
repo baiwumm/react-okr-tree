@@ -10,6 +10,7 @@ import type {
   RenderContentFunction,
 } from './types'
 import type { ViewportTreeApi } from './viewport'
+import type { OkrTreeVirtualContext } from './virtual'
 
 export type OkrTreeEventName =
   | 'node-click'
@@ -83,6 +84,13 @@ export interface OkrTreeContextValue {
   getDragOver: () => { node: TreeNode | null; type: DropType | null }
   /** 同时 bump 上一个与下一个目标节点，drop-prev / drop-inner / drop-next 类才会跟着走 */
   setDragOver: (node: TreeNode | null, type: DropType | null) => void
+
+  /**
+   * 虚拟滚动上下文（virtual prop 开启时存在；未开启为 undefined）。
+   * tick / reveal 走 React state：bump 即整树消费者重渲染并重算窗口，
+   * 所以行组件在渲染期直接调用 computeWindowState 即可。
+   */
+  virtual?: OkrTreeVirtualContext
 }
 
 const OkrTreeContext = createContext<OkrTreeContextValue | null>(null)

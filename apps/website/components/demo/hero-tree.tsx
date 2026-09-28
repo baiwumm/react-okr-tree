@@ -23,11 +23,7 @@ const makeData = () => [
     id: 1,
     label: '星环科技',
     children: [
-      {
-        id: 2,
-        label: '产品研发部',
-        children: [{ id: 5, label: '前端组' }],
-      },
+      { id: 2, label: '研发部' },
       { id: 3, label: '市场部' },
       { id: 4, label: '财务部' },
     ],

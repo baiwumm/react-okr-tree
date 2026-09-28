@@ -1,4 +1,5 @@
 import LightRays from '@/components/background/light-ray'
+import { BackToTop } from '@/components/landing/back-to-top'
 import { Cta } from '@/components/landing/cta'
 import { Faq } from '@/components/landing/faq'
 import { Features } from '@/components/landing/features'
@@ -31,6 +32,7 @@ export default function Home() {
         <Faq />
         <Footer />
       </div>
+      <BackToTop />
     </main>
   )
 }

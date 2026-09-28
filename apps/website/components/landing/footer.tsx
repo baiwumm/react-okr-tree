@@ -1,16 +1,18 @@
-import { Package } from 'lucide-react'
+'use client'
+
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Package } from 'lucide-react'
 import { Logo } from '@/components/logo'
-import { AnimatedBadge } from '@/components/motion/animated-badge'
+import { TextScramble } from '@/components/text-scramble'
 import { GithubIcon } from '@/components/ui/brand-icons'
-import { LIB_VERSION } from '@/lib/version'
 import { SITE } from '@/lib/site'
 
 const GROUPS = [
   {
     title: '文档',
     links: [
-      { text: '快速开始', href: '/docs/start' },
+      { text: '快速开始', href: '/docs' },
       { text: 'Demo 总览', href: '/docs/guide' },
       { text: '主题与变量', href: '/docs/theme' },
       { text: 'API', href: '/docs/api' },
@@ -26,6 +28,60 @@ const GROUPS = [
   },
 ] as const
 
+/** 底行版权：左「© + 站名」、右「Built by + 乱码渐显署名」，体例与参考站页脚一致 */
+function CopyrightBar() {
+  const [isTrigger, setIsTrigger] = useState(false)
+
+  useEffect(() => {
+    const start = () => setIsTrigger(true)
+
+    const initial = setTimeout(start, 300)
+    const interval = setInterval(start, 3500)
+
+    return () => {
+      clearTimeout(initial)
+      clearInterval(interval)
+    }
+  }, [])
+
+  return (
+    <div className="mx-auto mt-12 flex max-w-6xl flex-col items-center justify-between gap-4 border-t border-dashed border-black/20 pt-6 text-xs text-muted-foreground sm:flex-row dark:border-white/10">
+      <div>
+        <span>
+          © {new Date().getFullYear()}{' '}
+          <Link
+            href="/"
+            className="text-foreground underline underline-offset-4 transition-colors hover:opacity-80"
+          >
+            {SITE.name}
+          </Link>
+          . All rights reserved.
+        </span>
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        <span>Built by</span>
+        <a
+          href={SITE.ownerUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${SITE.owner} 的 GitHub`}
+          className="flex items-center font-medium text-foreground underline underline-offset-4 transition-colors hover:opacity-80"
+        >
+          <TextScramble
+            className="inline-block w-[7ch] whitespace-nowrap"
+            speed={0.02}
+            trigger={isTrigger}
+            onScrambleComplete={() => setIsTrigger(false)}
+          >
+            {SITE.owner}
+          </TextScramble>
+        </a>
+      </div>
+    </div>
+  )
+}
+
 export function Footer() {
   return (
     <footer className="border-t px-6 py-14">
@@ -34,12 +90,9 @@ export function Footer() {
           <div className="flex items-center gap-2">
             <Logo size={24} className="rounded-md" />
             <span className="font-semibold">{SITE.name}</span>
-            <AnimatedBadge size="sm" className="font-mono">
-              v{LIB_VERSION}
-            </AnimatedBadge>
           </div>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            {SITE.description}
+            垂直、水平与 OKR 双树三种布局的组织架构图
           </p>
           <div className="mt-5 flex items-center gap-3">
             <a
@@ -82,12 +135,7 @@ export function Footer() {
         ))}
       </div>
 
-      <div className="mx-auto mt-12 flex max-w-6xl flex-wrap items-center justify-between gap-3 border-t pt-6 text-xs text-muted-foreground">
-        <p>MIT Licensed · © {new Date().getFullYear()} baiwumm</p>
-        <p className="font-mono">
-          本站为 Next.js 静态导出，部署在 Cloudflare Pages；站内搜索跑在浏览器里。
-        </p>
-      </div>
+      <CopyrightBar />
     </footer>
   )
 }

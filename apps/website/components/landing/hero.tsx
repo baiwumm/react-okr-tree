@@ -100,7 +100,7 @@ export function Hero() {
           transition={{ delay: 0.38, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="mt-8 flex flex-wrap items-center justify-center gap-3"
         >
-          <ButtonLink href="/docs/start" variant="primary" size="lg">
+          <ButtonLink href="/docs" variant="primary" size="lg">
             <BookOpen size={16} />
             快速开始
           </ButtonLink>
@@ -108,7 +108,7 @@ export function Hero() {
             href={SITE.github}
             target="_blank"
             rel="noreferrer"
-            variant="outline"
+            variant="secondary"
             size="lg"
           >
             <GithubIcon className="size-4" />

@@ -6,4 +6,6 @@ export const SITE = {
   url: 'https://react-okr-tree.baiwumm.com',
   github: 'https://github.com/baiwumm/react-okr-tree',
   npm: 'https://www.npmjs.com/package/react-okr-tree',
+  owner: 'baiwumm',
+  ownerUrl: 'https://github.com/baiwumm',
 } as const

@@ -1,6 +1,7 @@
 import { HeroTree } from '@/components/demo/hero-tree'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/motion/tabs'
 import { AnimatedBadge } from '@/components/motion/animated-badge'
+import { TiltCard } from '@/components/motion/tilt-card'
 
 /**
  * 布局展示位（参考站 stacks.tsx 的位置）
@@ -53,18 +54,22 @@ function DemoCard({
   description: string
 }) {
   return (
-    <figure className="glass-card flex flex-col overflow-hidden rounded-3xl">
-      <div className="overflow-x-auto px-4 py-8">
-        {/* 装得下就居中，装不下就横向滚动——不这样树会贴着卡片左边 */}
-        {/* w-max 让树按自然宽度铺开（w-fit / min-w-full 都会被压回可用宽度而换行），
-            mx-auto 则在卡片够宽时水平居中，不够宽时退化为横向滚动 */}
-        <div className="mx-auto w-max">{children}</div>
-      </div>
-      <figcaption className="mt-auto border-t border-border/60 px-6 py-5">
-        <p className="font-mono text-sm font-semibold">{title}</p>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{description}</p>
-      </figcaption>
-    </figure>
+    /* TiltCard 做外层倾斜 wrapper：glare 光斑的圆角裁剪与卡片圆角对齐都在这层；
+       卡面较大，倾角收到 4 度。树本身可点，倾斜只是跟随光标的装饰变换 */
+    <TiltCard max={4} className="h-full rounded-3xl">
+      <figure className="glass-card flex h-full flex-col rounded-3xl">
+        <div className="overflow-x-auto px-4 py-8">
+          {/* 装得下就居中，装不下就横向滚动——不这样树会贴着卡片左边 */}
+          {/* w-max 让树按自然宽度铺开（w-fit / min-w-full 都会被压回可用宽度而换行），
+              mx-auto 则在卡片够宽时水平居中，不够宽时退化为横向滚动 */}
+          <div className="mx-auto w-max">{children}</div>
+        </div>
+        <figcaption className="mt-auto border-t border-border/60 px-6 py-5">
+          <p className="font-mono text-sm font-semibold">{title}</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{description}</p>
+        </figcaption>
+      </figure>
+    </TiltCard>
   )
 }
 
@@ -130,14 +135,16 @@ export function Showcase() {
               节点会被压到下一行 */}
           <div className="mt-8 grid gap-5 sm:grid-cols-2">
             {THEMES.map(item => (
-              <div key={item.theme} className="glass-card rounded-3xl p-5">
-                <p className="mb-4 font-mono text-xs text-muted-foreground">{item.label}</p>
-                <div className="overflow-x-auto">
-                  <div className="mx-auto w-max">
-                    <HeroTree theme={item.theme} defaultExpandAll labelWidth={104} />
+              <TiltCard key={item.theme} max={6} className="h-full rounded-3xl">
+                <div className="glass-card h-full rounded-3xl p-5">
+                  <p className="mb-4 font-mono text-xs text-muted-foreground">{item.label}</p>
+                  <div className="overflow-x-auto">
+                    <div className="mx-auto w-max">
+                      <HeroTree theme={item.theme} defaultExpandAll labelWidth={104} />
+                    </div>
                   </div>
                 </div>
-              </div>
+              </TiltCard>
             ))}
           </div>
         </div>

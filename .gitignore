@@ -11,4 +11,3 @@ playwright-report/
 .DS_Store
 .env
 .env.local
-.wrangler/

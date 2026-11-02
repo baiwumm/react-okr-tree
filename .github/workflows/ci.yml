@@ -66,7 +66,7 @@ jobs:
         run: npm pack --dry-run
 
   # 文档站是 workspace 的第二包：单独一个 job，文档挂了不掩盖库的结论。
-  # 关键是「静态导出的真实性」——部署链路（Cloudflare 纯静态资产）依赖它，
+  # 关键是「静态导出的真实性」——部署链路（纯静态托管，EdgeOne Makers）依赖它，
   # 所以除了 next build 跑通，还要断言 out/ 里没有任何服务端运行时残留、站内链接不 404。
   website:
     name: Website build (static export)

@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "react-okr-tree 文档站（Next.js + fumadocs，静态导出后部署 Cloudflare Pages，同时承担源项目 playground 的 Demo 职责）",
+  "description": "react-okr-tree 文档站（Next.js + fumadocs，静态导出后部署腾讯云 EdgeOne Makers，同时承担源项目 playground 的 Demo 职责）",
   "scripts": {
     "dev": "node scripts/with-memory-cap.mjs dev",
     "build": "node scripts/with-memory-cap.mjs build",

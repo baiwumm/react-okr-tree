@@ -1,7 +1,7 @@
 // 静态导出产物的本地文件服务器：给 Playwright 的视觉门禁当 webServer 用。
 //
 // 为什么不用 `next dev`：视觉基线要的是**部署形态**的样子，而部署的是 `out/` 里那批
-// 静态文件（Cloudflare 纯静态资产）。dev 服务器带未压缩的 React 与不同的水合时机，
+// 静态文件（EdgeOne Makers 纯静态托管）。dev 服务器带未压缩的 React 与不同的水合时机，
 // 用它做基线等于给一个线上不存在的形态拍照。
 //
 // 用法：node scripts/serve-out.mjs --port 4173（端口也可用 OKR_VISUAL_PORT 覆盖）
@@ -56,7 +56,7 @@ createServer(async (req, res) => {
     res.end(body)
   } catch {
     console.warn(`[serve-out] 404 ${rel}`)
-    // 与 Cloudflare 的 not_found_handling: 404-page 一致：回 404.html
+    // 与线上托管的 404 行为一致：未命中回 404.html，而不是目录列表或 SPA 兜底
     try {
       res.writeHead(404, { 'content-type': 'text/html; charset=utf-8' })
       res.end(await readFile(join(outDir, '404.html')))

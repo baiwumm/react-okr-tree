@@ -99,7 +99,7 @@ pnpm install
 - 24 个 Demo 用例是 `components/demo/` 下的客户端组件，直接嵌进[指南](/docs/guide)各页，不另开站点。
 - demo 组件各自 `import 'react-okr-tree/style.css'`，样式随用例引入；文档正文只允许使用 `mdx-components.tsx` 白名单里的组件。
 - `packages/react-okr-tree/dev/` 那套 harness 保留，但只服务两件事：库自身的视觉核对，以及 Playwright 基线的截图源。它不是发布物，也不承担 Demo 展示职责。
-- 部署是 Cloudflare 的纯静态资产链路，因此 `next.config.mjs` 必须 `output: 'export'`。连带两个后果：搜索索引走 `force-static` 导出成 `out/api/search`（浏览器里取回后本地搜），`scripts/verify-export.mjs` 在 CI 里断言产物**真的全静态**、站内链接**真的能落到文件上**、sitemap 覆盖每个文档页。
+- 部署是**纯静态托管**链路（腾讯云 EdgeOne Makers），因此 `next.config.mjs` 必须 `output: 'export'`。仓库内不含托管配置文件：构建命令 `pnpm build:website` 与输出目录 `apps/website/out` 配在 EdgeOne Makers 控制台侧，推 `main` 由平台自动部署。连带两个后果：搜索索引走 `force-static` 导出成 `out/api/search`（浏览器里取回后本地搜），`scripts/verify-export.mjs` 在 CI 里断言产物**真的全静态**、站内链接**真的能落到文件上**、sitemap 覆盖每个文档页。
 
 ## 相关文档
 

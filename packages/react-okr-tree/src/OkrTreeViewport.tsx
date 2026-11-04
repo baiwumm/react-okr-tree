@@ -394,6 +394,9 @@ function OkrTreeViewportInner(props: OkrTreeViewportProps, ref: Ref<OkrTreeViewp
       window.removeEventListener('pointerup', handleWindowPointerUp)
       window.removeEventListener('pointercancel', handleWindowPointerUp)
     }
+    // 常驻监听只在挂载时注册一次：handleWindowPointerUp 只读 refs（panStart / pinchStart），
+    // applyZoom 是稳定 callback；把它们或 props.zoom 收进依赖会让每次 props 变化都重新注册监听，
+    // 并把「初始钳制」在后续 props.zoom 变化时重复执行——首帧快照语义会被破坏。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

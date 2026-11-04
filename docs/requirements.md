@@ -11,12 +11,12 @@
 ## 1. 项目概述
 
 - **源项目**：`vue3-okr-tree` —— 组织架构树 / OKR 树组件。核心特性是飞书 OKR 的**根节点左右双向展开**，以及纯 CSS 伪元素绘制的连接线。它本身是 `vue-okr-tree`(Vue 2 v1.0.17) 的复刻 + 增强，已发布形态为组件库 + VitePress 文档站 + Playground。
-- **新项目**：`react-okr-tree`（npm 包名已确认可用，registry 返回 404——开工时状态，现已发布至 1.14.1），用 React + TypeScript 重新实现，对外 API 与源项目**逐项对齐**（命名按 React 惯例做 kebab-case→camelCase、事件→回调、插槽→render props 的机械转换），视觉与交互效果一致。
+- **新项目**：`react-okr-tree`（npm 包名已确认可用，registry 返回 404——开工时状态，现已发布至 1.16.0），用 React + TypeScript 重新实现，对外 API 与源项目**逐项对齐**（命名按 React 惯例做 kebab-case→camelCase、事件→回调、插槽→render props 的机械转换），视觉与交互效果一致。
 - **许可与复用**：两个仓库同为 MIT、同一作者。`src/lib/okr-tree/style.css` 与 `model/transition.css` **原样平移**（不改内容、只改包名注释），这是刻意的工程决策而非偷懒，理由见 3.7。
 - **交付物**：
   1. 可发布的 React 组件库：ESM + CJS + UMD + `dist/style.css` + 类型声明；
-  2. 功能对齐的文档站（**Next.js + fumadocs**）：Demo 与文档合一，覆盖源项目 Playground 全部 24 个用例 + 主题切换器 + 6 张 API 表；视觉与技术选型对齐参考站 `E:\personal-project\better-admin\apps\website`（见 6.2）；
-  3. 移植的测试套件（226 条单测等价覆盖 + SSR 冒烟 + 视觉回归基线）。
+  2. 功能对齐的文档站（**Next.js + fumadocs**）：Demo 与文档合一，覆盖源项目 Playground 全部 24 个用例 + 主题切换器 + 7 张 API 表；视觉与技术选型对齐参考站 `E:\personal-project\better-admin\apps\website`（见 6.2）；
+  3. 移植的测试套件（单测等价覆盖 + SSR 冒烟 + 视觉回归基线；当前条数以 `docs/acceptance.md` 为准）。
 - **仓库形态**：pnpm workspace 两包 —— `packages/react-okr-tree`（库）+ `apps/website`（文档站，同时承担源项目 playground 的职责）。文档站以 workspace 依赖直接引库源码（HMR 可用），不再需要源项目那套 `vite.playground.config.ts` + `docs:build:full` 的并站脚本——那是 VitePress 与 Vite playground 双栈造成的负担，统一到 Next 后消失。
 
 ---
@@ -492,7 +492,7 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 **内容分层沿用源项目 docs-site，但并入同一站**：
 
 - 落地页 7 张特性卡（OKR 双向展开 / CSS 变量主题化 / 交互完备 / 大数据量 / 画布缩放与导出 / WAI-ARIA / 发布就绪）。
-- `content/` 分组（每组一个 `meta.json` 控顺序与标题）：`start`（快速开始 / 仓库说明）、`guide`（Demo 总览 / 受控状态与方法 / 懒加载 / 画布 Viewport / 组对齐 Group / 键盘与可访问性 / 泛型与类型）、`theme`（外观与变量一览，对应源项目 `theme/index.md`）、`api`（6 张表）、`migration`（与 vue3-okr-tree 的差异，即本文档第 8 节）、`changelog`。
+- `content/` 分组（每组一个 `meta.json` 控顺序与标题）：`start`（快速开始 / 仓库说明）、`guide`（Demo 总览 / 受控状态与方法 / 懒加载 / 画布 Viewport / 组对齐 Group / 键盘与可访问性 / 泛型与类型）、`theme`（外观与变量一览，对应源项目 `theme/index.md`）、`api`（7 张表）、`migration`（与 vue3-okr-tree 的差异，即本文档第 8 节）、`changelog`。
 - 源项目 `guide/typed.md`（`createTypedOkrTree`）改为「泛型与类型推导」（D5）。
 - 侧栏 / 顶部导航、URL 结构由本项目自定，但**Demo 总览页必须是可交互的 24 个用例本体**（源项目 docs-site 靠并站嵌 playground，这里直接用 MDX 引 client 组件）。
 

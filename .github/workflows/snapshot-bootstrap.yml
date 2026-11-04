@@ -16,6 +16,12 @@ name: Snapshot Bootstrap
 #
 # 构建步骤必须与 visual.yml 完全一致（同镜像、同 Playwright 版本、同「库 dist → 静态导出」链路），
 # 否则生成的基线与门禁跑的产物不是同一份。
+#
+# 2026-11-04（Z8）：新增的 4 张用例基线（connector-svg-orthogonal / connector-svg-straight /
+# site-dark-basic / site-dark-okr-group）只提交了 win32 版；合并后必须再跑一次本 workflow 补齐
+# 对应 *-chromium-linux.png。解包后先用 `git status --short` 核对：应当只多这 4 个文件，
+# 既有 *-linux.png 不应出现 diff（有 diff 说明系统字体或渲染变了，必须逐张看图再提交）。
+# 在补齐之前，Visual Regression 会因这 4 条缺 Linux 基线而判红——这是缺基线，不是回归。
 
 on:
   workflow_dispatch:

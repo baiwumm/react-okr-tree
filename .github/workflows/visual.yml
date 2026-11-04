@@ -3,9 +3,10 @@ name: Visual Regression
 # 视觉回归（计划 9.2）：真实 Chromium 对**静态导出产物**截图比对 + 冒烟交互断言。
 # 失败时上传 diff 图与报告，便于定位像素级回归（改 CSS 变量 / 连接线时捕捉）。
 #
-# runner 镜像固定：Linux 基线（*-chromium-linux.png）由系统字体渲染决定，
-# ubuntu-latest 将于 2026-10-19 迁移到 Ubuntu 26，届时全部基线会集体失配。
-# 换镜像必须先用 snapshot-bootstrap.yml 重新生成并提交 Linux 基线。
+# runner 镜像永久固定：Linux 基线（*-chromium-linux.png）由系统字体渲染决定。
+# 2026-11-04 决定永久 pin ubuntu-24.04，不再跟随 ubuntu-latest 的发行版迁移——
+# 镜像换代会让全部 Linux 基线因系统字体变化集体失配，也没有「到期重建基线」这一动作。
+# 确需换镜像时必须先用 snapshot-bootstrap.yml 重新生成并提交 Linux 基线。
 #
 # 与源项目的差别：这里没有独立的 playground，服务器是文档站的 out/ 目录
 # （apps/website/scripts/serve-out.mjs，由 playwright.config.ts 的 webServer 拉起），

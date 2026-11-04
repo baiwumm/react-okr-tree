@@ -104,16 +104,26 @@ export default function App() {
 
 ## API
 
-完整表格（每个 prop 的说明、类型与默认值）见 **[文档站 API 页](https://react-okr-tree.baiwumm.com/docs/api)**，数据来自包内 `shared/api.ts` 单一来源，`tests/api-surface.spec.tsx` 断言它与 `OkrTreeHandle` 不漂移。本节只给分组与条数，不逐条重复：
+完整表格（每个 prop 的说明、类型与默认值）见 **[文档站 API 页](https://react-okr-tree.baiwumm.com/docs/api)**，数据来自包内 `shared/api.ts` 单一来源，`tests/api-surface.spec.tsx` 断言它与 `OkrTreeProps` / 回调 / `OkrTreeHandle` / `OkrTreeViewportHandle` 不漂移。本节只给分组与条数，不逐条重复：
 
-- **Attributes**（42 条）：布局与模式（`data` / `leftData` / `direction` / `onlyBothTree`）· 外观与定制（`labelWidth` / `labelClassName` / `renderContent` / `nodeComponent` / `theme` / `unstyled`）· 交互（`accordion` / `expandOnClickNode` / `showCheckbox` / `draggable` / `connector`）· 状态（`expandedKeys` + `onExpandedKeysChange` 等）· 懒加载（`lazy` / `load`）· React 独有的 `className` / `style` / `children`
+- **Attributes**（43 条）：布局与模式（`data` / `leftData` / `direction` / `onlyBothTree`）· 外观与定制（`labelWidth` / `labelClassName` / `renderContent` / `nodeComponent` / `theme` / `unstyled`）· 交互（`accordion` / `expandOnClickNode` / `showCheckbox` / `draggable` / `connector` / `virtual`）· 状态（`expandedKeys` + `onExpandedKeysChange` 等）· 懒加载（`lazy` / `load`）· React 独有的 `className` / `style` / `children`
 - **props（字段映射配置）**（4 条）：`label` / `children` / `disabled` / `isLeaf`
 - **Events（回调 props）**（14 条）：`onNodeClick` / `onNodeExpand` / `onNodeCollapse` / `onNodeContextMenu`、两个受控回调、`onCheck` / `onCheckChange`、六个拖拽回调
 - **Methods（通过 ref 调用）**（29 条）：查询定位（`getNode` / `getNodeEl` / `getVisibleNodes` / `getNodePath`）· 增删改与 `moveNode` · 展开收起与 `scrollToNode` · 勾选 · `refreshData()` · `store` / `root`
 - **渲染定制（对应源项目插槽）**（4 条）：`renderNode` / `renderExpandBtn` / `empty` / `renderToolbar`
-- **组合组件与键盘导航**（7 条）：`OkrTreeGroup` 与 `OkrTreeViewport` 的 props / methods、`exportImage`、键盘契约
+- **组合组件与键盘导航**（4 条）：`OkrTreeGroup` 的 `align` / `refresh()` / `children`，以及键盘契约
+- **OkrTreeViewport（画布缩放）**（20 条）：缩放范围（`minZoom` / `maxZoom` / `zoomStep`）· 受控值（`zoom` + `onZoomChange` / `offset` + `onOffsetChange`）· 工具栏（`toolbar` / `renderToolbar`）· 容器（`children` / `className` / `style`）· ref 方法（`zoomIn` / `zoomOut` / `reset` / `fitToScreen` / `centerNode` / `exportImage` / `getZoom` / `getOffset`）
 
 两条贯穿全表的约定：回调与 `labelClassName` 系列的 `node` 参数一律是内部 `TreeNode` 实例（源数据在 `node.data`），**不是**源数据对象；回调的 `event` 是 React 合成事件，需要原生事件时取 `event.nativeEvent`（D11）。
+
+## 虚拟滚动（1.16.0）
+
+`virtual` 默认关闭。开启后，同层可见兄弟数 ≥ 50 的行只渲染视口内窗口，窗口外节点用等尺寸占位块保持布局与连接线逐像素等价。
+
+- **创建期生效**：与 `nodeKey` / `direction` / `onlyBothTree` 一样是创建期快照，运行时改不会生效，需绑 `key` 重挂载。
+- **尺寸前提**：要求数字型 `labelWidth`；`horizontal` 布局还要求数字型 `labelHeight`。auto 尺寸下达标行会退回全量渲染并给出开发期警告（CDN / UMD 环境下无警告）。
+- **定位会先揭示**：`scrollToNode` 与键盘漫游对窗口外目标先揭示再定位，不需要手动处理。
+- **能力边界**：虚拟滚动只影响渲染窗口，不改变 `getVisibleNodes`、拖拽与检查逻辑的语义。
 
 ## 数据变更检测（React 侧必读）
 

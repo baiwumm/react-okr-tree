@@ -1,0 +1,53 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommits"],
+  "rangeStrategy": "bump",
+  "labels": ["dependencies"],
+  "timezone": "Asia/Shanghai",
+  "schedule": ["before 6am on monday"],
+  "packageRules": [
+    {
+      "description": "minor / patch 版本分组，CI 通过后自动合并",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "minor/patch 依赖",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "major 版本单独 PR，人工评审",
+      "matchUpdateTypes": ["major"],
+      "groupName": "major 依赖",
+      "automerge": false
+    },
+    {
+      "description": "库包构建链升级不自动合并（peer 与产物形状影响面大）",
+      "matchFileNames": ["packages/react-okr-tree/package.json"],
+      "matchPackageNames": [
+        "react",
+        "react-dom",
+        "@types/react",
+        "@types/react-dom",
+        "vite",
+        "typescript",
+        "vite-plugin-dts",
+        "@vitejs/plugin-react"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "文档站框架（Next.js / fumadocs / Tailwind）升级不自动合并，避免静态导出与样式链路漂移",
+      "matchFileNames": ["apps/website/package.json"],
+      "matchPackageNames": [
+        "next",
+        "fumadocs-core",
+        "fumadocs-mdx",
+        "fumadocs-ui",
+        "tailwindcss",
+        "@tailwindcss/postcss"
+      ],
+      "automerge": false
+    }
+  ]
+}

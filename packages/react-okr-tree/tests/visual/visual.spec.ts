@@ -118,6 +118,26 @@ test.describe('布局与几何', () => {
     const tree = await demoTree(page, 'connector')
     await expect(wrap.locator('.okr-connector-svg path').first()).toBeVisible()
     await snap(tree, 'connector-svg-curve.png')
+
+    /**
+     * G13 剩下的两张：三种形状只差 path 的 d，盒子尺寸必须一致（同一份布局），
+     * 所以这里不重新取 `demoTree`，也不 scrollIntoView——滚动会改截图裁剪的纵向位置。
+     * 每次切换都先确认按钮真的生效（`aria-pressed` 不存在，只有 active 类），
+     * 否则「切了还是老样子」也会写出一张和 curve 一样的基线却没人发现。
+     */
+    for (const [shape, file] of [
+      ['orthogonal', 'connector-svg-orthogonal.png'],
+      ['straight', 'connector-svg-straight.png'],
+    ] as const) {
+      const before = await wrap.locator('.okr-connector-svg path').first().getAttribute('d')
+      await wrap.getByRole('button', { name: shape, exact: true }).click()
+      // 形状真的换了才截图：三种形状只差 path 的 d，按钮没生效时基线会静默等于上一张
+      await expect
+        .poll(() => wrap.locator('.okr-connector-svg path').first().getAttribute('d'))
+        .not.toBe(before)
+      await page.waitForTimeout(200)
+      await snap(tree, file)
+    }
   })
 
   test('展开按钮自定义内容', async ({ page }) => {
@@ -145,6 +165,68 @@ test.describe('内置主题', () => {
       await page.waitForTimeout(240)
       await snap(page.locator('#theme-switcher'), `theme-${theme}.png`)
     }
+  })
+})
+
+/**
+ * G12 的两半：站内搜索与站点 `.dark` 态。
+ *
+ * 搜索走的是**静态索引**（`app/api/search/route.ts` 导出到 `out/api/search`，前端用
+ * fumadocs 的 staticClient 在浏览器里搜），所以这里必须真的输入关键词、等命中项出现、
+ * 再点进去看落到哪一页——只断言「对话框能打开」等于什么都没验证（索引坏了照样绿）。
+ */
+test.describe('站内搜索（静态索引）', () => {
+  test('输入「懒加载」能命中并跳转到懒加载页', async ({ page }) => {
+    await open(page, '/docs/guide/demos/')
+    /**
+     * 用 Ctrl+K 打开搜索，而不是点按钮：侧栏与 subnav 两个触发器在 1280 视口下都被
+     * sticky 侧栏占位块盖住（pointer-events 被 `pointer-events-none` 的祖先拦下），
+     * 点不到。快捷键是 fumadocs 官方入口，也更接近用户真实用法。
+     */
+    await page.keyboard.press('Control+k')
+    const dialog = page.locator('[role="dialog"]')
+    await expect(dialog).toBeVisible()
+    const input = dialog.locator('input').first()
+
+    /**
+     * 结果项是 `<button>`（fumadocs 的列表项），不是链接——所以断言要落在「命中项真的
+     * 指向懒加载页」上：点进去看 URL。静态索引是异步拉的，命中判据是「出现该项」，
+     * 不是固定等待。
+     *
+     * 只写 `/懒加载子节点/` 会先命中一条 **card 片段**（索引把文档里那段 `card` 组件源码
+     * 也切成了结果项，带 `href: /docs/guide/lazy` 字样），它的点击落点是所在页的锚点
+     * （实测跳到 `/docs/guide/#子页`），不是懒加载页。页面级结果的**可访问名**带面包屑
+     * （`react-okr-tree 指南 懒加载子节点`），用这个模式才唯一命中并真的导航过去。
+     */
+    await input.fill('懒加载')
+    const hit = dialog.getByRole('button', { name: /react-okr-tree.*指南.*懒加载子节点/ })
+    await expect(hit).toHaveCount(1, { timeout: 10_000 })
+    await hit.click()
+    await expect(page).toHaveURL(/\/docs\/guide\/lazy/)
+
+    // 第二个关键词：确认不是「任何输入都返回同一批结果」
+    await page.keyboard.press('Control+k')
+    await expect(dialog).toBeVisible()
+    await dialog.locator('input').first().fill('updateKeyChildren')
+    await expect(dialog.getByRole('button', { name: /updateKeyChildren/ }).first()).toBeVisible({
+      timeout: 10_000,
+    })
+    await expect(dialog.getByRole('button', { name: /懒加载子节点/ })).toHaveCount(0)
+  })
+})
+
+test.describe('站点暗色（html.dark）', () => {
+  /**
+   * next-themes 的存储键是默认的 `theme`（`app/layout.tsx` 只配了 attribute/defaultTheme）。
+   * 必须先写 localStorage 再进页面，否则首帧是浅色、水合后才切，截图会拍到中间态。
+   */
+  test('两个 Demo 在 .dark 下的形态', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('theme', 'dark'))
+    await open(page, '/docs/guide/demos/')
+    await expect(page.locator('html')).toHaveClass(/dark/)
+
+    await snap(await demoShot(page, 'basic'), 'site-dark-basic.png')
+    await snap(await demoShot(page, 'okr-group'), 'site-dark-okr-group.png')
   })
 })
 

@@ -4,7 +4,7 @@
 >
 > 对齐基准是 vue3-okr-tree 的**运行时行为**与 `shared/api.ts`（API 表的单一来源）。因框架范式不同而产生的必然差异，全部集中在第 3 节（移植决策）与第 8 节（有意差异清单），**这两节之外一律要求逐字对齐**——包括默认值、抛错文案、DOM 结构与类名。
 >
-> 版本范围：vue3-okr-tree 从 1.0.0 到 1.13.0 累积的全部能力都在复刻范围内（含主题、受控、懒加载、画布、复选框、拖拽、SVG 连接线、查询辅助方法、`unstyled`）。roadmap 中尚未实现的项（虚拟滚动、反向布局、Devtools）不在本期内，见第 9 节。
+> 版本范围：vue3-okr-tree 从 1.0.0 到 1.13.0 累积的全部能力都在复刻范围内（含主题、受控、懒加载、画布、复选框、拖拽、SVG 连接线、查询辅助方法、`unstyled`）。~~roadmap 中尚未实现的项（虚拟滚动、反向布局、Devtools）不在本期内，见第 9 节~~ → 2026-11-04：虚拟滚动已于 1.16.0 实现；仍不在本期的只有反向布局与 Devtools，清单见第 10 节（原文误写「见第 9 节」）。
 
 ---
 
@@ -512,7 +512,7 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 
 ### 6.5 部署：~~Cloudflare（纯静态资产）~~ → 腾讯云 EdgeOne Makers（2026-11-02 迁移）
 
-> **2026-11-02 迁移**：文档站托管从 Cloudflare 换到**腾讯云 EdgeOne Makers**（该产品原名 EdgeOne Pages，迁移同期已更名），仓库内已删除 `wrangler.jsonc`，**不再承载任何托管配置文件**——构建与部署参数配在控制台侧：框架预设选**静态**（不要选 Next 预设，它会按 SSR 处理并把输出目录默认成 `.next`）、根目录 = 仓库根、输出目录 = `apps/website/out`、安装命令 `pnpm install --frozen-lockfile`、编译命令 `pnpm build:website`、Node 22。**包管理器只能是 pnpm**：`apps/website` 依赖 `"react-okr-tree": "workspace:*"`，npm 不认 `workspace:` 协议，而且 `allowBuilds`（`pnpm-workspace.yaml`）是 pnpm 11 的机制；根 `engines` 是 `>=20.19.0` 且 `.npmrc` 开了 `engine-strict=true`，Node 18 连安装都过不去。推 `main` 由平台自动触发部署（与原 Workers Builds 同形态，没有新增 GitHub Actions 部署作业）。域名 `react-okr-tree.baiwumm.com` 不变，DNS 指向 Makers 分配的目标。本节以下 Cloudflare 表述是当时的选型依据，按快照保留；**随之失效的只有平台与配置文件，硬约束没变**：托管侧仍是纯静态、没有服务端运行时，所以 `output: 'export'` 那条照旧成立。
+> **2026-11-02 迁移**：文档站托管从 Cloudflare 换到**腾讯云 EdgeOne Makers**（该产品原名 EdgeOne Pages，迁移同期已更名），仓库内已删除 `wrangler.jsonc`，**不再承载任何托管配置文件**——构建与部署参数配在控制台侧：框架预设选**静态**（不要选 Next 预设，它会按 SSR 处理并把输出目录默认成 `.next`）、根目录 = 仓库根、输出目录 = `apps/website/out`、安装命令 `pnpm install --frozen-lockfile`、编译命令 `pnpm build:website`、Node 22。**包管理器只能是 pnpm**：`apps/website` 依赖 `"react-okr-tree": "workspace:*"`，npm 不认 `workspace:` 协议，而且 `allowBuilds`（`pnpm-workspace.yaml`）是 pnpm 11 的机制；根 `engines` 由 ~~`>=20.19.0`~~ → `^22.22.2 || ^24.15.0 || >=26.0.0`（2026-11-04，下限取自 jsdom 30 的 `engines`；本仓 `.npmrc` 开了 `engine-strict=true`，旧声明与 lockfile 事实不符——Node 22.19 / 24.10 连安装都过不去），Node 18 / 20 一律装不上。推 `main` 由平台自动触发部署（与原 Workers Builds 同形态，没有新增 GitHub Actions 部署作业）。域名 `react-okr-tree.baiwumm.com` 不变，DNS 指向 Makers 分配的目标。本节以下 Cloudflare 表述是当时的选型依据，按快照保留；**随之失效的只有平台与配置文件，硬约束没变**：托管侧仍是纯静态、没有服务端运行时，所以 `output: 'export'` 那条照旧成立。
 
 ~~已定走 Cloudflare，与源 okr-tree 站同一条链路。~~ → 源项目的做法是 `wrangler.jsonc` 声明 `assets.directory` 指向 VitePress 产物 + `html_handling: "auto-trailing-slash"` + `not_found_handling: "404-page"`，由 Workers Builds 跑 `npx wrangler deploy`——**本质是纯静态，没有服务端运行时**。这一条是本站 `output: 'export'` 约束的来源，换到 EdgeOne 后仍然成立；**不再成立的只有「与源 okr-tree 站同一条链路」**：源站仍在 Cloudflare，本站已独立迁走。
 
@@ -620,7 +620,7 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 
 ## 10. 明确不做（与源项目决策一致）
 
-- 虚拟滚动（roadmap #15 未开工；React 下同样受「CSS 伪元素连接线依赖兄弟 DOM 相邻性」这一约束，需先做可行性 spike）。
+- ~~虚拟滚动（roadmap #15 未开工；React 下同样受「CSS 伪元素连接线依赖兄弟 DOM 相邻性」这一约束，需先做可行性 spike）~~ → 2026-11-04 已在 1.16.0 实现：`virtual` 创建期生效，同层可见兄弟数 ≥ 阈值（50）时只渲染视口窗口，用等尺寸占位块保持布局与连接线等价；要求数字型 `labelWidth`（horizontal 布局还要求 `labelHeight`）。
 - `direction: 'vertical-reverse' | 'horizontal-reverse'`、垂直模式的 OKR 双向（roadmap #12）。
 - Tailwind / CSS-in-JS 进入组件库本体；双语 README；原版死代码。
 - Devtools 集成、`selectedKey` / `orkstyle` 等从未生效的 API。

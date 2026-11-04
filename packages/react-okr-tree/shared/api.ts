@@ -253,6 +253,13 @@ export const attributesSection: ApiSection = {
       'true',
     ],
     [
+      'virtual',
+      '<strong>1.16.0 新增（创建期生效）。</strong>虚拟滚动：同层可见兄弟数 ≥ 阈值（50）的行只渲染视口内窗口，用等尺寸占位块保持布局与连接线逐像素等价。要求数字型 <code>labelWidth</code>（horizontal 布局还要求 <code>labelHeight</code>），auto 尺寸下达标行退回全量渲染并给出开发期警告；<code>scrollToNode</code> 与键盘漫游对窗口外目标先揭示再定位。运行时变更不生效，需绑 <code>key</code> 重挂载',
+      'boolean',
+      '—',
+      'false',
+    ],
+    [
       'className / style',
       '透传到 <code>.org-chart-container</code> 根容器',
       'string / CSSProperties',
@@ -449,11 +456,81 @@ export const slotsSection: ApiSection = {
   ],
 }
 
+export const viewportSection: ApiSection = {
+  id: 'api-viewport',
+  title: 'OkrTreeViewport（画布缩放）',
+  intro:
+    'React 版与源项目同名组件（1.16.0 对齐）。<code>&lt;OkrTreeViewport&gt;</code> 包裹一棵树，提供缩放、平移、适应窗口与导出图片；<code>children</code> 放树，<code>renderToolbar</code> 自定义工具栏。缩放与偏移可受控（<code>zoom + onZoomChange</code> / <code>offset + onOffsetChange</code>），未传时组件内部维护。',
+  columns: ['名称', '类型 / 签名', '说明'],
+  rows: [
+    ['minZoom', 'prop，number，默认 0.2', '最小缩放'],
+    ['maxZoom', 'prop，number，默认 4', '最大缩放'],
+    [
+      'zoomStep',
+      'prop，number，默认 1.2',
+      '每次 <code>zoomIn()</code> / <code>zoomOut()</code> / 滚轮一格的缩放系数（乘除）',
+    ],
+    ['zoom', 'prop，number，默认 undefined', '受控缩放；未传时内部维护'],
+    ['onZoomChange', 'event，(zoom: number) => void', '缩放变化回调，配合 <code>zoom</code> 受控'],
+    [
+      'offset',
+      'prop，ViewportOffset，默认 undefined',
+      '受控平移偏移（<code>{ x, y }</code>）；未传时内部维护',
+    ],
+    [
+      'onOffsetChange',
+      'event，(offset: ViewportOffset) => void',
+      '偏移变化回调，配合 <code>offset</code> 受控',
+    ],
+    [
+      'wheelBehavior',
+      "prop，'ctrl-zoom' | 'zoom' | 'scroll'，默认 'ctrl-zoom'",
+      '滚轮行为：按住 Ctrl/⌘ 才缩放 / 始终缩放 / 交给页面滚动',
+    ],
+    [
+      'toolbar',
+      'prop，boolean，默认 false',
+      '显示内置工具栏；传入 <code>renderToolbar</code> 时无需开启',
+    ],
+    [
+      'renderToolbar',
+      'prop，(scope: ViewportToolbarScope) => ReactNode',
+      '自定义工具栏；scope 为 <code>{ zoom, zoomIn, zoomOut, reset, fit }</code>',
+    ],
+    [
+      'children',
+      'prop，ReactNode',
+      '画布内容，通常放 <code>&lt;OkrTree /&gt;</code> 或 <code>&lt;OkrTreeGroup /&gt;</code>',
+    ],
+    ['className / style', 'prop，string / CSSProperties', '容器附加类名与内联样式'],
+    ['zoomIn()', 'method', '按 <code>zoomStep</code> 放大一次'],
+    ['zoomOut()', 'method', '按 <code>zoomStep</code> 缩小一次'],
+    ['reset()', 'method', '恢复初始缩放与偏移'],
+    [
+      'fitToScreen(padding = 20)',
+      'method，padding?: number',
+      '缩放到内容完整可见并居中，四周留 <code>padding</code>',
+    ],
+    [
+      'centerNode(data)',
+      'method，data: TreeNodeData，=> Promise&lt;boolean&gt;',
+      '滚动并平移使目标节点居中；目标不在已渲染窗口时先揭示',
+    ],
+    [
+      'exportImage(options = {})',
+      'method，=> Promise&lt;string&gt;',
+      '导出为 PNG/SVG DataURL；<code>type</code> / <code>scale</code> / <code>background</code> / <code>toPng</code> / <code>toSvg</code> 见 <code>ExportImageOptions</code>（依赖可选 peer <code>html-to-image</code>）',
+    ],
+    ['getZoom()', 'method，=> number', '当前缩放（受控值或内部值）'],
+    ['getOffset()', 'method，=> ViewportOffset', '当前偏移的副本'],
+  ],
+}
+
 export const compositionSection: ApiSection = {
   id: 'api-composition',
   title: '组合组件与键盘导航',
   intro:
-    '<code>OkrTreeGroup</code> 让组内多棵 OKR 树的根节点水平坐标一致（替代源项目文档里「业务层手动量 DOM」）；<code>OkrTreeViewport</code> 提供画布缩放/平移/导出。键盘导航为所有树内置。',
+    '<code>OkrTreeGroup</code> 让组内多棵 OKR 树的根节点水平坐标一致（替代源项目文档里「业务层手动量 DOM」）；<code>OkrTreeViewport</code> 的画布 API 见上一张独立表。键盘导航为所有树内置。',
   columns: ['名称', '类型', '说明'],
   rows: [
     ['OkrTreeGroup / align', 'prop，boolean，默认 true', 'false 时各树独立排布'],
@@ -463,21 +540,6 @@ export const compositionSection: ApiSection = {
       '手动重新测量（字体加载完成、外部样式变化等；组件已自动响应成员挂载/更新与尺寸变化）',
     ],
     ['OkrTreeGroup / children', '—', '放置若干 <code>&lt;OkrTree onlyBothTree /&gt;</code>'],
-    [
-      'OkrTreeViewport props',
-      'minZoom / maxZoom / zoomStep / zoom + onZoomChange / offset + onOffsetChange / wheelBehavior / toolbar / renderToolbar',
-      '缩放范围与受控值；<code>wheelBehavior</code>：ctrl-zoom（默认，不劫持页面滚动）/ zoom / scroll',
-    ],
-    [
-      'OkrTreeViewport methods',
-      'zoomIn / zoomOut / reset / fitToScreen(padding?) / centerNode / exportImage / getZoom / getOffset',
-      '双击复位；<code>fitToScreen</code> 默认四周留 20px；<code>centerNode</code> 先展开祖先再对准视口中心',
-    ],
-    [
-      'exportImage(options)',
-      'method',
-      "<code>{ type: 'png' | 'svg', scale = 2, background, toPng?, toSvg? }</code>。依赖可选 peer <code>html-to-image</code>；打包器下动态导入不可靠时用 <code>toPng / toSvg</code> 直接传入渲染函数",
-    ],
     [
       '键盘导航',
       '—',
@@ -493,5 +555,6 @@ export const apiSections: ApiSection[] = [
   eventsSection,
   methodsSection,
   slotsSection,
+  viewportSection,
   compositionSection,
 ]

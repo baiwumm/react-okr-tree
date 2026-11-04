@@ -2,7 +2,9 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。**版本号自 1.13.0 起与 [`vue3-okr-tree`](https://github.com/baiwumm/vue3-okr-tree) 锁步发布**：同号即同一功能面，版本决策（patch / minor / major）永远先在上游发生，本包跟随——上游发版后对齐移植，无对应变更也发同号空版本；特性面差异只发生在机制层（见 `docs/requirements.md` 第 8 节的 D1–D12）。
 
-## Unreleased
+## 1.17.0（2026-11-04）
+
+跟随上游 `vue3-okr-tree` 1.17.0 同号发布（锁步约定）。上游本批的 peer 下限收紧（`vue >=3.5.2`）不影响本包，本包 peer 仍为 `react >=18.2.0`；其余条目为同批的文档、API 表与视觉收口。
 
 - **万级平铺的性能记账（库源码零改动）**：`pnpm bench` 新增两条万级场景（1 父 + 10000 平铺子节点，只差 `virtual`），`docs/perf.md` 补同名一节。实测本包 978 ms（渲染 10001 个节点）→ 111 ms（渲染 13 个），也就是 `virtual` 压掉了 99.87% 的渲染节点、只降 89% 的首帧，剩下那 111 ms 是挂载期的模型侧成本。**同一形状上游是 10953 ms / 5494 ms，约 50 倍的差**——~~这条差异记为上游侧待查项、本包不跟进~~ → 2026-11-04 上游已定位并修复（节点构造期逐兄弟 `indexOf` + 勾选态 `every`/`some` 的 O(N²)，jsdom 窗口化首帧 6.49 s → 0.33 s、全量 14.48 s → 9.8 s）；本包的构造路径不逐节点重算勾选态，本来就没有这条路径，无需移植。不设门禁（`tests/visual/perf.spec.ts` 守的是既有的 2040 节点浏览器验收线）。
 - **hooks 依赖收口（K9）**：`OkrTree.tsx` / `OkrTreeViewport.tsx` 的 `react-hooks/exhaustive-deps` 关闭从 8 处清到 3 处。5 处直接修掉：受控的 `defaultExpandedKeys` / `currentNodeKey` / `expandedKeys` / `currentKey` 四条 effect 补上真实依赖（`store` / `nodeKey` / `bumpAll` 均为稳定引用，行为不变）；`syncCurrentKey` 把组件内的 `currentKeyValue()` 内联——留成普通函数会让 callback 每次渲染换身份，连带 context value 与整树重渲染。剩余 3 处每处都在最近注释里写明「为什么不能加依赖、加了会怎样」：字段映射 effect 不能收 `props.data`（会绕过元素级同引用判定、整树重建冲掉展开/过滤），树注册 effect 不能收 store / api（会 unregister→register 抖动、`centerNode` 漏命中），viewport 初始钳制 effect 不能收 `props.zoom`（后续变化会重复钳制、破坏首帧快照语义）。

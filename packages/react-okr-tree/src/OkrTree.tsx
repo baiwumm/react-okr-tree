@@ -371,21 +371,19 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
   const isExpandedControlled = () => propsRef.current.expandedKeys !== undefined
   const isCurrentControlled = () => propsRef.current.currentKey !== undefined
 
-  function currentKeyValue(): TreeKey | null {
-    const node = store.getCurrentNode()
-    const key = node?.key
-    return key === undefined ? null : key
-  }
-
   const syncExpandedKeys = useCallback(() => {
     if (isExpandedControlled() && propsRef.current.nodeKey)
       propsRef.current.onExpandedKeysChange?.(store.getExpandedKeys())
   }, [store])
 
   const syncCurrentKey = useCallback(() => {
-    if (isCurrentControlled() && propsRef.current.nodeKey)
-      propsRef.current.onCurrentKeyChange?.(currentKeyValue())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (isCurrentControlled() && propsRef.current.nodeKey) {
+      // 内联 currentKeyValue()：把它留成组件内的普通函数会让本 callback 每次渲染换身份，
+      // 进而让 context value 与整棵树重渲染；逻辑只依赖 store，属性直接取即可。
+      const node = store.getCurrentNode()
+      const key = node?.key
+      propsRef.current.onCurrentKeyChange?.(key === undefined ? null : key)
+    }
   }, [store])
 
   // 懒加载展开完成后同步受控展开态
@@ -975,6 +973,10 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
     store.props = next
     store.setData(props.data)
     bumpAll()
+    // 依赖只取 props.props：这里响应的是「字段映射」变化，并用当前 data 重建一次。
+    // 不能把 props.data 收进依赖——那会让每次 data 引用变化都绕过下方 dataOrLeftChanged 的
+    // 元素级同引用判定，直接整树重建，把展开/过滤结果冲掉。store / bumpAll 是稳定引用，
+    // 收进来行为不变，纯粹是 lint 噪声，故只在这里说明并保留 disable。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.props])
 
@@ -1021,27 +1023,23 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
 
   useEffect(() => {
     store.setDefaultExpandedKeys(props.defaultExpandedKeys)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.defaultExpandedKeys])
+  }, [props.defaultExpandedKeys, store])
 
   useEffect(() => {
     if (props.nodeKey && props.currentNodeKey !== undefined)
       store.setCurrentNodeKey(props.currentNodeKey)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.currentNodeKey])
+  }, [props.currentNodeKey, props.nodeKey, store])
 
   useEffect(() => {
     if (props.nodeKey && props.expandedKeys !== undefined) {
       store.setExpandedKeys(props.expandedKeys)
       bumpAll()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.expandedKeys])
+  }, [props.expandedKeys, props.nodeKey, store, bumpAll])
 
   useEffect(() => {
     if (props.nodeKey && props.currentKey !== undefined) store.setCurrentNodeKey(props.currentKey)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.currentKey])
+  }, [props.currentKey, props.nodeKey, store])
 
   // ---- 组对齐 / 画布登记 ----
   useEffect(() => {
@@ -1057,6 +1055,9 @@ function OkrTreeInner<T extends TreeNodeData = TreeNodeData>(
     }
     viewport.registerTree(api)
     return () => viewport.unregisterTree(api)
+    // getNodeEl / expandNode 是每次渲染重建的内部函数，收进依赖会让本 effect 每帧都
+    // unregister→register 一次（viewport 的树实例集合短暂为空，centerNode 等会漏命中）；
+    // 它们只读写 store 与 refs，下一次渲染自然拿到新闭包，无需为它们重登记。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewport])
 

@@ -24,3 +24,21 @@ README、文档站页面、API 表等**生成物或衍生产物一律不手改**
 - **改活文档用就地更正体例**：`~~旧表述~~ → 新表述 + 日期`，保留历史结论，不整段重写、不抹掉当时的判断。
 
 以上规则以本节为单一来源，`docs/README.md` 只维护索引表。
+
+## 代码与提交风格
+
+- 注释密度高是刻意的：写「为什么」和约束（尤其反直觉的结论），不写「这行做了什么」。
+- commit message 走 conventional commits + scope，中文主题：`fix(model): …`、`docs(api): …`、`chore(release): …`。破坏性变更用 `!`。
+- **AI 参与的提交必须带 trailer**：正文后空一行追加连续的 trailer 块，`Co-authored-by: <产品名> <registry 邮箱>`（GitHub 只解析这一行，它决定多人作者与 Contributors 归属），模型名只进 `Assisted-by: <产品名>:<模型名>`。身份按**实际运行本次会话的产品**匹配 `ai-commit-trailer` skill 的 `references/agents.json`，不得照抄其它产品、不得把模型名塞进 `Co-authored-by` 的姓名位。纯人工改动不加 trailer。格式、身份表与校验流程以该 skill 为唯一规范，本文件不重复其定义。
+- 提交前用该 skill 的 `node "$SKILL_DIR/scripts/normalize.mjs" check --message .git/COMMIT_TRAILER_MSG` 自检，**exit 0 才算通过**（`fix --write` 可自动归位 trailer）；`check --range` 报出的历史提交只报告、不重写——改写已推送历史是另一次显式决定。
+
+示例：
+
+```text
+fix(viewport): 平移甩出画布边界松手不再卡 is-panning
+
+指针离开元素后不再收 pointerup，改为在 window 上终结手势并清标志。
+
+Co-authored-by: pi <noreply@pi.dev>
+Assisted-by: pi:glm-4.6
+```

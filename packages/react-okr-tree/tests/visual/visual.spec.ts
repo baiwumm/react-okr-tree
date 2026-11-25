@@ -215,18 +215,22 @@ test.describe('站内搜索（静态索引）', () => {
   })
 })
 
-test.describe('站点暗色（html.dark）', () => {
+test.describe('站点亮色（html 无 .dark）', () => {
   /**
+   * 站点自 2026-11-20 起是暗色优先：`<html class="dark">` 直接写进 SSR 产物、
+   * `defaultTheme: 'dark'` 且关掉 system，所以上面那批基线拍的已经是暗色形态。
+   * 这一组反过来显式钉亮色，保证两档都有像素覆盖（原来是 `site-dark-*`，改版时对调）。
+   *
    * next-themes 的存储键是默认的 `theme`（`app/layout.tsx` 只配了 attribute/defaultTheme）。
-   * 必须先写 localStorage 再进页面，否则首帧是浅色、水合后才切，截图会拍到中间态。
+   * 必须先写 localStorage 再进页面，否则首帧是暗色、水合后才切，截图会拍到中间态。
    */
-  test('两个 Demo 在 .dark 下的形态', async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem('theme', 'dark'))
+  test('两个 Demo 在亮色下的形态', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('theme', 'light'))
     await open(page, '/docs/guide/demos/')
-    await expect(page.locator('html')).toHaveClass(/dark/)
+    await expect(page.locator('html')).not.toHaveClass(/dark/)
 
-    await snap(await demoShot(page, 'basic'), 'site-dark-basic.png')
-    await snap(await demoShot(page, 'okr-group'), 'site-dark-okr-group.png')
+    await snap(await demoShot(page, 'basic'), 'site-light-basic.png')
+    await snap(await demoShot(page, 'okr-group'), 'site-light-okr-group.png')
   })
 })
 

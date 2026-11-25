@@ -86,20 +86,18 @@ export function Showcase() {
           title="三种布局，一个组件"
         />
 
-        {/* 切换器：紧凑的 segmented control，不用全宽下划线。
-            选中态用 data-[selected=true]: 变体直接上底色，而不是 HeroUI 的 `Tabs.Indicator`
-            （RAC 的 SelectionIndicator 在静态导出预渲染时抛 `SharedElement` 上下文错误，
-            见 docs/acceptance.md 的暗黑终端改版批）。react-aria 的键盘方向键与 aria-selected
-            不受影响。 */}
-        <Tabs align="center" className="mt-10" defaultSelectedKey="vertical">
-          <Tabs.ListContainer className="mx-auto w-fit rounded-full border border-border bg-surface p-1">
+        {/* 切换器：HeroUI Tabs 的默认形态（全宽、默认 pill 变体与滑块指示器），
+            只覆盖 Tabs.Panel 的上间距，不在标签上写任何自定义样式。 */}
+        <Tabs className="mt-10" defaultSelectedKey="vertical">
+          <Tabs.ListContainer>
             <Tabs.List>
               {LAYOUTS.map(item => (
-                <Tabs.Tab
-                  key={item.key}
-                  className="h-9 w-auto rounded-full px-5 text-muted transition-colors data-[selected=true]:bg-default data-[selected=true]:text-foreground"
-                  id={item.key}
-                >
+                <Tabs.Tab key={item.key} id={item.key}>
+                  {/* Indicator 必须放在每个 Tab 内部：RAC 的 SelectionIndicatorContext 是 Tab
+                      渲染子节点时提供的，放在 List 里拿不到 context（预渲染直接抛
+                      SharedElement 错误）。每个 Tab 各挂一个、只有选中那个可见，跨 Tab 的滑动
+                      由 SharedElement 的进出场完成——这就是 HeroUI 的默认用法。 */}
+                  <Tabs.Indicator />
                   {item.label}
                 </Tabs.Tab>
               ))}

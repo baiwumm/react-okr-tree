@@ -1,38 +1,48 @@
-import LightRays from '@/components/background/light-ray'
-import { BackToTop } from '@/components/landing/back-to-top'
 import { Cta } from '@/components/landing/cta'
 import { Faq } from '@/components/landing/faq'
 import { Features } from '@/components/landing/features'
 import { Footer } from '@/components/landing/footer'
 import { Hero } from '@/components/landing/hero'
 import { Navbar } from '@/components/landing/navbar'
+import { QuickStart } from '@/components/landing/quick-start'
 import { Showcase } from '@/components/landing/showcase'
+import { JsonLd } from '@/components/seo/json-ld'
+import { FAQ_ITEMS } from '@/lib/faq'
+
+/** FAQPage 结构化数据：文本取自 lib/faq.ts，喂给机器前剥掉行内代码的反引号标记 */
+const FAQ_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQ_ITEMS.map(item => ({
+    '@type': 'Question',
+    name: item.title,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.content.replace(/`/g, ''),
+    },
+  })),
+}
 
 /**
- * 落地页（参考站的段次：Navbar / Hero / Features / 展示位 / Cta / Faq / Footer）
+ * 落地页（2026-11-20 暗黑终端改版）
  *
- * 静态导出下整页首屏是 SSR 出来的 HTML——包括 Hero 与展示位里那些真实的 `<OkrTree>`，
- * 交互所需的客户端 JS 才增量 hydrate。
+ * 编辑器式单页叙事，全部段落以 hairline 分隔：
+ * 导航 → Hero（规格表 + 数据行 + 真实树）→ 快速开始 → 布局与外观 → 特性 → 继续 → FAQ → 页脚。
  */
 export default function Home() {
   return (
-    <main className="relative min-h-screen bg-background text-foreground">
-      {/* 整页光线：fixed 一层，滚动时全程可见；pointer-events-none 保证按钮与卡片照旧可点 */}
-      <LightRays
-        className="pointer-events-none fixed inset-0 z-0 opacity-65"
-        raysOrigin="top-center"
-        followMouse
-      />
-      <div className="relative z-10">
-        <Navbar />
+    <div className="flex min-h-screen flex-col">
+      <JsonLd data={FAQ_JSON_LD} />
+      <Navbar />
+      <main className="flex-1">
         <Hero />
-        <Features />
+        <QuickStart />
         <Showcase />
+        <Features />
         <Cta />
         <Faq />
-        <Footer />
-      </div>
-      <BackToTop />
-    </main>
+      </main>
+      <Footer />
+    </div>
   )
 }

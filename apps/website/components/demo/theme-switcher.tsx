@@ -53,7 +53,9 @@ export function ThemeSwitcher() {
           theme=&quot;{theme}&quot;
         </span>
       </div>
-      <div className="overflow-x-auto p-4">
+      {/* 主题本色画布钉浅色（同首页主题展示位）：六套主题里有四套只改线色 / 圆角 / 阴影 /
+          选中色，暗底上会糊成一团；显式传了 theme 的树不该被站点暗色适配改写。 */}
+      <div className="canvas-light overflow-x-auto p-4">
         <OkrTree data={data} nodeKey="id" direction="horizontal" theme={theme} showCollapsable />
       </div>
     </div>

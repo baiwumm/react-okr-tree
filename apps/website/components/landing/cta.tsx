@@ -1,62 +1,40 @@
 'use client'
 
-import { ArrowRight, Package } from 'lucide-react'
-import { motion } from 'motion/react'
-import { ButtonLink } from '@/components/motion/button/base'
-import { TiltCard } from '@/components/motion/tilt-card'
-import { GithubIcon } from '@/components/ui/brand-icons'
-import { LIB_VERSION } from '@/lib/version'
-import { SITE } from '@/lib/site'
+import { Button, Typography } from '@heroui/react'
+import { useRouter } from 'next/navigation'
 
-/** 行动号召：装包命令 + 两个出口。按钮用 beUI 的 ButtonLink（与参考站同一件） */
+/**
+ * 收尾段（对应参考站的 Cta）：一句问句 + 两个出口。
+ * 装包命令只在「快速开始」的终端窗口里出现一次，这里不重复第二份（版本号同理）。
+ */
 export function Cta() {
+  const router = useRouter()
+
   return (
-    <section className="relative py-20">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+    <section className="border-t border-border">
+      <div className="mx-auto w-full max-w-6xl px-6 py-20 sm:py-28">
+        <Typography className="eyebrow" type="body-xs" weight="semibold">
+          04 / 继续
+        </Typography>
+        <Typography
+          className="mt-4 max-w-3xl text-balance leading-snug tracking-tight"
+          type="h2"
+          weight="semibold"
         >
-          {/* 大卡面倾角收到 3 度，与首页小卡片的 6 度在视觉摆幅上对齐；
-              宽度约束挂在 TiltCard 上，glare 光斑才不会铺进卡片两侧空白 */}
-          <TiltCard max={3} className="rounded-3xl">
-            <div className="glass-card rounded-3xl px-8 py-14 text-center">
-              <h2 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
-                现在就把它放进你的 React 项目
-              </h2>
-              <p className="mx-auto mt-3 max-w-md text-pretty text-muted-foreground">
-                零运行时依赖，peer 只要求 React 18.2 以上。样式是一条独立的
-                <code className="mx-1 font-mono text-[0.9em]">style.css</code>
-                ，不引就只是个纯结构树。
-              </p>
-              <pre className="mx-auto mt-8 w-fit rounded-2xl border bg-card/80 px-5 py-3 text-left font-mono text-sm">
-                <code>
-                  <span className="text-muted-foreground">$</span> npm i react-okr-tree@
-                  {LIB_VERSION}
-                </code>
-              </pre>
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                <ButtonLink href="/docs" variant="primary" size="lg">
-                  <Package size={16} />
-                  快速开始
-                  <ArrowRight size={16} />
-                </ButtonLink>
-                <ButtonLink
-                  href={SITE.github}
-                  target="_blank"
-                  rel="noreferrer"
-                  variant="secondary"
-                  size="lg"
-                >
-                  <GithubIcon className="size-4" />
-                  Star on GitHub
-                </ButtonLink>
-              </div>
-            </div>
-          </TiltCard>
-        </motion.div>
+          想先看清它的边界，再决定要不要装？
+        </Typography>
+        <Typography className="mt-4 max-w-2xl leading-relaxed" color="muted" type="body-sm">
+          24 个可交互 Demo 覆盖布局、主题、连接线、拖拽、懒加载与画布缩放；迁移说明逐条列出与
+          vue3-okr-tree 的差异。
+        </Typography>
+        <div className="mt-8 flex flex-wrap items-center gap-3">
+          <Button size="lg" variant="primary" onPress={() => router.push('/docs/guide/demos/')}>
+            看 Demo 总览
+          </Button>
+          <Button size="lg" variant="outline" onPress={() => router.push('/docs/migration/')}>
+            对比 vue3-okr-tree
+          </Button>
+        </div>
       </div>
     </section>
   )

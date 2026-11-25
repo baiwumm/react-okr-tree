@@ -1,51 +1,79 @@
 'use client'
 
+import { Button, Chip, Tooltip, Typography } from '@heroui/react'
+import { BookOpen } from 'lucide-react'
 import Link from 'next/link'
-import { Tag } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import type { ReactNode } from 'react'
+
 import { Logo } from '@/components/logo'
-import { AnimatedBadge } from '@/components/motion/animated-badge'
-import { GithubIcon } from '@/components/ui/brand-icons'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { LIB_VERSION } from '@/lib/version'
+import { GithubIcon } from '@/components/ui/brand-icons'
 import { SITE } from '@/lib/site'
+import { LIB_VERSION } from '@/lib/version'
+
+/** 顶栏图标按钮共用的箭头提示（与参考站同款交互） */
+function NavTooltip({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <Tooltip delay={0}>
+      {children}
+      <Tooltip.Content showArrow placement="bottom">
+        <Tooltip.Arrow />
+        <Typography type="body-xs">{label}</Typography>
+      </Tooltip.Content>
+    </Tooltip>
+  )
+}
 
 /**
- * 顶部导航（参考站的 `.navbar-premium` 悬浮玻璃条）
+ * 顶部导航（对应参考站）：贴顶 hairline 条 + HeroUI 图标按钮。
  *
- * 只留三个非文档入口：版本徽章（beUI 的 success AnimatedBadge，`LIB_VERSION` 从库的
- * package.json 读，不在站上出现第二个版本号副本）、GitHub 图标与主题切换。
- * 文档入口收进首屏按钮与页脚，导航条不再重复。
+ * 左：Logo + 站名 + 版本徽章（`LIB_VERSION` 直接读库的 package.json，站上不出现第二份版本号）；
+ * 右：文档 / GitHub 两个图标入口 + 主题切换。文档入口在 Hero 里也有一份，
+ * 但读者滚到页面中段时仍要能一眼看到它。
  */
 export function Navbar() {
-  return (
-    <header className="fixed inset-x-0 top-4 z-50 flex justify-center px-4">
-      <nav className="navbar-premium w-full max-w-3xl rounded-full px-4 py-2">
-        <div className="flex items-center justify-between gap-3">
-          <Link href="/" className="flex items-center gap-2 text-sm font-semibold">
-            <Logo size={24} className="rounded-md" />
-            <span className="truncate">{SITE.name}</span>
-          </Link>
+  const router = useRouter()
 
-          <div className="flex items-center gap-1.5">
-            {/* 版本号是库真源的一部分，窄屏优先让它活着 */}
-            <span className="hidden shrink-0 sm:inline">
-              <AnimatedBadge status="success" size="sm" icon={<Tag className="h-3 w-3" />}>
-                v{LIB_VERSION}
-              </AnimatedBadge>
-            </span>
-            <a
-              href={SITE.github}
-              target="_blank"
-              rel="noreferrer"
-              aria-label="react-okr-tree on GitHub"
-              className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+  return (
+    <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
+      <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-6">
+        <Link className="flex min-w-0 items-center gap-2.5" href="/">
+          <Logo className="shrink-0 rounded-lg" size={28} />
+          <Typography className="truncate leading-tight" type="h6" weight="semibold">
+            {SITE.name}
+          </Typography>
+          <Chip className="hidden font-mono sm:inline-flex" size="sm" variant="soft">
+            v{LIB_VERSION}
+          </Chip>
+        </Link>
+
+        <nav aria-label="主导航" className="ml-auto flex items-center gap-2">
+          <NavTooltip label="文档">
+            <Button
+              isIconOnly
+              aria-label="文档"
+              size="sm"
+              variant="outline"
+              onPress={() => router.push('/docs/')}
+            >
+              <BookOpen className="size-4" />
+            </Button>
+          </NavTooltip>
+          <NavTooltip label="GitHub">
+            <Button
+              isIconOnly
+              aria-label="GitHub"
+              size="sm"
+              variant="outline"
+              onPress={() => window.open(SITE.github, '_blank', 'noopener,noreferrer')}
             >
               <GithubIcon className="size-4" />
-            </a>
-            <ThemeToggle />
-          </div>
-        </div>
-      </nav>
+            </Button>
+          </NavTooltip>
+          <ThemeToggle />
+        </nav>
+      </div>
     </header>
   )
 }

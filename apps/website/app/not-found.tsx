@@ -1,19 +1,26 @@
-import Link from 'next/link'
+'use client'
 
+import { Button, Typography } from '@heroui/react'
+import { useRouter } from 'next/navigation'
+
+/** 404：与全站同一套 token（暗底 + hairline + 朱红），动词只有一个「返回首页」 */
 export default function NotFound() {
+  const router = useRouter()
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-      <p className="rounded-full border border-dashed px-4 py-1 text-xs text-muted-foreground">
+      <span className="rounded-full border border-dashed border-border px-4 py-1 font-mono text-xs text-accent">
         404
-      </p>
-      <h1 className="mt-6 text-4xl font-bold tracking-tight">页面不存在</h1>
-      <p className="mt-3 text-muted-foreground">你访问的页面可能已被移动或删除。</p>
-      <Link
-        href="/"
-        className="mt-8 rounded-full bg-foreground px-6 py-2.5 text-sm font-bold text-background transition-opacity hover:opacity-80"
-      >
+      </span>
+      <Typography className="mt-6 tracking-tight" type="h1" weight="semibold">
+        页面不存在
+      </Typography>
+      <Typography className="mt-3" color="muted" type="body-sm">
+        你访问的页面可能已被移动或删除。
+      </Typography>
+      <Button className="mt-8" size="lg" variant="primary" onPress={() => router.push('/')}>
         返回首页
-      </Link>
+      </Button>
     </div>
   )
 }

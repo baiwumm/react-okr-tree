@@ -474,10 +474,11 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 | `fumadocs-core` / `fumadocs-ui`        | 16.15.7  | `RootProvider`（i18n `zh-CN` + theme）、`DocsLayout` / `DocsPage` / `DocsBody` / `DocsTitle` / `DocsDescription`、内置 `CodeBlock`（shiki） |
 | `fumadocs-mdx`                         | 15.4.0   | `source.config.ts` 的 `defineDocs({ dir: 'content' })`；`next.config.mjs` 用 `createMDX()` 包装                                             |
 | `tailwindcss` / `@tailwindcss/postcss` | 4.3.3    | `globals.css` 里 `@import "tailwindcss"` + fumadocs `neutral.css` / `preset.css`                                                            |
-| `next-themes`                          | 0.4.6    | 站级明暗切换（`attribute: "class"` + `enableSystem`）                                                                                       |
+| `next-themes`                          | 0.4.6    | 站级明暗切换（`attribute: "class"` + ~~`enableSystem`~~ → 2026-11-20 起暗色优先：`defaultTheme: "dark"` 且关掉 `enableSystem`）              |
 | `lucide-react`                         | 0.545.0  | 图标                                                                                                                                        |
-| `ogl`                                  | 1.0.11   | 首屏 WebGL 光效（`components/background/light-ray.tsx`）                                                                                    |
-| `theme-switch-animation`               | 0.1.0    | 主题切换动画（参考站 theme-toggle 用）                                                                                                      |
+| ~~`ogl`~~                              | ~~1.0.11~~ | ~~首屏 WebGL 光效（`components/background/light-ray.tsx`）~~ → 2026-11-20 删除：首屏氛围光改为一层 CSS radial（`hero.tsx`），不再需要 WebGL |
+| `@heroui/react` / `@heroui/styles`     | 3.2.7    | 2026-11-20 新增：UI 原语（`Button` / `Tooltip` / `Accordion` / `Tabs` / `Typography` / `Chip`）与 design tokens；`@heroui/styles` 提供 `bg-surface` / `text-muted` / `bg-accent` 等 Tailwind 词汇，组件本身是可选项 |
+| `theme-switch-animation`               | ~~0.1.0~~ → 0.6.1 | 主题切换动画（参考站 theme-toggle 用）；0.6.x 的 `CIRCLE_BLUR` 依赖根元素上的 `view-transition-name: root`（见 `app/globals.css`） |
 
 开发依赖同样锁定：`typescript` 5.9.3、`@types/react` 19.2.2、`@types/react-dom` 19.2.2、`@types/node` 24.7.2、`@types/mdx` 2.0.14、`prettier` 3.9.6。
 
@@ -487,7 +488,9 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 
 ### 6.2 视觉与信息架构
 
-**视觉基线取参考站，不另立一套**：shadcn neutral + oklch 黑白体系（`--background: oklch(1 0 0)` / `--foreground: oklch(0.145 0 0)` 等），并在 `:root` / `.dark` 里把 `--color-fd-*` 覆盖为同一组值，保证落地页与文档区是同一套视觉而非两套并行变量；`@custom-variant dark (&:is(.dark *))`；`--radius: 0.625rem` 及 `--radius-*` 派生；Maple Mono CN 作为 `--font-sans-stack` 首选。落地页结构照参考站：`Navbar` → `Hero` →（dashed 分隔 `mx-auto max-w-5xl border-b border-dashed`）→ `Features` → `Stacks`（参考站此处陈列 5 个技术栈，本站改为「三套布局 + OKR 双向」展示位）→ `Cta` → `Faq` → `Footer`，背景 `LightRays`（`raysOrigin="top-center"`、`rayLength={1.5}`、`followMouse`、`opacity-65`，收着用以免白底起灰纱）。文档区 `DocsLayout`：`nav.title` 为 Logo + 站名（链回 `/`），`links` 放 GitHub 图标外链，侧栏底部只留操作条不放内容卡。
+**视觉基线取参考站，不另立一套**：~~shadcn neutral + oklch 黑白体系（`--background: oklch(1 0 0)` / `--foreground: oklch(0.145 0 0)` 等），并在 `:root` / `.dark` 里把 `--color-fd-*` 覆盖为同一组值，保证落地页与文档区是同一套视觉而非两套并行变量；`@custom-variant dark (&:is(.dark *))`；`--radius: 0.625rem` 及 `--radius-*` 派生；Maple Mono CN 作为 `--font-sans-stack` 首选。落地页结构照参考站：`Navbar` → `Hero` →（dashed 分隔 `mx-auto max-w-5xl border-b border-dashed`）→ `Features` → `Stacks`（参考站此处陈列 5 个技术栈，本站改为「三套布局 + OKR 双向」展示位）→ `Cta` → `Faq` → `Footer`，背景 `LightRays`（`raysOrigin="top-center"`、`rayLength={1.5}`、`followMouse`、`opacity-65`，收着用以免白底起灰纱）。~~ → **2026-11-20 改为暗黑终端 + 朱红**：token 体系换成 HeroUI 那套（近黑 `--background: oklch(0.13 0.002 285.89)`、`--surface` / `--default` / `--border: oklch(1 0 0 / 12%)`、朱红 `--accent: oklch(0.5543 0.17 32.08)`，亮色档保留），`:root` / `.dark` 里把 `--color-fd-*` 全部映射到同一组 token，`@custom-variant dark (&:is(.dark *))`，圆角改用 HeroUI 的 `--radius`（0.5rem）派生；`html.dark` 直接写进 SSR 产物、`defaultTheme: 'dark'`，亮色仍可从顶栏切换。落地页结构：`Navbar` → `Hero`（`SpecSheet` 规格表 + 数据行 + 真实 `<OkrTree>` 终端窗）→ `QuickStart`（01 / 开始）→ `Showcase`（02 / 布局与外观）→ `Features`（03 / 特性）→ `Cta`（04 / 继续）→ `Faq`（05 / 常见问题）→ `Footer`，段间只有 hairline（`.frame` / `.spec-row` / `.eyebrow` 三个工具类），不再有 `LightRays`、玻璃卡与 hover 倾斜。文档区 `DocsLayout`：`nav.title` 为 Logo + 站名（链回 `/`），`links` 放 GitHub 图标外链，侧栏底部只留操作条不放内容卡。
+
+**演示画布的暗色适配（站点侧，不是库的一部分）**：组件默认主题是浅色外观（白卡的观感来自 `--okr-node-shadow` 在浅底上的柔和阴影），站点改暗后阴影消失、节点会变成浮空文字。因此 `app/globals.css` 在 `.dark .okr-demo-canvas` 上覆盖 6 个 `--okr-*` 变量（底色 / 文字 / 圆角 / 阴影 / 按钮色），只在演示画布上生效；显式传了 `theme` 的树会在自己的容器上重新声明变量，继承值自动让位，所以不影响六套内置主题的展示。**刻意不加 `--okr-node-border`**：节点宽度是内容撑出来的，加 1px 边框会让卡片变宽 2px，`tests/visual/visual.spec.ts` 里「unstyled 只清外观、不改节点盒尺寸」那条会当场变红。主题展示位（首页「六套内置主题」与文档站 `ThemeSwitcher`）另用 `.canvas-light` 钉浅色画布——六套主题里有四套只改线色 / 圆角 / 阴影 / 选中色，暗底上读不出区别。
 
 **内容分层沿用源项目 docs-site，但并入同一站**：
 

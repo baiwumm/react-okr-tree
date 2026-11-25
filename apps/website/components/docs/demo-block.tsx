@@ -75,12 +75,11 @@ export async function DemoBlock({
     : undefined
 
   return (
-    <div
-      id={anchorOf(id, file)}
-      className="my-6 scroll-mt-16 overflow-hidden rounded-xl border border-fd-border"
-    >
-      {/* 树容器是 display:block，撑满后内容靠左；w-fit + mx-auto 让它居中，且比宿主宽时不会被裁掉左边 */}
-      <div className="overflow-x-auto p-4">
+    <div id={anchorOf(id, file)} className="frame my-6 scroll-mt-16">
+      {/* 树容器是 display:block，撑满后内容靠左；w-fit + mx-auto 让它居中，且比宿主宽时不会被裁掉左边。
+          `okr-demo-canvas` 是站点侧的暗色适配锚点（变量覆盖见 app/globals.css），
+          显式传了 theme 的 demo 会在自己的容器上重新声明，不受影响。 */}
+      <div className="okr-demo-canvas overflow-x-auto p-4">
         <div className="mx-auto w-fit">{children}</div>
       </div>
       {title || description || file ? (

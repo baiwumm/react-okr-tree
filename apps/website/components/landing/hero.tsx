@@ -1,125 +1,158 @@
 'use client'
 
-import { BookOpen } from 'lucide-react'
-import { motion } from 'motion/react'
+import { Button, Typography } from '@heroui/react'
+import { BookOpen, MonitorPlay } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+
 import { HeroTree } from '@/components/demo/hero-tree'
-import { AnimatedBadge } from '@/components/motion/animated-badge'
-import { ButtonLink } from '@/components/motion/button/base'
-import { TextReveal } from '@/components/motion/text-reveal'
+import { SpecSheet } from '@/components/landing/spec-sheet'
 import { GithubIcon } from '@/components/ui/brand-icons'
+import { FACTS } from '@/lib/facts'
 import { SITE } from '@/lib/site'
 
 /**
- * 主视觉窗口（对应参考站的 AdminMockup）
+ * 主视觉（对应参考站的 Hero + SpecSheet + 数据行）
  *
- * 光线背景不在这里：它挂在 app/(home)/page.tsx 上作为整页 fixed 层（与参考实现同挂法），
- * 只留首屏一块会显得像贴了张渐变图。
- *
- * 差别在于这里**不是**仿制界面，而是真实的 `<OkrTree>`：组件本身 SSR 安全
- * （requirements R8），静态导出下首屏就是渲染好的树，点 ± 圆盘可以现场收起展开。
- * 因此整块不再 `aria-hidden` / `pointer-events-none`。窗口不做透视倾斜：参考站敢倾斜
- * 是因为那是假界面，这里要留可点击的阅读性，正放更清楚。
+ * 右侧不是仿制界面也不是插画，而是组件真实接受的 props 规格表；下方窗口里是**真实的
+ * `<OkrTree>`**——组件本身 SSR 安全（requirements R8），静态导出下首屏就是渲染好的树，
+ * 点 ± 圆盘可以现场收起展开。窗口只做终端样式的外框，不做透视倾斜：这块内容要能读、能点。
  */
 const MAC_DOTS = ['#ff5f57', '#febc2e', '#28c840']
+
+const STATS = [
+  { label: '布局形态', value: FACTS.layouts },
+  { label: '内置主题', value: FACTS.themes },
+  { label: '展开动画', value: FACTS.animations },
+  { label: '运行时依赖', value: FACTS.runtimeDeps },
+]
 
 function TreeWindow() {
   const host = SITE.url.replace(/^https?:\/\//, '')
 
   return (
-    <div className="mx-auto mt-20 max-w-4xl">
-      <motion.div
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.45, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <div className="glass-card overflow-hidden rounded-3xl border-border/60 text-left">
-          {/* 仿 macOS 窗控：三颗彩色圆点 + 居中的地址条 */}
-          <div className="flex items-center gap-2 border-b border-border/60 px-4 py-2.5">
-            {MAC_DOTS.map(color => (
-              <span
-                key={color}
-                className="size-3 rounded-full ring-1 ring-inset ring-black/10"
-                style={{ backgroundColor: color }}
-              />
-            ))}
-            <span className="ms-3 flex h-5 flex-1 items-center justify-center rounded-full bg-muted text-[10px] text-muted-foreground/70">
-              {host}/docs
-            </span>
-          </div>
-          <div className="overflow-x-auto px-6 py-10">
-            <div className="mx-auto w-max">
-              <HeroTree layout="vertical" showCollapsable defaultExpandAll animate />
-            </div>
-          </div>
+    <div className="reveal frame mt-14" style={{ animationDelay: '480ms' }}>
+      {/* 终端窗框：三颗窗控圆点 + 地址条，只用 hairline 与表面色，不带阴影 */}
+      <div className="flex items-center gap-2 border-b border-border bg-surface-secondary px-4 py-2.5">
+        {MAC_DOTS.map(color => (
+          <span
+            key={color}
+            className="size-2.5 rounded-full ring-1 ring-inset ring-black/10"
+            style={{ backgroundColor: color }}
+          />
+        ))}
+        <span className="ms-3 flex h-5 flex-1 items-center justify-center rounded-full bg-default font-mono text-[10px] text-muted">
+          {host}/docs
+        </span>
+      </div>
+      <div className="overflow-x-auto px-6 py-10">
+        <div className="okr-demo-canvas mx-auto w-max rounded-md p-2">
+          <HeroTree layout="vertical" showCollapsable defaultExpandAll animate />
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }
 
 export function Hero() {
+  const router = useRouter()
+
   return (
-    <section className="relative overflow-hidden px-6 pt-40 pb-24 text-center">
-      {/* 背景光效参数照参考站收着用：白底上光束过量会像蒙了层灰纱，只留首屏顶部这一束 */}
+    <section className="relative overflow-hidden">
+      {/* 朱红氛围光：低占比 radial，只铺首屏右上方 */}
       <div
         aria-hidden
-        className="dot-grid pointer-events-none absolute inset-x-0 top-0 h-[560px] opacity-60"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(760px circle at 80% 22%, color-mix(in oklab, var(--accent) 14%, transparent), transparent 70%)',
+        }}
       />
-      <div className="relative">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-6 flex justify-center"
-        >
-          <AnimatedBadge status="info" size="md" pulse>
-            React 移植 · 与 vue3-okr-tree 特性逐条对齐
-          </AnimatedBadge>
-        </motion.div>
 
-        <TextReveal
-          as="h1"
-          text={['一套树组件', '三种布局形态']}
-          className="mx-auto text-balance text-5xl font-bold tracking-tight text-foreground sm:text-6xl"
-          delay={0.12}
-        />
+      <div className="relative mx-auto w-full max-w-6xl px-6 pt-16 pb-14 sm:pt-24">
+        <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-16">
+          <div className="flex min-w-0 flex-1 flex-col gap-6">
+            <Typography className="eyebrow reveal" type="body-xs" weight="semibold">
+              React 组件 · 与 vue3-okr-tree 锁步 · MIT
+            </Typography>
 
-        <motion.p
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground"
-        >
-          垂直、水平与飞书 OKR 双树三种布局的组织架构图 React 组件，内置六套主题、六种展开动画、CSS
-          与 SVG 两种连接线，复选框、拖拽排序与懒加载开箱即用。
-        </motion.p>
+            <Typography
+              className="reveal max-w-xl text-balance text-4xl leading-[1.12] tracking-tight sm:text-5xl"
+              style={{ animationDelay: '80ms' }}
+              type="h1"
+              weight="semibold"
+            >
+              一套树组件
+              <br />
+              三种布局形态
+            </Typography>
 
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.38, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-8 flex flex-wrap items-center justify-center gap-3"
+            <Typography
+              className="reveal max-w-xl text-pretty leading-relaxed"
+              color="muted"
+              style={{ animationDelay: '160ms' }}
+              type="body-sm"
+            >
+              垂直、水平与飞书 OKR 双树三种布局的组织架构图组件，内置六套主题、六种展开动画、CSS 与
+              SVG 两种连接线，复选框、拖拽排序与懒加载开箱即用。
+            </Typography>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <Button
+                className="reveal"
+                size="lg"
+                style={{ animationDelay: '240ms' }}
+                variant="primary"
+                onPress={() => router.push('/docs/')}
+              >
+                <BookOpen className="size-4" />
+                快速开始
+              </Button>
+              <Button
+                className="reveal"
+                size="lg"
+                style={{ animationDelay: '320ms' }}
+                variant="outline"
+                onPress={() => router.push('/docs/guide/demos/')}
+              >
+                <MonitorPlay className="size-4" />
+                Demo 总览
+              </Button>
+              <Button
+                className="reveal"
+                size="lg"
+                style={{ animationDelay: '400ms' }}
+                variant="tertiary"
+                onPress={() => window.open(SITE.github, '_blank', 'noopener,noreferrer')}
+              >
+                <GithubIcon className="size-4" />
+                GitHub
+              </Button>
+            </div>
+          </div>
+
+          <div className="reveal min-w-0 flex-1" style={{ animationDelay: '400ms' }}>
+            <SpecSheet />
+          </div>
+        </div>
+
+        {/* 数据行：hairline 分隔，等宽数字，不做卡片 */}
+        <dl
+          className="reveal mt-14 grid grid-cols-2 gap-8 border-t border-border pt-8 sm:grid-cols-4"
+          style={{ animationDelay: '480ms' }}
         >
-          <ButtonLink href="/docs" variant="primary" size="lg">
-            <BookOpen size={16} />
-            快速开始
-          </ButtonLink>
-          <ButtonLink
-            href={SITE.github}
-            target="_blank"
-            rel="noreferrer"
-            variant="secondary"
-            size="lg"
-          >
-            <GithubIcon className="size-4" />
-            GitHub
-          </ButtonLink>
-        </motion.div>
+          {STATS.map(stat => (
+            <div key={stat.label} className="flex min-w-0 flex-col gap-1">
+              <dt>
+                <Typography color="muted" type="body-xs">
+                  {stat.label}
+                </Typography>
+              </dt>
+              <dd className="font-mono text-3xl tabular-nums sm:text-4xl">{stat.value}</dd>
+            </div>
+          ))}
+        </dl>
 
         <TreeWindow />
-        <p className="mx-auto mt-5 max-w-md text-xs text-muted-foreground">
-          上面是真实组件而非截图：点节点下方的 ± 圆盘，看默认动画收起整棵子树。
-        </p>
       </div>
     </section>
   )

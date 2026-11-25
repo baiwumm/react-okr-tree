@@ -20,10 +20,10 @@ export function ApiTable({ id }: { id?: string }) {
               dangerouslySetInnerHTML={{ __html: section.intro }}
             />
           ) : null}
-          <div className="mt-3 overflow-x-auto rounded-xl border border-fd-border">
+          <div className="frame mt-3 overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="bg-fd-secondary/50">
+                <tr className="bg-surface-secondary">
                   {section.columns.map(col => (
                     <th key={col} className="px-3 py-2 text-left font-medium whitespace-nowrap">
                       {col}

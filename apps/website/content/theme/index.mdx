@@ -43,6 +43,7 @@ export default function App({ data }: { data: TreeNodeData[] }) {
 
 - 想跟随系统：`theme="auto"`。
 - 想跟随站点：在站级主题容器上自己覆盖 `--okr-*` 变量（`.dark { --okr-node-bg: …; }`），或按当前主题给组件传 `theme="dark"` / `theme="default"`。变量能写在任意祖先，所以这条路不需要组件配合。
+- 本站自己走的就是第三条：暗色下演示画布的容器上覆盖了底色 / 文字 / 圆角 / 阴影几个变量（`.dark .okr-demo-canvas`，见文档站仓库的 `app/globals.css`）。原因值得记一笔——默认主题的「白卡」其实没有背景色，它的卡片感完全来自 `--okr-node-shadow` 在浅色页面上投的阴影，拿到暗底上阴影看不见，节点就成了浮空文字。
 
 </Callout>
 

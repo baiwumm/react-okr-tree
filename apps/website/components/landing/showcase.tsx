@@ -86,13 +86,18 @@ export function Showcase() {
           title="三种布局，一个组件"
         />
 
-        <Tabs className="mt-10" defaultSelectedKey="vertical" variant="secondary">
-          <Tabs.ListContainer>
+        {/* 切换器：紧凑的 segmented control，不用全宽下划线。
+            选中态用 data-[selected=true]: 变体直接上底色，而不是 HeroUI 的 `Tabs.Indicator`
+            （RAC 的 SelectionIndicator 在静态导出预渲染时抛 `SharedElement` 上下文错误，
+            见 docs/acceptance.md 的暗黑终端改版批）。react-aria 的键盘方向键与 aria-selected
+            不受影响。 */}
+        <Tabs align="center" className="mt-10" defaultSelectedKey="vertical">
+          <Tabs.ListContainer className="mx-auto w-fit rounded-full border border-border bg-surface p-1">
             <Tabs.List>
               {LAYOUTS.map(item => (
                 <Tabs.Tab
                   key={item.key}
-                  className="data-[selected=true]:text-foreground"
+                  className="h-9 w-auto rounded-full px-5 text-muted transition-colors data-[selected=true]:bg-default data-[selected=true]:text-foreground"
                   id={item.key}
                 >
                   {item.label}
@@ -104,7 +109,8 @@ export function Showcase() {
           {LAYOUTS.map(item => (
             <Tabs.Panel key={item.key} className="pt-6" id={item.key}>
               <DemoFrame title={item.title} description={item.description}>
-                <HeroTree layout={item.key} showCollapsable defaultExpandAll labelWidth={104} />
+                {/* labelWidth 120：OKR 左树的「战略投资部」在 104 宽下会折成两行 */}
+                <HeroTree layout={item.key} showCollapsable defaultExpandAll labelWidth={120} />
               </DemoFrame>
             </Tabs.Panel>
           ))}

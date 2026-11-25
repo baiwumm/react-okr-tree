@@ -1,3 +1,5 @@
+import type { Metadata } from 'next'
+
 import { Cta } from '@/components/landing/cta'
 import { Faq } from '@/components/landing/faq'
 import { Features } from '@/components/landing/features'
@@ -8,20 +10,21 @@ import { QuickStart } from '@/components/landing/quick-start'
 import { Showcase } from '@/components/landing/showcase'
 import { JsonLd } from '@/components/seo/json-ld'
 import { FAQ_ITEMS } from '@/lib/faq'
+import { homeGraph } from '@/lib/schema'
 
-/** FAQPage 结构化数据：文本取自 lib/faq.ts，喂给机器前剥掉行内代码的反引号标记 */
-const FAQ_JSON_LD = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: FAQ_ITEMS.map(item => ({
-    '@type': 'Question',
-    name: item.title,
-    acceptedAnswer: {
-      '@type': 'Answer',
-      text: item.content.replace(/`/g, ''),
-    },
-  })),
+/**
+ * 首页 canonical 必须写在这一页，不能写在根布局：根 layout 的 alternates 会被 404 继承，
+ * 结果是三个 404 产物也声称自己是首页（noindex 但仍然是错的信号）。
+ */
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
 }
+
+/**
+ * 首页结构化数据：Organization + WebSite + SoftwareSourceCode + FAQPage 一张 @graph
+ * （选型与「不承诺富结果」的理由见 lib/schema.ts；FAQ 文本与可见内容同源 lib/faq.ts）
+ */
+const HOME_JSON_LD = homeGraph(FAQ_ITEMS)
 
 /**
  * 落地页（2026-11-20 暗黑终端改版）
@@ -32,7 +35,7 @@ const FAQ_JSON_LD = {
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
-      <JsonLd data={FAQ_JSON_LD} />
+      <JsonLd data={HOME_JSON_LD} />
       <Navbar />
       <main className="flex-1">
         <Hero />

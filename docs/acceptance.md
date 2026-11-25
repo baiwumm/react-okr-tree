@@ -249,6 +249,21 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 - 体积：文档站 CSS raw 136K → 568K、**gzip 22K → 55K**（HeroUI 的 token 层是全量的）；JS 反而下降（去掉 ogl 与 tilt/scroll 动效，落地页改用一条 CSS `@keyframes reveal`）。
 - HeroUI `Tabs.Indicator` 的位置：必须挂在**每个 `Tabs.Tab` 内部**（RAC 的 `SelectionIndicatorContext` 是 Tab 渲染子节点时提供的）。放在 `Tabs.List` 里会在静态导出预渲染阶段抛 `<SharedElement> must be rendered inside a <SharedElementTransition>`——这是上游 `react-aria-components@1.22.1` 的问题（用它的 `TabList` + `SelectionIndicator` 原样复现同一错误，`dom` 渲染器丢掉了含 `<SharedElementTransition>` 的子节点）。本站按「每个 Tab 各挂一个、只有选中的那个可见」使用它，滑块样式全走 HeroUI 默认（`tabs__indicator`），没有任何自定义类；切换时指示器会从旧 Tab 滑到新 Tab（实测 `x` 92 → 823）。
 
+**SEO/AEO 审计与落地（2026-11-25，只读审计 → 修复）**：对 `apps/website` 源码 + `out/` 22 个导出页做了 head 解析、sitemap/robots 检查、JSON-LD 提取，并用 Playwright + CDP（Slow 4G + 4× CPU，本地 `serve-out` 不压缩）量了 CLS/LCP。**发现的真问题**（按当时的严重程度）：
+
+1. **全站 0 个 canonical**，而 `sitemap.xml` 19 条全是不带尾斜杠的 URL、内链与产物是带斜杠的；线上实测两种形态都 200（6.5 ①）。等于 19 个页面各两份、无合并信号。更糟的是 `verify-export.mjs` 头注释写着「每个页面的 canonical 与 SITE.url 同源」，脚本里**根本没有这条断言**——假门禁。
+2. **字体 1.7MB 且无 preload**：首访传输 ≈2.1MB（字体占 82%），字体 28.2s 到齐后触发整页折行重排，demos 页 **CLS 0.1523**（lazy 0.0752、首页 0.0131）；同时 `/logo.svg` 因为 `priority` 占了一条 `preload as="image"`，与字体抢名额。
+3. **机器可读层几乎为零**：全站 JSON-LD 只有首页一块 FAQPage；18 个文档页零结构化数据；`og:url` 所有页面都指首页、`og:type` 全 `website`；无 `llms.txt`；无「最后更新」与 sitemap `lastmod`。
+4. **on-page**：`/docs/api/` 标题层级 `1,3,3,3,3,3,3,3,2`（H1→H3 跳级）；首页 H1「一套树组件 / 三种布局形态」不含类别词；404 三份继承首页 title/description。
+
+**修复与实测**：canonical 三处同形（首页写在 `(home)/page.tsx`——放根布局会被 404 继承）、sitemap 补斜杠 + `<lastmod>`、`verify:export` 从 16 条断言扩到 **26 条**（新增 9 条：每个可索引页自指 canonical、canonical 与页面地址同形、sitemap 带斜杠、sitemap 覆盖、每条 lastmod、两个验证 meta；并把 8 条资产/口径断言重写成可执行版本）；`lib/schema.ts` 一张 `@graph`（Organization/WebSite/SoftwareSourceCode/FAQPage）与文档页 TechArticle+BreadcrumbList；可见面包屑 + 「最后更新」（`source.config.ts` 开 `lastModified`）；`og:url`/`og:type=article` 逐页；`public/llms.txt`；API 页 H3→H2；首页 H1 改成「React 组织架构图组件 / 三种布局，一个组件」；404 拆成服务端页 + 客户端按钮后有了自己的 title 与 `noindex`；GSC/Bing 验证 meta 进根布局并被门禁断言。
+
+**字体这一项的数字**（本轮最实在的收益）：preload + 两个字族的度量兼容回退（细节见 requirements 6.6 与 `app/globals.css` 注释），同一口径重测 —— demos **0.1523 → 0.0035**、lazy **0.0752 → 0.0181**、首页 **0.0131 → 0**。等价性实测：无字体 vs 有字体逐段行高，lazy 页总高差 +2px、段落平均差 2.76px。三次失败的中间态也记下来免得重踩：单一回退面（src 里混写 Consolas 与雅黑）时中文会绕开 size-adjust，CLS 反而升到 0.1702；`ascent-override` 与 `size-adjust` 是**相乘**关系，按 102% 直给会让行盒高 20%。
+
+**看起来是问题、实际不是**（免得下一轮重复报）：`keywords` meta（Google 忽略）保留；`/api/search` 无扩展名返回 octet-stream 但 `res.json()` 不受影响（6.5 ④ 已核）；sitemap 的 `changefreq`/`priority` 是噪音字段但不致错；`/404`、`/404/`、`/_not-found/` 三份重复但都 `noindex`。
+
+**本轮不做**：英文版（明确不做）、对比/替代页（缺 product-marketing 定位基线）、demos 页拆页（2MB HTML，需单独一批）、字体子集再裁。视觉基线 **61 条零变化**（改的都是 head / 页面上方的面包屑，不进入 Demo 截图框）；`verify:export` 26 条全绿；`typecheck` / `format:check` 干净。
+
 **撑高窗口首帧抖动修复（2026-11-20，库侧）**：暗色改版后实测发现「Hero 终端窗里那棵树收起时会抖，展示区的不抖」，逐帧读取容器高度得到序列 **735 → 395 → 735 → 395**（终端窗是 279 → 195 → 279 → 195），确认是库的缺陷而非站点样式：`useDelayedCollapse` 把 `setKeepHeight(true)` 放在 `useEffect` 里，而 effect 在提交并绘制之后才跑——收起的那一帧先按 `height: 0` 提交上屏，下一帧才被 effect 撑回来，`animateDuration` 到点后再真正塌下去，于是抖两下。展示区的树没传 `animate`，走不到这条路径，所以看起来正常。
 
 修法：把「撑高」从 effect 挪到**渲染期**跟进（记录上一次提交的展开态，变化时同步 `setKeepHeight`），React 会把这次 setState 合并进同一次提交，中间态不上屏；effect 只保留「到期归零」的定时器。语义不变（D8 的 `visibility:hidden` 撑满 `animateDuration` 后再补 `height:0` 仍照旧），变的是它和收起**同帧**生效。

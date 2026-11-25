@@ -4,6 +4,9 @@ import { apiSections, type ApiSection } from '../../../../packages/react-okr-tre
  * API 表：内容取自 `packages/react-okr-tree/shared/api.ts`（单一来源，README 生成器与
  * 库侧的防漂移测试读的是同一份；放包里而不是仓库根是因为 vitest 不加载 root 以外的文件）。
  *
+ * 标题用 `<h2>` 而不是 `<h3>`：这一页没有中间的 h2 层，用 h3 会让标题层级从 h1 直接跳到 h3
+ * （审计里唯一一处跳级）。七个分组成为本页的 h2 后，右侧目录也能直接列出它们。
+ *
  * 单元格里带 `<code>` / `<strong>` 片段，所以用 innerHTML 渲染——数据是本仓库构建期文件，
  * 不是用户输入。`prose` 作用域不到组件内部的 code，故在 td 上手动补 code 样式。
  */
@@ -13,7 +16,7 @@ export function ApiTable({ id }: { id?: string }) {
     <>
       {sections.map(section => (
         <section key={section.id} id={section.id} className="my-6 scroll-mt-16">
-          <h3 className="text-lg font-semibold">{section.title}</h3>
+          <h2 className="text-lg font-semibold">{section.title}</h2>
           {section.intro ? (
             <p
               className="mt-1 text-sm text-fd-muted-foreground [&_code]:text-[0.85em]"

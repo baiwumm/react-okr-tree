@@ -6,6 +6,14 @@ import { UI_TRANSLATIONS } from '@/lib/i18n'
 import { SITE } from '@/lib/site'
 import './globals.css'
 
+/** OG 卡片是真图（public/og.png，1200×630），尺寸写进 meta 让抓取端首帧就知道比例 */
+const OG_IMAGE = {
+  url: '/og.png',
+  width: 1200,
+  height: 630,
+  alt: 'react-okr-tree — React 组织架构图 / OKR 树组件',
+}
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
@@ -13,8 +21,16 @@ export const metadata: Metadata = {
     template: `%s — ${SITE.name}`,
   },
   description: SITE.description,
+  // 搜索控制台验证（GSC / Bing）：值由站长从控制台取得，改站点时别丢
+  verification: {
+    google: '4YBtBTmg5H9MGoyvCmvEeJx8viyBPjLnK4INCHT9SQs',
+    other: {
+      'msvalidate.01': '6DEA985B20CA4A215DAC4EA659011A8A',
+    },
+  },
   icons: {
-    icon: { url: '/favicon.svg', type: 'image/svg+xml' },
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    apple: '/apple-touch-icon.png',
   },
   keywords: [
     'react-okr-tree',
@@ -33,10 +49,11 @@ export const metadata: Metadata = {
     locale: 'zh_CN',
     url: SITE.url,
     siteName: SITE.name,
-    images: ['/og.png'],
+    images: [OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
+    images: [OG_IMAGE],
   },
 }
 
@@ -54,6 +71,23 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     // next-themes 仍是唯一主题真源，用户点切换后改成 light 并写入 localStorage。
     <html suppressHydrationWarning className="dark" lang="zh-CN">
       <body className="flex min-h-screen flex-col font-sans antialiased">
+        {/*
+          字体预加载（React 19 会把这条 link 提升到 <head>）。
+          全站正文就是 Maple Mono CN（1.7MB 子集），它是首访最大的单个资源；
+          不预加载的话要等 HTML 解析到 <link rel=stylesheet> 才被发现，晚一个 RTT。
+          crossOrigin 必须写：字体请求即使同源也走 CORS 模式，缺了它会被下载两次。
+
+          React 19 会把这条 link 提升到 <head>，**但不会删掉原件**——最终 HTML 里会出现两条
+          同 URL 的 preload（实测删掉这条就等于没有预加载）。浏览器按 URL 去重、只发一次请求，
+          不要为了“去重”而把它删掉。
+        */}
+        <link
+          as="font"
+          crossOrigin="anonymous"
+          href="/fonts/maple-mono-cn-regular.woff2"
+          rel="preload"
+          type="font/woff2"
+        />
         <RootProvider
           i18n={{ locale: 'zh-CN', translations: UI_TRANSLATIONS }}
           // type: 'static' → fumadocs 用 staticClient 拉取 app/api/search 导出的静态索引，

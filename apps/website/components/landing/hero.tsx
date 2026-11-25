@@ -81,9 +81,12 @@ export function Hero() {
               type="h1"
               weight="semibold"
             >
-              一套树组件
+              {/* H1 放类别词：审计里首页 H1 只有「一套树组件 / 三种布局形态」，
+                  “React 组织架构图”只出现在 eyebrow 与副题——搜索权重最高的位置反而没有它。
+                  原来的「三种布局形态」移成下半句，读起来仍是同一句话。 */}
+              React 组织架构图组件
               <br />
-              三种布局形态
+              三种布局，一个组件
             </Typography>
 
             <Typography

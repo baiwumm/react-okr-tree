@@ -22,13 +22,10 @@ export function Logo({
   const src = mounted && resolvedTheme === 'dark' ? '/logo-dark.svg' : '/logo.svg'
 
   return (
-    <Image
-      src={src}
-      alt="react-okr-tree Logo"
-      width={size}
-      height={size}
-      className={className}
-      priority
-    />
+    // 不传 `priority` / `loading`：`priority` 会给这个 28px 的 SVG 加一条
+    // `<link rel=preload as=image>`，与首屏真正的大件（1.7MB 字体，见 app/layout.tsx）
+    // 抢预加载名额；`loading="eager"` 在 Next 16 下同样会触发那条 preload（实测）。
+    // 交给默认行为：SVG 很小，进入视口就加载。
+    <Image src={src} alt="react-okr-tree Logo" width={size} height={size} className={className} />
   )
 }

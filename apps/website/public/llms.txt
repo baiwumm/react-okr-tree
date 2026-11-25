@@ -1,0 +1,39 @@
+# react-okr-tree
+
+> React 组织架构图 / OKR 树组件。三种布局（垂直、水平、飞书 OKR 左右双向），6 套内置主题、
+> 6 种展开动画、CSS 与 SVG 两种连接线，内置复选框父子联动、拖拽换父级、懒加载、虚拟滚动与
+> 画布缩放（含 PNG / SVG 导出）。零运行时依赖，peer 仅要求 react / react-dom >= 18.2.0，
+> 是 vue3-okr-tree 的 React 移植版，两者自 1.13.0 起版本号锁步。
+
+## 关键事实
+
+- 包名：react-okr-tree（npm，MIT 许可，TypeScript 编写）
+- 安装：`pnpm add react-okr-tree`，样式单独引入 `import 'react-okr-tree/style.css'`
+- 布局：`direction="vertical" | "horizontal"`；OKR 双向需要 `direction="horizontal"` +
+  `onlyBothTree` + `leftData`，根节点用 `alignRoot` 保持居中
+- 外观：`theme` prop 取 6 个内置值（default / feishu / dark / auto / minimal / colorful），
+  全部取值可用 `--okr-*` CSS 变量覆盖；`unstyled` 只保留结构与连线
+- 数据更新：`data` 换引用即重建；同引用原地改靠渲染期脏检查，必要时 `ref.refreshData()`
+- 可访问性：`role=tree/treeitem/group`、漫游 tabindex、方向键导航，OKR 左树为完整镜像
+- SSR：渲染路径不读 window/document，静态导出与 Next.js App Router 可直接用
+
+## 文档
+
+- [概览](https://react-okr-tree.baiwumm.com/docs/)：三种布局怎么选、与 vue3-okr-tree 的对应关系
+- [安装与快速开始](https://react-okr-tree.baiwumm.com/docs/start/)：npm / pnpm / CDN UMD 三种引入路径
+- [Demo 总览](https://react-okr-tree.baiwumm.com/docs/guide/demos/)：24 个可交互用例（站内直接点）
+- [主题与样式定制](https://react-okr-tree.baiwumm.com/docs/theme/)：6 套主题与 27 个 `--okr-*` 变量
+- [完整 API](https://react-okr-tree.baiwumm.com/docs/api/)：props、字段映射、回调、ref 方法、画布与组合组件
+- [从 vue3-okr-tree 迁移](https://react-okr-tree.baiwumm.com/docs/migration/)：命名规则与 D1–D12 有意差异
+- [更新日志](https://react-okr-tree.baiwumm.com/docs/changelog/)：版本记录
+
+## 源码与分发
+
+- GitHub：https://github.com/baiwumm/react-okr-tree
+- npm：https://www.npmjs.com/package/react-okr-tree
+- 姊妹项目（Vue 3）：https://github.com/baiwumm/vue3-okr-tree ・ https://vue3-okr-tree.baiwumm.com
+
+## 不适合的场景
+
+- 需要编辑器式思维导图（自由拖动节点、任意跨层级连线）时，这个库不是正确选择
+- 需要非 React 框架的绑定时，请用 vue3-okr-tree 或自行封装

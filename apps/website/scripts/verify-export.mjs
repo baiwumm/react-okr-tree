@@ -8,8 +8,11 @@
 //   1. out/ 存在且是纯文件（没有 .next/standalone、没有 server action 清单）；
 //   2. 站内 href/src 全部能落到 out/ 里的真实文件（外链与 #锚点 放行），og/twitter image meta 的
 //      content 走同一套解析（这条是 2026-09-26 补的，此前正则扫不到 meta，og.png 丢了没人报）；
-//   3. 关键资产齐备：/api/search 索引、sitemap.xml、robots.txt、字体、favicon；
-//   4. sitemap 覆盖所有文档页，且每个页面的 canonical 与 SITE.url 同源。
+//   3. 关键资产齐备：/api/search 索引、sitemap.xml、robots.txt、字体、favicon、llms.txt；
+//   4. **索引口径一致**：每个可索引页都有自指 canonical（尾斜杠形态）、canonical 出现在
+//      sitemap 里、sitemap 全部带尾斜杠且带 <lastmod>、GSC/Bing 验证 meta 在首页。
+//      （这条以前只写在注释里、并没有实现——2026-11-25 审计发现全站 0 个 canonical 而
+//      门禁全绿，所以现在把它变成真断言：`canonical`、`sitemap`、`og:url` 三处必须同形。）
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, normalize } from 'node:path'
 
@@ -105,6 +108,7 @@ for (const p of [
   'logo.svg',
   'logo-dark.svg',
   'fonts/maple-mono-cn-regular.woff2',
+  'llms.txt',
   '404.html',
 ]) {
   assert(existsSync(join(OUT, p)), `资产存在：/${p}`)
@@ -119,18 +123,70 @@ assert(
   '站内搜索索引结构可被 staticClient 载入（含文档 id 与各字段子树）'
 )
 
-// ---- 4. sitemap 覆盖文档页 ----
-// app/sitemap.ts 用的是 source 的 page.url（形如 /docs、/docs/start，不带尾斜杠），
-// 而磁盘形态是 out/docs/start/index.html，所以这里按同一套规则反推再比对。
+// ---- 4. 索引口径：canonical / sitemap / 验证 meta ----
+// 三处口径必须同形：页面内 canonical、sitemap 的 <loc>、以及 og:url（后者由页面 metadata 派生，
+// 与 canonical 同源；这里只断前两者，og:url 的逐页正确性由 Next 的 metadata 合并保证）。
+const pageUrlOf = file => {
+  const rel = file
+    .slice(OUT.length + 1)
+    .split('\\')
+    .join('/')
+    .replace(/index\.html$/, '')
+  return `${SITE_URL}/${rel}`
+}
+const canonicalOf = html => {
+  const m = html.match(/<link rel="canonical" href="([^"]+)"/)
+  return m ? m[1] : null
+}
+
+const pages = htmlFiles.map(file => ({
+  file,
+  url: pageUrlOf(file),
+  html: readFileSync(file, 'utf8'),
+}))
+// 404 三份（/404.html、/404/、/_not-found/）是 noindex，不参与 canonical 口径
+const indexable = pages.filter(p => !/name="robots" content="noindex"/.test(p.html))
+
+const noCanonical = indexable.filter(p => !canonicalOf(p.html))
+assert(
+  noCanonical.length === 0,
+  `每个可索引页都有自指 canonical（缺 ${noCanonical.length}/${indexable.length}）`
+)
+for (const p of noCanonical.slice(0, 10)) console.error('  ' + p.url)
+
+const badCanonical = indexable.filter(p => canonicalOf(p.html) !== p.url)
+assert(
+  badCanonical.length === 0,
+  `canonical 与页面地址同形（不一致 ${badCanonical.length} 条，应为 ${indexable.length}）`
+)
+for (const p of badCanonical.slice(0, 10)) console.error(`  ${p.url} -> ${canonicalOf(p.html)}`)
+
 const sitemap = readFileSync(join(OUT, 'sitemap.xml'), 'utf8')
-assert(sitemap.includes(`${SITE_URL}/`), 'sitemap 收录落地页')
-const docPages = htmlFiles
-  .map(f => f.slice(OUT.length + 1).replace(/\\/g, '/'))
-  .filter(p => (p === 'docs/index.html' || p.startsWith('docs/')) && p.endsWith('index.html'))
-  .map(p => `${SITE_URL}/${p.replace(/\/index\.html$/, '').replace(/^docs$/, 'docs')}`)
-const missing = docPages.filter(url => !sitemap.includes(url))
-assert(missing.length === 0, `sitemap 覆盖 ${docPages.length} 个文档页（缺 ${missing.length}）`)
-for (const m of missing.slice(0, 10)) console.error('  ' + m)
+const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1])
+assert(
+  locs.length >= indexable.length,
+  `sitemap 条目数 ${locs.length} ≥ 可索引页数 ${indexable.length}`
+)
+
+const noSlash = locs.filter(u => !u.endsWith('/'))
+assert(noSlash.length === 0, `sitemap 全部带尾斜杠（不带斜杠 ${noSlash.length} 条）`)
+for (const u of noSlash.slice(0, 10)) console.error('  ' + u)
+
+const missingInSitemap = indexable.filter(p => !locs.includes(p.url))
+assert(
+  missingInSitemap.length === 0,
+  `sitemap 覆盖全部可索引页（缺 ${missingInSitemap.length} 条）`
+)
+for (const p of missingInSitemap.slice(0, 10)) console.error('  ' + p.url)
+
+const lastmodCount = (sitemap.match(/<lastmod>/g) || []).length
+assert(lastmodCount >= locs.length, `sitemap 每条都有 <lastmod>（${lastmodCount}/${locs.length}）`)
+
+// 搜索引擎控制台验证：两个 meta 一旦丢了，GSC/Bing 会取消已验证状态
+const homeHtml = pages.find(p => p.url === `${SITE_URL}/`)?.html ?? ''
+assert(homeHtml.includes('name="google-site-verification"'), '首页含 google-site-verification meta')
+assert(homeHtml.includes('name="msvalidate.01"'), '首页含 msvalidate.01（Bing）meta')
+
 assert(
   allHtml.every(h => !h.includes('localhost:') && !h.includes('127.0.0.1')),
   'HTML 里没有本地回环地址残留'

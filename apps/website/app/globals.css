@@ -28,6 +28,50 @@
 }
 
 /*
+ * 度量兼容回退字族（2026-11-25 补）
+ *
+ * Maple Mono CN 是 1:2 步进的等宽字：中文步进 **1.2em**、拉丁 0.6em（实测 100px 下
+ * 「汉」=120、「H」=60）。系统回退字族的中文是 1em、拉丁 0.55em 左右，于是字体加载完成
+ * 那一刻整页中文会重新折行——实测 demos 页 CLS 0.1523，位移就发生在字体到达后 0.5s。
+ *
+ * 三条实测结论决定了这里要写**两个回退字族**而不是一个：
+ * 1. `src` 列表是「整个字面」的回退，不是逐字形回退：`local('Consolas'), local('YaHei')`
+ *    只会命中 Consolas，中文字形会跳到**字族栈的下一档**，完全绕开 size-adjust
+ *    ——实测回退面里「汉」=100，而带 YaHei 的面 =120。
+ * 2. `ascent-override` / `descent-override` 会**再乘一次** size-adjust
+ *    （120% × 85% = 102%，正好是 Maple 的 ascent；descent 同理 25% → 30%）。
+ * 3. 中文与拉丁的步进比例不同（1.2 / 0.6），一个 size-adjust 不可能同时对齐两者，
+ *    所以拆成「中文回退」与「拉丁回退」两档，在字族栈里按语种排先后。
+ *
+ * 实测口径：`/docs/guide/lazy/` 无字体 vs 有字体时逐段行高对比，本组合总高差 +2px、
+ * 段落平均差 2.76px。换字体 / 改字号 / 改字体栈时请重跑同口径探针，而不是拍脑袋改数字。
+ */
+@font-face {
+  font-family: 'Maple CJK Fallback';
+  src:
+    local('Microsoft YaHei'), local('PingFang SC'), local('Noto Sans CJK SC'), local('Heiti SC'),
+    local('Hiragino Sans GB');
+  size-adjust: 120%;
+  /* 120% × 85% = 102%（Maple ascent），120% × 25% = 30%（Maple descent） */
+  ascent-override: 85%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Maple Latin Fallback';
+  src:
+    local('Consolas'), local('Menlo'), local('DejaVu Sans Mono'), local('Liberation Mono'),
+    local('Courier New');
+  /* 拉丁面按 Consolas 的 0.55em → Maple 的 0.6em 取 109%（Mac 的 Menlo 是 0.6em，会多 ~9%，可接受） */
+  size-adjust: 109%;
+  /* 109% × 93.6% = 102%（Maple ascent），109% × 27.5% = 30%（descent） */
+  ascent-override: 93.6%;
+  descent-override: 27.5%;
+  line-gap-override: 0%;
+}
+
+/*
  * Tailwind 语义层（2026-11-20 暗黑终端改版）
  *
  * 组件一律用 HeroUI 的 token class（bg-background / bg-surface / bg-default /
@@ -57,11 +101,11 @@
 
   /* 全局字体：Maple Mono CN（自托管子集），回退系统字体栈 */
   --font-sans-stack:
-    'Maple Mono CN', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    'Maple Mono CN', 'Maple CJK Fallback', 'Maple Latin Fallback', ui-sans-serif, system-ui,
+    -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   --font-mono-stack:
-    'Maple Mono CN', ui-monospace, 'Cascadia Code', 'JetBrains Mono', Consolas, 'Courier New',
-    monospace;
+    'Maple Mono CN', 'Maple Latin Fallback', 'Maple CJK Fallback', ui-monospace, 'Cascadia Code',
+    'JetBrains Mono', Consolas, 'Courier New', monospace;
 
   /* ===== 亮色档（保留双主题；默认渲染暗色，见 app/layout.tsx） ===== */
   --background: oklch(0.985 0 0);

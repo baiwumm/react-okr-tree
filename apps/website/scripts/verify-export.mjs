@@ -77,7 +77,18 @@ for (const d of [...dead].slice(0, 15)) console.error('  ' + d)
 // ---- 2.5 image meta（G11 的那个检测盲区）----
 // 上面那条正则只看 href/src，而 app/layout.tsx 的 `images: ['/og.png']` 渲染成
 // <meta property="og:image" content="…/og.png">——图丢了线上是社交卡片空白，CI 却全绿。
-// 这里把 image 类 meta 单独扫一遍，摘掉 SITE_URL 前缀后按同一套 resolveLocal 验文件真的存在。
+// 这里把 image 类 meta 单独扫一遍，绝对地址按 origin 比到本站后取 pathname，再走同一套 resolveLocal。
+// 用 URL 解析而不是 startsWith(SITE_URL) + slice：前缀比对会把 `https://…baiwumm.com.evil/og.png`
+// 当成站内路径放过去（CodeQL js/incomplete-url-substring-sanitization）。
+const SITE_ORIGIN = new URL(SITE_URL).origin
+const toLocalPath = raw => {
+  try {
+    const url = new URL(raw, SITE_URL)
+    return url.origin === SITE_ORIGIN ? url.pathname : raw
+  } catch {
+    return raw
+  }
+}
 const imageMetaTag = /<meta\b[^>]*>/g
 let imageMetaHits = 0
 const deadImages = new Set()
@@ -88,7 +99,7 @@ for (const file of htmlFiles) {
     if (!key || !content?.[1]) continue
     const raw = content[1]
     imageMetaHits++
-    const path = raw.startsWith(SITE_URL) ? raw.slice(SITE_URL.length) : raw
+    const path = toLocalPath(raw)
     if (!path.startsWith('/') || !resolveLocal(path))
       deadImages.add(`${file.replace(OUT + '/', '')} -> ${raw}`)
   }

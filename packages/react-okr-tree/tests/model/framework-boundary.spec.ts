@@ -27,8 +27,9 @@ describe('模型层框架无关性', () => {
     const code = read('viewport.ts')
     expect(code).not.toMatch(/from\s+['"]react/)
     // 说明符必须是变量：写死 import('html-to-image') 会让打包器把可选依赖内联进发布产物。
-    // import(...) 里允许出现若干 ignore 注释（@vite-ignore / webpackIgnore / turbopackIgnore）。
-    expect(code).toMatch(/import\(\s*(?:\/\*[\s\S]*?\*\/\s*)*specifier\s*\)/)
+    // 注释先剥再匹配——直接在正则里写 `(?:/*…*/)*` 是嵌套量词，CodeQL 的 js/redos 会报。
+    const withoutComments = code.replace(/\/\*[\s\S]*?\*\//g, '')
+    expect(withoutComments).toMatch(/import\(\s*specifier\s*\)/)
     expect(code).not.toMatch(/import\(\s*['"]html-to-image['"]\s*\)/)
   })
 })

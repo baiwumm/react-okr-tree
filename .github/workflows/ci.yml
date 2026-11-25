@@ -20,7 +20,7 @@ jobs:
         # pnpm 11 依赖 node:sqlite（Node ≥22.5），Node 20 上 setup-node 的 pnpm 缓存步骤会直接崩
         node: [22, 24]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v5
 
@@ -72,7 +72,7 @@ jobs:
     name: Website build (static export)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           # 文档站的「最后更新」与 sitemap <lastmod> 由 fumadocs 读 git 提交时间生成，
           # actions/checkout 默认 shallow（depth=1）会把所有文件算成同一个最新提交时间，
@@ -124,7 +124,7 @@ jobs:
           - react: '~18.3.0'
             types: '~18.3.0'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v5
 

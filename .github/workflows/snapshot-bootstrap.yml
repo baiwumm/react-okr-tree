@@ -22,6 +22,14 @@ name: Snapshot Bootstrap
 # 对应 *-chromium-linux.png。解包后先用 `git status --short` 核对：应当只多这 4 个文件，
 # 既有 *-linux.png 不应出现 diff（有 diff 说明系统字体或渲染变了，必须逐张看图再提交）。
 # 在补齐之前，Visual Regression 会因这 4 条缺 Linux 基线而判红——这是缺基线，不是回归。
+#
+# 2026-11-25（站点改暗色优先）：上面的「只多几个文件、既有基线零 diff」这一批的口径**反过来了**。
+# demo 块底色来自页面，站点换底色（c5d5a12）后 19 名基线全部作废；11-25 只重拍了 win32
+# （791fd92），`site-dark-*` 两张 `-linux` 随改名被删，其余 17 张仍是 11-04 的旧底色。
+# 所以这批的预期清单是 **19 个文件全变**：17 个 `M` + `site-light-basic` / `site-light-okr-group`
+# 两个 `??`。判断依据从「既有基线不该有 diff」改为「只变这 19 个、没有第 20 个」。
+# `--ref` 必须带着这批改动（`45b8dc7` 改了 demo 的 URL 结构，见 tests/visual/helpers.ts 的
+# DEMO_PAGES / openDemo）：在旧 ref 上跑会让用例找不到 `#demo-*`，拍出来的不是基线而是废图。
 
 on:
   workflow_dispatch:

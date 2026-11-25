@@ -26,6 +26,8 @@
     "dev:website": "pnpm build && pnpm --filter react-okr-tree-website dev",
     "build:website": "pnpm build && pnpm --filter react-okr-tree-website build",
     "typecheck:website": "pnpm --filter react-okr-tree-website typecheck",
-    "format:website": "pnpm --filter react-okr-tree-website format"
+    "format:website": "pnpm --filter react-okr-tree-website format",
+    "fonts:subset": "pnpm --filter react-okr-tree-website fonts:subset",
+    "verify:fonts": "pnpm --filter react-okr-tree-website verify:fonts"
   }
 }

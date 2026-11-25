@@ -562,6 +562,8 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 
 **字体（CWV 的唯一大项）**：全站坚持 Maple Mono CN（1.7MB 子集）。两件事必须同时存在：① `app/layout.tsx` 里 `<link rel="preload" as="font" crossorigin>`（React 19 会把它提升到 head，但**同时保留原件**，最终出现两条同 URL 的 preload，浏览器按 URL 去重、只发一次请求——删掉这条等于没有预加载）；② `app/globals.css` 里**两个字族**的度量兼容回退（`Maple CJK Fallback` / `Maple Latin Fallback`）。为什么是两个、size-adjust 与 ascent-override 的乘法关系、以及可复现的测量口径，都写在 CSS 注释里；核心数字：Maple 中文步进 1.2em / 拉丁 0.6em / ascent 102% / descent 30%，中日韩回退面取 `size-adjust: 120%` + `ascent-override: 85%` + `descent-override: 25%`（乘积即 102%/30%），拉丁回退面取 109% / 93.6% / 27.5%。改字体、改字号、改字体栈时**必须重跑探针**（无字体 vs 有字体逐段行高对比），否则 CLS 会静默回到 0.15 量级。
 
+**字体子集化（2026-11-25 第二批）**：完整字体留在 `apps/website/font-src/maple-mono-cn-regular.woff2`（GB2312 子集，1.7MB，**只作为裁剪输入、不进产物**），产物是 `public/fonts/maple-mono-cn-regular.woff2`，由 `pnpm fonts:subset`（`apps/website/scripts/subset-font.mjs`）按「站点实际用到的字」生成，**实测 1731KB → 243KB（省 86%）**，同时写出字符清单 `scripts/font-subset-chars.txt`。三条纪律：① 必须从 `font-src/` 裁，不能从上一版子集裁（否则裁掉的字形永久丢失）；② 改了文案/新增页面后要重跑 `pnpm fonts:subset` 并提交字体与清单；③ CI 的 website 作业跑 `verify:fonts`——它按 `out/**/*.html` 里的字反查清单，漏字当场红（漏字的后果不是报错，而是那几个字静默退化成系统字体，人眼很难发现）。子集化后本地同口径 CLS 三页均为 **0**（字体在首帧前就到齐），线上 LCP 由 1.7MB 降为 243KB 后应同步改善，以 PSI 实测为准。
+
 **本轮明确不做**（各有理由，别当遗漏）：英文版（产品决策：不做）；对比/替代类页面（需先有 product-marketing 的关键词与定位基线）；`/docs/guide/demos` 拆页（2MB HTML，属内容结构改动，要单独一批）；字体子集再裁（需要字体工具链，且不解决 swap 型的 CLS）。
 
 ---

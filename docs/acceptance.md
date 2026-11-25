@@ -262,6 +262,8 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 
 **看起来是问题、实际不是**（免得下一轮重复报）：`keywords` meta（Google 忽略）保留；`/api/search` 无扩展名返回 octet-stream 但 `res.json()` 不受影响（6.5 ④ 已核）；sitemap 的 `changefreq`/`priority` 是噪音字段但不致错；`/404`、`/404/`、`/_not-found/` 三份重复但都 `noindex`。
 
+**字体子集化（2026-11-25 第二批）**：字体从 1731KB 裁到 **243KB（省 86%）**，字符集 1135 个（扫描 `content/components/app/lib` + `public/llms.txt` + 库的 `shared/api.ts`，并并上已导出 HTML 的字符）。源字体移入 `apps/website/font-src/`（不进产物，只作为裁剪输入），新增 `pnpm fonts:subset` / `verify:fonts` 与 CI 的 website 作业一条校验步骤；`verify:fonts` 按导出 HTML 反查清单，实测「导出的 1048 个字符全部在子集清单内」。代价与防线：漏字不会报错、只会静默退化成系统字体，所以清单与校验必须一起提交；**视觉基线 61 条零 diff**（同一套字形轮廓，只是删掉未用字形），本地同口径 CLS 三页均 **0**。收益需线上确认：LCP 的字体成本从 1.7MB 降到 243KB，按 PSI 实测复核。
+
 **本轮不做**：英文版（明确不做）、对比/替代页（缺 product-marketing 定位基线）、demos 页拆页（2MB HTML，需单独一批）、字体子集再裁。视觉基线 **61 条零变化**（改的都是 head / 页面上方的面包屑，不进入 Demo 截图框）；`verify:export` 26 条全绿；`typecheck` / `format:check` 干净。
 
 **撑高窗口首帧抖动修复（2026-11-20，库侧）**：暗色改版后实测发现「Hero 终端窗里那棵树收起时会抖，展示区的不抖」，逐帧读取容器高度得到序列 **735 → 395 → 735 → 395**（终端窗是 279 → 195 → 279 → 195），确认是库的缺陷而非站点样式：`useDelayedCollapse` 把 `setKeepHeight(true)` 放在 `useEffect` 里，而 effect 在提交并绘制之后才跑——收起的那一帧先按 `height: 0` 提交上屏，下一帧才被 effect 撑回来，`animateDuration` 到点后再真正塌下去，于是抖两下。展示区的树没传 `animate`，走不到这条路径，所以看起来正常。

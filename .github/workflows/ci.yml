@@ -100,6 +100,11 @@ jobs:
       - name: Typecheck website
         run: pnpm typecheck:website
 
+      # 字体是手工子集（font-src/ → public/fonts/），内容新增的字若没进子集会静默退化成
+      # 系统字体。这条按导出的 HTML 反查字符清单，漂了就红，提示重跑 pnpm fonts:subset
+      - name: Verify font subset covers shipped text
+        run: pnpm --filter react-okr-tree-website verify:fonts
+
       - name: Verify export is fully static + no dead links
         run: pnpm --filter react-okr-tree-website verify:export
 

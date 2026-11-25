@@ -11,7 +11,9 @@
     "verify:export": "node scripts/verify-export.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "fonts:subset": "node scripts/subset-font.mjs",
+    "verify:fonts": "node scripts/subset-font.mjs --check"
   },
   "dependencies": {
     "@heroui/react": "3.2.7",
@@ -35,6 +37,7 @@
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "prettier": "3.9.6",
+    "subset-font": "2.9.0",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3"
   }

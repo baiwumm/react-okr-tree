@@ -1,0 +1,100 @@
+name: 🐞 Bug report
+description: 报告一个可复现的问题（渲染与布局、交互、数据与受控、SSR、构建产物或文档站）
+title: '[Bug] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。这个表单只收**可复现的 bug**；安装与用法问题请先看[文档站](https://react-okr-tree.baiwumm.com)，与 Vue 版的差异见[迁移页](https://react-okr-tree.baiwumm.com/docs/migration/)，安全问题走[私密报告](https://github.com/baiwumm/react-okr-tree/security/advisories/new)。
+
+        本库与 [`vue3-okr-tree`](https://github.com/baiwumm/vue3-okr-tree) 刻意锁步：同一现象在 Vue 版也存在时也请一并说明，两边要一起改。
+  - type: dropdown
+    id: area
+    attributes:
+      label: 涉及范围
+      options:
+        - 渲染与布局（layout / direction / alignRoot / labelWidth）
+        - OKR 双向（onlyBothTree / leftData）
+        - 交互：拖拽（draggable / allow-drop 回调）
+        - 交互：键盘、焦点、勾选（checkbox）
+        - 数据与受控（expandedKeys / currentKey / deepWatch / refreshData）
+        - 懒加载与虚拟滚动（lazy + load / virtual）
+        - 画布（缩放、平移、导出图片 / html-to-image）
+        - 主题与样式（theme / unstyled / 打印）
+        - SSR 与 hydration
+        - 类型声明 / 包导出 / 构建产物（ESM / CJS / UMD）
+        - 文档站与 Demo（apps/website）
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 版本
+      description: 库版本与 React 版本（`npm ls react-okr-tree react react-dom` 可查）。
+      placeholder: react-okr-tree 1.17.0 · react 19.2.0
+    validations:
+      required: true
+  - type: dropdown
+    id: usage
+    attributes:
+      label: 引入方式
+      options:
+        - ESM `import`（Vite / Next.js / Rspack 等）
+        - CJS `require()`
+        - UMD `<script>`（ReactOkrTree 全局）
+        - 不确定
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: 浏览器 / 环境
+      description: 布局与拖拽在不同引擎上的差异（滚动容器、pointer、字体度量）值得单独说明。
+      options:
+        - Chrome / Edge（Chromium）
+        - Safari / iOS（WebKit）
+        - Firefox
+        - 服务端渲染（node）
+        - 其它或不确定
+    validations:
+      required: true
+  - type: input
+    id: layout
+    attributes:
+      label: 布局与关键 props
+      description: 出问题时的布局与相关参数，没写的项省略即可。
+      placeholder: layout=horizontal · direction=ltr · theme=feishu · virtual · connector=svg
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 最好给最小复现（一份数据 + 一个组件的最小组合，或可运行的仓库 / CodeSandbox 链接）。
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期与实际
+      description: 预期行为、实际行为，以及控制台完整报错与 React 警告原文。
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 取证材料
+      description: 截图 / 录屏、控制台输出、DOM 片段。视觉问题请写清主题、浏览器与复现尺寸——像素基线与系统字体相关。
+      placeholder: 截图 + 复现尺寸（如 1440×900）+ 主题名。
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 我已搜索现有 issue 与讨论，并在文档站确认过这不是预期的行为或有意差异（D1–D12）。
+          required: true
+        - label: 我能在文档站 Demo 或最小复现里重现，不依赖业务页面的其它样式。
+          required: true

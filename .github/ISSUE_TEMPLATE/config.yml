@@ -1,0 +1,23 @@
+# 空白 issue 关掉：走表单才能拿到判定必需的字段（版本 / 浏览器 / 布局 / 最小复现）。
+# contact_links 只放真实存在的入口；使用问题与新想法走 Discussions（Q&A / Ideas 已配表单模板）。
+blank_issues_enabled: false
+
+contact_links:
+  - name: 📚 文档站 / Documentation
+    url: https://react-okr-tree.baiwumm.com
+    about: 安装、24 个可交互 Demo、API 全表、主题变量与键盘操作先在这里查。
+  - name: 🙏 使用问题 / Q&A
+    url: https://github.com/baiwumm/react-okr-tree/discussions/categories/q-a
+    about: 安装、接入、参数怎么用——先查文档站，没答案再来提问（有表单模板）。
+  - name: 💡 想法 / Ideas
+    url: https://github.com/baiwumm/react-okr-tree/discussions/categories/ideas
+    about: 功能与 DX 建议，发帖前请过一遍 docs/requirements.md §10 的「明确不做」清单（有表单模板）。
+  - name: 🔁 与 vue3-okr-tree 的差异
+    url: https://react-okr-tree.baiwumm.com/docs/migration/
+    about: 本库是 vue3-okr-tree 的 React 复刻版，D1–D12 有意差异（render props、受控成对 props、合成事件等）逐条在这里。
+  - name: 🤖 开发规范 / AGENTS.md
+    url: https://github.com/baiwumm/react-okr-tree/blob/main/AGENTS.md
+    about: 目录结构、门禁清单、生成物规则、docs/ 约定与提交风格。
+  - name: 🔒 私密报告安全问题 / Report a security issue
+    url: https://github.com/baiwumm/react-okr-tree/security/advisories/new
+    about: 请勿在公开 issue 中披露漏洞细节。

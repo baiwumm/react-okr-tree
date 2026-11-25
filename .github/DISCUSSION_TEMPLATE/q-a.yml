@@ -1,0 +1,58 @@
+title: '[Q&A] '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for asking. Please search existing discussions and the [docs](https://react-okr-tree.baiwumm.com) first — install, the 24 demos and every prop are documented there.
+
+        提问前请先检索已有讨论与文档站；从 `vue3-okr-tree` 迁移过来的问题，先看[迁移页](https://react-okr-tree.baiwumm.com/docs/migration/)。日志与截图里不要带真实项目的业务数据。
+  - type: input
+    id: version
+    attributes:
+      label: 库版本
+      description: 安装的 react-okr-tree 版本（`npm ls react-okr-tree` 可查），以及 React 版本。
+      placeholder: react-okr-tree 1.17.0 · react 19.2.0
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: 问题发生在哪
+      options:
+        - 安装与接入（Vite / Next.js / CJS / UMD）
+        - 数据与受控（expandedKeys / currentKey / checkbox / filter）
+        - 布局（layout / direction / OKR 双向 / 连接线）
+        - 交互（拖拽 / 键盘 / 懒加载 / 虚拟滚动）
+        - 画布（缩放、平移、导出图片）
+        - 主题与样式（theme / unstyled / CSS 变量 / 打印）
+        - SSR 与 hydration
+        - 类型与产物（d.ts / exports）
+        - 从 vue3-okr-tree 迁移（D1–D12 差异）
+        - 文档站
+        - 其他
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: 想做什么 / 遇到了什么
+      description: 预期行为、实际行为、报错原文。
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤（如有）
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 发帖前确认
+      options:
+        - label: 我检索过已有讨论与文档站，没有找到答案。
+          required: true
+        - label: 帖子里没有真实项目的业务数据、token 或内部地址。
+          required: true

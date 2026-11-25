@@ -1,0 +1,63 @@
+version: 2
+
+# 依赖自动更新用 Dependabot（原生集成，装上即生效），不再走 Renovate：
+# 原 renovate.json 从未产生过 PR（app 未安装），两套配置并存只会重复开 PR。
+updates:
+  # pnpm workspace（packages/react-okr-tree、apps/website）统一在仓库根目录处理：
+  # Dependabot 读根 pnpm-lock.yaml，子包的 package.json 不用单独登记。
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    # 新版本先放 7 天：本仓依赖全部精确锁定（save-exact），刚发布的包进 PR 只会让门禁替上游踩雷。
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: 'chore(deps)'
+    labels: [dependencies]
+    groups:
+      npm-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # typescript-eslint 的 peer 是 `>=4.8.4 <6.1.0`，升 TS 大版本会让 `pnpm lint` 直接失败。
+      # 等上游放开上限后删掉这条再手动升（见 docs/requirements.md §7 的版本锁定）。
+      - dependency-name: 'typescript'
+        update-types:
+          - version-update:semver-major
+      # 库的实现只依赖 react / react-dom 的公开 API，但 peer 下限是 18.2.0，
+      # 大版本升级要先跑通 peer-matrix（18.2 / 18.3）再手动升，不让 bot 提。
+      - dependency-name: 'react'
+        update-types:
+          - version-update:semver-major
+      - dependency-name: 'react-dom'
+        update-types:
+          - version-update:semver-major
+
+  # 工作流里 pin 的 actions（checkout / setup-node / pnpm action 等）。
+  # 这几个是 `v5` 这类浮动 major tag，升级只需改 yml，不碰产物。
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: 'ci(deps)'
+    labels: [dependencies]
+    groups:
+      actions-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch

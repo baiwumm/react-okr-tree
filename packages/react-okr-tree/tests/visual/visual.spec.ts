@@ -1,27 +1,29 @@
 import { expect, test } from '@playwright/test'
-import { demoBlock, demoShot, demoTree, open, setToggle } from './helpers'
+import { DEMOS_INDEX, demoBlock, demoShot, demoTree, open, openDemo, setToggle } from './helpers'
 import { snap } from './snap'
 
 /**
- * 视觉基线（计划 9.2）：截文档站 /docs/guide/demos 里的真实 Demo。
+ * 视觉基线（计划 9.2）：截文档站 Demo 页里的真实用例。
+ *
+ * 2026-11-25 起 `/docs/guide/demos` 拆成 1 个索引 + 7 组（原来是 25 个用例挤在一页、2MB HTML），
+ * 所以每个用例先用 `openDemo` 打开它所在的那一页；不针对单个用例的（搜索、亮色基线）才用索引页。
  *
  * 定位一律走 `<DemoBlock>` 推导出的 `#demo-<文件名>`（文件名是阶段 8 契约表里定死的），
  * 所以新增一个 demo 不会让既有基线集体错位——源项目早期用 nth-child 时就吃过这个亏。
  */
 test.describe('布局与几何', () => {
-  test.beforeEach(async ({ page }) => {
-    await open(page, '/docs/guide/demos/')
-  })
-
   test('垂直布局', async ({ page }) => {
+    await openDemo(page, 'basic')
     await snap(await demoShot(page, 'basic'), 'layout-vertical.png')
   })
 
   test('水平布局', async ({ page }) => {
+    await openDemo(page, 'horizontal')
     await snap(await demoShot(page, 'horizontal'), 'layout-horizontal.png')
   })
 
   test('折叠圆盘上的子节点数', async ({ page }) => {
+    await openDemo(page, 'collapsable')
     const wrap = demoBlock(page, 'collapsable')
     await wrap.scrollIntoViewIfNeeded()
     await setToggle(wrap, 'showNodeNum', true)
@@ -31,6 +33,7 @@ test.describe('布局与几何', () => {
   })
 
   test('OKR 双树与 Group 对齐', async ({ page }) => {
+    await openDemo(page, 'okr-group')
     const wrap = demoBlock(page, 'okr-group')
     await wrap.scrollIntoViewIfNeeded()
     await page.waitForTimeout(220)
@@ -53,6 +56,7 @@ test.describe('布局与几何', () => {
    *    实测都把它打红。
    */
   test('展开 / 收起不改变 OKR 根卡片的水平坐标', async ({ page }) => {
+    await openDemo(page, 'okr-group')
     const wrap = demoBlock(page, 'okr-group')
     await wrap.scrollIntoViewIfNeeded()
     const tree = wrap.locator('.org-chart-container').first()
@@ -101,10 +105,12 @@ test.describe('布局与几何', () => {
   })
 
   test('节点尺寸与自定义类名', async ({ page }) => {
+    await openDemo(page, 'node-style')
     await snap(await demoShot(page, 'node-style'), 'node-style.png')
   })
 
   test('复选框：父子联动与半选', async ({ page }) => {
+    await openDemo(page, 'checkbox')
     await demoTree(page, 'checkbox')
     await demoBlock(page, 'checkbox').locator('.org-chart-node-checkbox').first().click()
     await page.waitForTimeout(250)
@@ -112,6 +118,7 @@ test.describe('布局与几何', () => {
   })
 
   test('SVG 连接线', async ({ page }) => {
+    await openDemo(page, 'connector')
     const wrap = demoBlock(page, 'connector')
     await wrap.scrollIntoViewIfNeeded()
     await wrap.getByRole('button', { name: /connector="svg"/ }).click()
@@ -141,6 +148,7 @@ test.describe('布局与几何', () => {
   })
 
   test('展开按钮自定义内容', async ({ page }) => {
+    await openDemo(page, 'expand-btn')
     const wrap = demoBlock(page, 'expand-btn')
     await wrap.scrollIntoViewIfNeeded()
     await wrap.getByRole('button', { name: 'renderExpandBtn', exact: true }).click()
@@ -149,6 +157,7 @@ test.describe('布局与几何', () => {
   })
 
   test('过滤后的形态', async ({ page }) => {
+    await openDemo(page, 'filter')
     const wrap = demoBlock(page, 'filter')
     await wrap.scrollIntoViewIfNeeded()
     await wrap.locator('input').first().fill('前端')
@@ -177,7 +186,8 @@ test.describe('内置主题', () => {
  */
 test.describe('站内搜索（静态索引）', () => {
   test('输入「懒加载」能命中并跳转到懒加载页', async ({ page }) => {
-    await open(page, '/docs/guide/demos/')
+    // 起点用 demos 索引页：这条例不针对某个用例，只需要一个带搜索入口的文档页
+    await open(page, DEMOS_INDEX)
     /**
      * 用 Ctrl+K 打开搜索，而不是点按钮：侧栏与 subnav 两个触发器在 1280 视口下都被
      * sticky 侧栏占位块盖住（pointer-events 被 `pointer-events-none` 的祖先拦下），
@@ -227,7 +237,7 @@ test.describe('animate 收起不闪（撑高必须在渲染期跟进）', () => 
    * 改成渲染期 setState 后，中间态不会上屏，只剩过渡结束那次必然的 height:0。
    */
   test('收起时容器高度只掉一次，不出现「塌一下再弹回」', async ({ page }) => {
-    await open(page, '/docs/guide/demos/')
+    await openDemo(page, 'animation')
     const block = demoBlock(page, 'animation')
     await block.scrollIntoViewIfNeeded()
     await page.waitForTimeout(250)
@@ -277,13 +287,17 @@ test.describe('站点亮色（html 无 .dark）', () => {
    *
    * next-themes 的存储键是默认的 `theme`（`app/layout.tsx` 只配了 attribute/defaultTheme）。
    * 必须先写 localStorage 再进页面，否则首帧是暗色、水合后才切，截图会拍到中间态。
+   * 两个用例分处两组页（basic 在 layout、okr-group 在 okr），所以各开各的页。
    */
   test('两个 Demo 在亮色下的形态', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('theme', 'light'))
-    await open(page, '/docs/guide/demos/')
-    await expect(page.locator('html')).not.toHaveClass(/dark/)
 
+    await openDemo(page, 'basic')
+    await expect(page.locator('html')).not.toHaveClass(/dark/)
     await snap(await demoShot(page, 'basic'), 'site-light-basic.png')
+
+    await openDemo(page, 'okr-group')
+    await expect(page.locator('html')).not.toHaveClass(/dark/)
     await snap(await demoShot(page, 'okr-group'), 'site-light-okr-group.png')
   })
 })
@@ -299,7 +313,7 @@ test.describe('计算样式契约（不靠像素）', () => {
    * 写会当场得到一条假红）。所以这里量的是**被聚焦那个节点的卡片本体**。
    */
   test('键盘 Tab 走到节点时，卡片上有可见焦点环；焦点离开后收掉', async ({ page }) => {
-    await open(page, '/docs/guide/demos/')
+    await openDemo(page, 'basic')
     await demoTree(page, 'basic')
 
     /** 只有焦点确实落在树节点上时才返回读数，否则 null —— 让「走到节点」与「有环」两件事分开判 */
@@ -328,6 +342,20 @@ test.describe('计算样式契约（不靠像素）', () => {
     }
     // 可达性本身先断住：Tab 走不到节点时上面那条循环会安静地跑完，环的判据就成了空断
     expect(ring, 'Tab 80 次仍未走到任何 .org-chart-node，说明键盘可达性变了').not.toBeNull()
+
+    /**
+     * 环是**过渡进入**的，必须等它落定再读数（2026-11-25 踩过）：
+     * 站点 globals.css 的 reduced-motion 兜底把 `transition-duration` 压成 0.01ms，
+     * 而卡片自身没有声明 `transition-property`（初值 `all`）——于是本来**没有过渡**的
+     * `outline-width` / `outline-color` 也有了一帧过渡。同步读拿到的是过渡起点
+     * （`medium` = 3px / `currentColor`），实测等 100ms 后才落到 2px solid #409eff。
+     * 拆页前这条用例读到的页 Tab 序列更长、过渡早已结束，所以一直是绿的。
+     * 用轮询而不是 sleep：与下面「焦点离开后收掉」同一手法，也不会给慢机器埋雷。
+     */
+    await expect
+      .poll(async () => (await readRing())?.cardOutlineWidth, { timeout: 3000 })
+      .toBe('2px')
+    ring = await readRing()
     expect(ring!.focusVisible).toBe(true)
     expect(ring!.cardOutline).toBe('solid')
     expect(ring!.cardOutlineWidth).toBe('2px')
@@ -347,7 +375,7 @@ test.describe('计算样式契约（不靠像素）', () => {
   })
 
   test('unstyled 只清外观，不改节点盒尺寸', async ({ page }) => {
-    await open(page, '/docs/guide/demos/')
+    await openDemo(page, 'basic')
     const container = page.locator('#demo-basic .org-chart-container').first()
     const inner = container.locator('.org-chart-node-label-inner').first()
     await inner.scrollIntoViewIfNeeded()
@@ -391,7 +419,7 @@ test.describe('计算样式契约（不靠像素）', () => {
   })
 
   test('打印媒体：圆盘与工具栏隐藏、阴影去掉', async ({ page }) => {
-    await open(page, '/docs/guide/demos/')
+    await openDemo(page, 'collapsable')
     const wrap = demoBlock(page, 'collapsable')
     await wrap.scrollIntoViewIfNeeded()
     const btn = wrap.locator('.org-chart-node-btn').first()

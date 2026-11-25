@@ -1,0 +1,17 @@
+---
+title: 事件
+description: 事件回调签名与 OKR 左右树的事件。
+---
+
+import { EventsDemo } from '@/components/demo/events'
+import { EventsOkrDemo } from '@/components/demo/events-okr'
+
+事件都是 onXxx 回调 prop，没有自定义事件总线。
+
+<DemoBlock title="事件回调" description="事件都是 <code>onXxx</code> 回调 prop。<code>onNodeContextMenu</code> 只有在你传了它的时候才会 <code>preventDefault</code> 掉浏览器原生菜单。" file="components/demo/events.tsx">
+  <EventsDemo />
+</DemoBlock>
+
+<DemoBlock title="OKR 模式事件" description="左右两棵树走同一批回调；左树节点的 <code>node.isLeftChild</code> 为 <code>true</code>。" file="components/demo/events-okr.tsx">
+  <EventsOkrDemo />
+</DemoBlock>

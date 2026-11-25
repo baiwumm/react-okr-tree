@@ -262,6 +262,10 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 
 **看起来是问题、实际不是**（免得下一轮重复报）：`keywords` meta（Google 忽略）保留；`/api/search` 无扩展名返回 octet-stream 但 `res.json()` 不受影响（6.5 ④ 已核）；sitemap 的 `changefreq`/`priority` 是噪音字段但不致错；`/404`、`/404/`、`/_not-found/` 三份重复但都 `noindex`。
 
+**Demo 总览拆页 + favicon.ico（2026-11-25 第三批）**：`/docs/guide/demos` 一页 25 个用例（导出 HTML **2013KB / gzip 151KB**）拆成 1 个索引 + 7 组，最大单页 **502KB / 46KB**、索引页 78KB，sitemap 19 → **26** 条（多出 7 个可排名的落地页），`verify:export` 26 条断言同步扩到 26 页口径。用例定位规则不变（`#demo-<文件名>` 仍由 `DemoBlock` 从 `file` 推导），测试侧只改「先打开哪一页」：`helpers.ts` 新增 `DEMO_PAGES` 表 + `openDemo(page, name)`，`visual.spec.ts` / `smoke.spec.ts` / `demo-interaction.spec.ts` 全部改为按用例取页；视觉套件 **61 条零新增**（截图目标是 demo 块本身，与所在页无关）。另补 `/favicon.ico`（32×32 内嵌 PNG 的 ICO，986B，`pnpm gen:favicon` 生成）并进 `verify:export` 资产清单。
+
+**本轮踩到并修掉的一个假故障，值得留档**：拆页后「键盘 Tab 焦点环」用例读到 `outline-width: 3px` 而非 `2px`。逐帧 + CSSOM 排查后排除了布局回归（块高在拆页前后都是 516.5px、树形区域像素一致），真因是**环是过渡进入的**：站点 globals.css 的 reduced-motion 兜底把 `transition-duration` 压成 `0.01ms`，而卡片自身没声明 `transition-property`（初值 `all`），于是本来没有过渡的 `outline-width` / `outline-color` 也有了一帧过渡，同步读拿到的是过渡起点（`medium` = 3px / `currentColor`）；实测等 100ms 后落到 `2px solid #409eff`。修法是轮询到落定再断言（与同用例里「焦点离开后收掉」同一手法），并在注释里写清为什么不能同步读。**教训**：拆页后每个用例的 Tab 序列变短，这类「读得太早」的问题会从隐性变显性。
+
 **字体子集化（2026-11-25 第二批）**：字体从 1731KB 裁到 **243KB（省 86%）**，字符集 1135 个（扫描 `content/components/app/lib` + `public/llms.txt` + 库的 `shared/api.ts`，并并上已导出 HTML 的字符）。源字体移入 `apps/website/font-src/`（不进产物，只作为裁剪输入），新增 `pnpm fonts:subset` / `verify:fonts` 与 CI 的 website 作业一条校验步骤；`verify:fonts` 按导出 HTML 反查清单，实测「导出的 1048 个字符全部在子集清单内」。代价与防线：漏字不会报错、只会静默退化成系统字体，所以清单与校验必须一起提交；**视觉基线 61 条零 diff**（同一套字形轮廓，只是删掉未用字形），本地同口径 CLS 三页均 **0**。收益需线上确认：LCP 的字体成本从 1.7MB 降到 243KB，按 PSI 实测复核。
 
 **本轮不做**：英文版（明确不做）、对比/替代页（缺 product-marketing 定位基线）、demos 页拆页（2MB HTML，需单独一批）、字体子集再裁。视觉基线 **61 条零变化**（改的都是 head / 页面上方的面包屑，不进入 Demo 截图框）；`verify:export` 26 条全绿；`typecheck` / `format:check` 干净。

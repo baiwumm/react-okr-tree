@@ -1,0 +1,37 @@
+---
+title: 布局与展开
+description: direction、showCollapsable、默认展开、节点尺寸与类名。
+---
+
+import { BasicDemo } from '@/components/demo/basic'
+import { HorizontalDemo } from '@/components/demo/horizontal'
+import { CollapsableDemo } from '@/components/demo/collapsable'
+import { ExpandAllDemo } from '@/components/demo/expand-all'
+import { DefaultExpandedKeysDemo } from '@/components/demo/default-expanded-keys'
+import { NodeStyleDemo } from '@/components/demo/node-style'
+
+布局由 props 决定，没有隐藏的全局配置。
+
+<DemoBlock title="基础用法（垂直）" description="只传 <code>data</code>，默认 <code>direction=&quot;vertical&quot;</code>。" file="components/demo/basic.tsx">
+  <BasicDemo />
+</DemoBlock>
+
+<DemoBlock title="水平方向" description="<code>direction=&quot;horizontal&quot;</code>：同层节点竖排成一列，整体向右生长，这是组织架构图常用的形态。" file="components/demo/horizontal.tsx">
+  <HorizontalDemo />
+</DemoBlock>
+
+<DemoBlock title="是否可展开" description="<code>showCollapsable</code> 打开圆盘才有收起动作；不打开时组件强制全部展开（原版既有行为）。" file="components/demo/collapsable.tsx">
+  <CollapsableDemo />
+</DemoBlock>
+
+<DemoBlock title="默认全部展开" description="<code>defaultExpandAll</code>。需要一进来就全展开时用它，不要挂载后再调 <code>expandAll()</code>——后者要走一次整树重渲染。" file="components/demo/expand-all.tsx">
+  <ExpandAllDemo />
+</DemoBlock>
+
+<DemoBlock title="指定默认展开的节点" description="<code>nodeKey</code> + <code>defaultExpandedKeys</code>：命中节点的祖先链自动展开。" file="components/demo/default-expanded-keys.tsx">
+  <DefaultExpandedKeysDemo />
+</DemoBlock>
+
+<DemoBlock title="节点尺寸与类名" description="<code>labelWidth</code> / <code>labelHeight</code>（number 走 px，string 原样）、<code>labelClassName</code> 与 <code>currentLableClassName</code>（后者是原版拼写，刻意保留）。" file="components/demo/node-style.tsx">
+  <NodeStyleDemo />
+</DemoBlock>

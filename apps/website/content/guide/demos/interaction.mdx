@@ -1,0 +1,37 @@
+---
+title: 交互
+description: 手风琴、点击展开、复选框、拖拽、SVG 连接线、虚拟滚动。
+---
+
+import { AccordionDemo } from '@/components/demo/accordion'
+import { NodeClickDemo } from '@/components/demo/node-click'
+import { CheckboxDemo } from '@/components/demo/checkbox'
+import { DraggableDemo } from '@/components/demo/draggable'
+import { ConnectorDemo } from '@/components/demo/connector'
+import { VirtualDemo } from '@/components/demo/virtual'
+
+交互全部内建：复选框联动、拖拽三段放置、同层窗口化。
+
+<DemoBlock title="手风琴" description="<code>accordion</code> 展开一个自动收起同级；只约束交互展开，<code>expandAll()</code> 这类整体操作不受影响。" file="components/demo/accordion.tsx">
+  <AccordionDemo />
+</DemoBlock>
+
+<DemoBlock title="点击节点展开" description="<code>expandOnClickNode</code>：点卡片切展开态，选中与勾选照旧。" file="components/demo/node-click.tsx">
+  <NodeClickDemo />
+</DemoBlock>
+
+<DemoBlock title="复选框" description="<code>showCheckbox</code> + <code>checkStrictly</code>（父子联动 vs 各自独立）、半选态，以及 <code>getCheckedKeys</code> / <code>setCheckedKeys</code> 的取与设。" file="components/demo/checkbox.tsx">
+  <CheckboxDemo />
+</DemoBlock>
+
+<DemoBlock title="拖拽排序" description="<code>draggable</code> + <code>allowDrag</code> / <code>allowDrop</code> 谓词；卡片上/中/下三段分别是 prev / inner / next，禁止放进自身子树。" file="components/demo/draggable.tsx">
+  <DraggableDemo />
+</DemoBlock>
+
+<DemoBlock title="SVG 连接线" description="<code>connector=&quot;svg&quot;</code> 换成覆盖层路径，布局零改动；三种形状在收起子树时会跟着重绘。" file="components/demo/connector.tsx">
+  <ConnectorDemo />
+</DemoBlock>
+
+<DemoBlock title="虚拟滚动" description="<code>virtual</code>：同层可见兄弟数 ≥ 50 的行只渲染视口内窗口，占位块保持布局与连接线逐像素等价。要求数字型 <code>labelWidth</code>；创建期快照，切换走 <code>key</code> 重挂载。" file="components/demo/virtual.tsx">
+  <VirtualDemo />
+</DemoBlock>

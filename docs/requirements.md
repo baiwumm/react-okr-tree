@@ -564,6 +564,10 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 
 **字体子集化（2026-11-25 第二批）**：完整字体留在 `apps/website/font-src/maple-mono-cn-regular.woff2`（GB2312 子集，1.7MB，**只作为裁剪输入、不进产物**），产物是 `public/fonts/maple-mono-cn-regular.woff2`，由 `pnpm fonts:subset`（`apps/website/scripts/subset-font.mjs`）按「站点实际用到的字」生成，**实测 1731KB → 243KB（省 86%）**，同时写出字符清单 `scripts/font-subset-chars.txt`。三条纪律：① 必须从 `font-src/` 裁，不能从上一版子集裁（否则裁掉的字形永久丢失）；② 改了文案/新增页面后要重跑 `pnpm fonts:subset` 并提交字体与清单；③ CI 的 website 作业跑 `verify:fonts`——它按 `out/**/*.html` 里的字反查清单，漏字当场红（漏字的后果不是报错，而是那几个字静默退化成系统字体，人眼很难发现）。子集化后本地同口径 CLS 三页均为 **0**（字体在首帧前就到齐），线上 LCP 由 1.7MB 降为 243KB 后应同步改善，以 PSI 实测为准。
 
+**Demo 总览拆页（2026-11-25 第三批）**：`/docs/guide/demos` 原来一页装 25 个用例，导出 HTML **2013KB（gzip 151KB）**——首屏要等 2MB 文档解析完，且所有「某功能怎么用」的长尾查询都挤在一个 URL 上。现在按功能拆成 **1 个索引 + 7 组**（`content/guide/demos/{layout,content,okr,state,filter,events,interaction}.mdx`，各自只 import 自己那几个 demo 客户端组件），最大单页降到 **502KB（gzip 46KB）**，索引页 78KB，并多出 7 个可独立排名的落地页。三条纪律：① 锚点 `#demo-<文件名>` 仍由 `<DemoBlock>` 从 `file` 推导，用例定位规则没变；② 每个 demo 属于哪一页由 `tests/visual/helpers.ts` 的 `DEMO_PAGES` 单点决定，用例里不散写路径；③ 源码仍是构建期 `readFileSync` + shiki，**find-in-page 与无 JS 阅读都不丢**（因此没有走「按需加载源码」那条会回退这两点的路）。
+
+**favicon.ico（2026-11-25）**：站点原先只有 `favicon.svg`，`/favicon.ico` 持续 404。现在由 `pnpm gen:favicon`（`packages/react-okr-tree/scripts/gen-favicon.mjs`，与 `gen:og` 同一套「用 Playwright 光栅化」的前提）生成 32×32 的**内嵌 PNG 的 ICO**（986 字节），产物进 `apps/website/public/` 并在 `metadata.icons` 里显式声明。
+
 **本轮明确不做**（各有理由，别当遗漏）：英文版（产品决策：不做）；对比/替代类页面（需先有 product-marketing 的关键词与定位基线）；`/docs/guide/demos` 拆页（2MB HTML，属内容结构改动，要单独一批）；字体子集再裁（需要字体工具链，且不解决 swap 型的 CLS）。
 
 ---

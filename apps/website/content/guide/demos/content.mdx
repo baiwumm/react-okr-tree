@@ -1,0 +1,22 @@
+---
+title: 节点内容定制
+description: 三种内容写法、展开按钮内容、展开动画。
+---
+
+import { ContentModesDemo } from '@/components/demo/content-modes'
+import { ExpandBtnDemo } from '@/components/demo/expand-btn'
+import { AnimationDemo } from '@/components/demo/animation'
+
+内容与动画都走渲染函数 / 类名，不改库就能换样子。
+
+<DemoBlock title="三种内容写法对比" description="优先级 <code>renderNode</code> &gt; <code>nodeComponent</code> &gt; <code>renderContent</code> &gt; 内置 <code>node.label</code>。React 版的 <code>renderContent</code> 只收 <code>(node)</code>，没有 Vue 的 <code>h</code>。" file="components/demo/content-modes.tsx">
+  <ContentModesDemo />
+</DemoBlock>
+
+<DemoBlock title="展开按钮内容" description="<code>renderExpandBtn</code>（旧名 <code>nodeBtnContent</code> 仍在）；<code>showNodeNum</code> 折叠时优先显示数字。" file="components/demo/expand-btn.tsx">
+  <ExpandBtnDemo />
+</DemoBlock>
+
+<DemoBlock title="展开动画" description="<code>animate</code> + <code>animateName</code> 六个方向 + <code>animateDuration</code>；系统开启「减弱动态效果」时自动按关闭处理。" file="components/demo/animation.tsx">
+  <AnimationDemo />
+</DemoBlock>

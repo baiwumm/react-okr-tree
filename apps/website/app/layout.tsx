@@ -29,7 +29,9 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    // svg 是主图标（矢量、任意尺寸清晰）；/favicon.ico 是老浏览器与部分爬虫的默认请求，
+    // 少了它线上会持续 404（SEO 审计里的一条 P3）。两者都留着，浏览器按 type/sizes 自选。
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }, { url: '/favicon.ico' }],
     apple: '/apple-touch-icon.png',
   },
   keywords: [

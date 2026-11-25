@@ -1,0 +1,22 @@
+---
+title: 状态、数据与画布
+description: 受控状态与 ref 方法、懒加载、画布缩放与导出。
+---
+
+import { ControlledDemo } from '@/components/demo/controlled'
+import { LazyDemo } from '@/components/demo/lazy'
+import { ViewportDemo } from '@/components/demo/viewport'
+
+受控只靠成对 props；画布是外层包裹组件。
+
+<DemoBlock title="受控状态与 ref 方法" description="<code>expandedKeys</code> / <code>currentKey</code> 成对 props 即受控；ref 上的方法入参普遍接受 key / data 对象 / TreeNode 三种形态。原地改数据后要宿主重渲染或调 <code>refreshData()</code>。" file="components/demo/controlled.tsx">
+  <ControlledDemo />
+</DemoBlock>
+
+<DemoBlock title="懒加载子节点" description="<code>lazy</code> + <code>load(node, resolve, reject)</code>；失败分支与重试、<code>isLeaf</code> 判定。" file="components/demo/lazy.tsx">
+  <LazyDemo />
+</DemoBlock>
+
+<DemoBlock title="画布缩放与平移" description="<code>OkrTreeViewport</code> 包住树：滚轮/捏合/拖拽、<code>fitToScreen</code>、<code>centerNode</code>、<code>exportImage</code>（可选依赖 <code>html-to-image</code> 以注入函数的方式使用）。" file="components/demo/viewport.tsx">
+  <ViewportDemo />
+</DemoBlock>

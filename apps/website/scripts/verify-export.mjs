@@ -104,6 +104,7 @@ for (const p of [
   'sitemap.xml',
   'robots.txt',
   'favicon.svg',
+  'favicon.ico',
   'og.png',
   'logo.svg',
   'logo-dark.svg',

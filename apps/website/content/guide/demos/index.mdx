@@ -1,0 +1,36 @@
+---
+title: Demo 总览
+description: 25 个可交互用例，逐条对应源项目 playground 的演示场景（外加 React 侧新增的虚拟滚动）；源码由构建期读取真实组件文件生成。
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card'
+
+这 25 个用例用来做「特性是否对齐」的人工核对：其中 24 个与源项目 `playground/components/demos/` 一一对应（编号见[开发计划](/docs/start/repo)的阶段 8 契约表），第 25 个「虚拟滚动」是 React 侧随 1.16.0 同批同形移植后新增的。每个用例下面折叠的源码**就是这一块正在跑的组件文件本身**：`<DemoBlock>` 在构建期用 `readFileSync` 读它，再用 shiki 高亮成 HTML，所以文档里的代码与页面里跑着的代码不会各写一份再漂移，浏览器也不为此背一个 shiki。
+
+数据全部来自 `components/demo/data.ts` 的工厂函数——每次调用返回新副本。原因在[数据变更与源数据回写](/docs/guide/data)：`append` / `remove` 这类方法会写回你传进来的源数据，多个用例共用一份会互相污染。
+
+按功能分成七组，每组一页。每组里的用例互相独立，可以只读你关心的那一组。
+
+<Cards>
+<Card href="/docs/guide/demos/layout" title="布局与展开">
+  direction、showCollapsable、默认展开、节点尺寸与类名。
+</Card>
+<Card href="/docs/guide/demos/content" title="节点内容定制">
+  三种内容写法、展开按钮内容、展开动画。
+</Card>
+<Card href="/docs/guide/demos/okr" title="OKR 模式">
+  双树与根对齐、分侧渲染、折叠计数。
+</Card>
+<Card href="/docs/guide/demos/state" title="状态、数据与画布">
+  受控状态与 ref 方法、懒加载、画布缩放与导出。
+</Card>
+<Card href="/docs/guide/demos/filter" title="过滤">
+  单树过滤与 OKR 双树过滤。
+</Card>
+<Card href="/docs/guide/demos/events" title="事件">
+  事件回调签名与 OKR 左右树的事件。
+</Card>
+<Card href="/docs/guide/demos/interaction" title="交互">
+  手风琴、点击展开、复选框、拖拽、SVG 连接线、虚拟滚动。
+</Card>
+</Cards>

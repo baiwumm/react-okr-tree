@@ -1,9 +1,9 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { demoBlock, open, setToggle } from './helpers'
+import { demoBlock, type DemoName, openDemo, setToggle } from './helpers'
 
 /**
  * G8（docs/acceptance.md §9 第 3 条的备注，与源项目 vue3-okr-tree 的 G8 同源）：
- * 文档站 24 个 Demo 的**交互层**断言。
+ * 文档站 25 个 Demo 的**交互层**断言。
  *
  * 与源项目同批同形：全部只读 DOM 状态与计算样式，一张 png 都不截（像素比对归 visual.spec.ts），
  * 每个用例自带 console / pageerror 守卫，把「点下去真的改变了什么」和「不报错」一起钉住。
@@ -43,11 +43,14 @@ const labelsIn = async (root: Locator) =>
   (await root.locator('.org-chart-node-label-inner').allTextContents()).map(t => t.trim())
 
 /**
- * 打开 Demo 总览页并装错误守卫。
+ * 打开某个 Demo 所在的页并装错误守卫。
  * `Failed to load resource` 与 `__next.*.txt` 的 404 是 Next 静态导出的已知预取形态差异
  * （口径与 smoke.spec.ts 完全一致），其余一律算失败。
+ *
+ * 2026-11-25 起 demos 拆成 1 个索引 + 7 组，所以必须知道用例名才能打开对的页
+ * （页由 helpers 的 DEMO_PAGES 表决定，别再写死路径）。
  */
-async function openDemos(page: Page): Promise<string[]> {
+async function openDemos(page: Page, name: DemoName): Promise<string[]> {
   const errors: string[] = []
   let resourceLoadErrors = 0
   let rscPrefetchMisses = 0
@@ -69,7 +72,7 @@ async function openDemos(page: Page): Promise<string[]> {
     }
     errors.push(`[http ${res.status()}] ${res.url()}`)
   })
-  await open(page, '/docs/guide/demos/')
+  await openDemo(page, name)
   const guard = () => errors.length === 0 && resourceLoadErrors === rscPrefetchMisses
   await expect.poll(guard, { message: '页面加载阶段不该有报错或意外 404' }).toBe(true)
   return errors
@@ -81,7 +84,7 @@ const assertClean = async (errors: string[]) => {
 
 test.describe('布局与展开', () => {
   test('basic / horizontal：两种 direction 全展开渲染，树根容器带上方向类', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'basic')
     const vertical = demoBlock(page, 'basic')
     await expect(vertical.locator('.org-chart-node-children.vertical')).toHaveCount(1)
     await expect(vertical.locator('.org-chart-node')).toHaveCount(9)
@@ -100,7 +103,7 @@ test.describe('布局与展开', () => {
   })
 
   test('expand-all / collapsable：默认展开与按开关切换折叠', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'expand-all')
     const all = demoBlock(page, 'expand-all')
     await expect(all.locator('.org-chart-node-children.is-hidden')).toHaveCount(0)
     await expect(all.locator('.org-chart-node-btn.expanded')).toHaveCount(3)
@@ -125,7 +128,7 @@ test.describe('布局与展开', () => {
   test('default-expanded-keys：展开目标键会连带拉起父链，追加一批不收起上一批', async ({
     page,
   }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'default-expanded-keys')
     const block = demoBlock(page, 'default-expanded-keys')
     await block.scrollIntoViewIfNeeded()
 
@@ -144,7 +147,7 @@ test.describe('布局与展开', () => {
 
 test.describe('节点外观与自定义内容', () => {
   test('node-style：尺寸按钮改内联盒尺寸，点击后套上 currentLableClassName', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'node-style')
     const block = demoBlock(page, 'node-style')
     await block.scrollIntoViewIfNeeded()
     const root = nodeByLabel(block, 'xxx科技有有限公司')
@@ -165,7 +168,7 @@ test.describe('节点外观与自定义内容', () => {
   })
 
   test('content-modes：四种写法各自渲染，同传时 renderNode 优先级最高', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'content-modes')
     const block = demoBlock(page, 'content-modes')
     await block.scrollIntoViewIfNeeded()
     const via = block.locator('.org-chart-node-label-inner .text-\\[10px\\]')
@@ -187,7 +190,7 @@ test.describe('节点外观与自定义内容', () => {
   })
 
   test('expand-btn：两种自定义按钮口各出各的内容，showNodeNum 把两者都压掉', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'expand-btn')
     const block = demoBlock(page, 'expand-btn')
     await block.scrollIntoViewIfNeeded()
     const texts = block.locator('.org-chart-node-btn-text')
@@ -221,7 +224,7 @@ test.describe('节点外观与自定义内容', () => {
   test('animation：动画类与时长变量随 prop 走，prefers-reduced-motion 实时掐掉', async ({
     page,
   }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'animation')
     const block = demoBlock(page, 'animation')
     await block.scrollIntoViewIfNeeded()
     const container = block.locator('.org-chart-node > .org-chart-node-children').first()
@@ -252,7 +255,7 @@ test.describe('节点外观与自定义内容', () => {
 
 test.describe('OKR 双向树', () => {
   test('okr-group：组测量在位，alignRoot 开关落到两棵树根节点的状态类', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'okr-group')
     const block = demoBlock(page, 'okr-group')
     await block.scrollIntoViewIfNeeded()
 
@@ -268,7 +271,7 @@ test.describe('OKR 双向树', () => {
   })
 
   test('okr-content：左子树的自定义内容不越界到右子树', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'okr-content')
     const block = demoBlock(page, 'okr-content')
     await block.scrollIntoViewIfNeeded()
 
@@ -290,7 +293,7 @@ test.describe('OKR 双向树', () => {
   })
 
   test('okr-node-num：根两侧圆盘各给出自己那一侧的直接子节点数', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'okr-node-num')
     const block = demoBlock(page, 'okr-node-num')
     await block.scrollIntoViewIfNeeded()
     const root = nodeByLabel(block, 'xxx科技有有限公司')
@@ -313,7 +316,7 @@ test.describe('OKR 双向树', () => {
 
 test.describe('过滤与实例方法', () => {
   test('filter：只留匹配项与父链、清空恢复，方法按钮的读结果与 DOM 一致', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'filter')
     const block = demoBlock(page, 'filter')
     await block.scrollIntoViewIfNeeded()
     const readout = block.locator('p.text-sm').first()
@@ -350,7 +353,7 @@ test.describe('过滤与实例方法', () => {
   })
 
   test('filter-okr：关键字同时筛左右两棵树，再点一次同词等于清空', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'filter-okr')
     const block = demoBlock(page, 'filter-okr')
     await block.scrollIntoViewIfNeeded()
     const status = block.locator('p.text-sm').first()
@@ -388,7 +391,7 @@ test.describe('过滤与实例方法', () => {
   })
 
   test('controlled：受控展开/选中回写读得到，filter 与 remove 走同一份 DOM', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'controlled')
     const block = demoBlock(page, 'controlled')
     await block.scrollIntoViewIfNeeded()
     const readout = block.locator('code').first()
@@ -426,7 +429,7 @@ test.describe('过滤与实例方法', () => {
 
 test.describe('事件', () => {
   test('events：点击 / 右键 / 勾选 / 展开各自进日志，一行一件事', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'events')
     const block = demoBlock(page, 'events')
     await block.scrollIntoViewIfNeeded()
     const finance = nodeByLabel(block, '财务部')
@@ -447,7 +450,7 @@ test.describe('事件', () => {
   })
 
   test('events-okr：左右两棵树的展开收起都触发事件', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'events-okr')
     const block = demoBlock(page, 'events-okr')
     await block.scrollIntoViewIfNeeded()
     const root = nodeByLabel(block, 'xxx科技有有限公司')
@@ -473,7 +476,7 @@ test.describe('事件', () => {
 
 test.describe('懒加载与画布', () => {
   test('lazy：请求数只算一次，首次 reject 后停在折叠态并可重试', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'lazy')
     const block = demoBlock(page, 'lazy')
     await block.scrollIntoViewIfNeeded()
     const requests = block.locator('span').filter({ hasText: '已发起' }).locator('strong')
@@ -520,7 +523,7 @@ test.describe('懒加载与画布', () => {
   test('viewport：滚轮行为三档切换，fitToScreen / centerNode 改写缩放与状态文案，平移只吞一次点击', async ({
     page,
   }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'viewport')
     const block = demoBlock(page, 'viewport')
     const viewport = block.locator('.okr-viewport')
     await viewport.scrollIntoViewIfNeeded()
@@ -594,7 +597,7 @@ test.describe('懒加载与画布', () => {
 
 test.describe('交互档（accordion / expand-on-click-node / checkbox / draggable / connector）', () => {
   test('accordion：程序化 expandAll 不受互斥限制，下一次手动展开才收起同级', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'accordion')
     const block = demoBlock(page, 'accordion')
     await block.scrollIntoViewIfNeeded()
     const root = nodeByLabel(block, 'xxx科技有有限公司')
@@ -619,7 +622,7 @@ test.describe('交互档（accordion / expand-on-click-node / checkbox / draggab
   test('expandOnClickNode：开着点卡片就切换展开，关掉只选中；读跟手显示最近点击', async ({
     page,
   }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'node-click')
     const block = demoBlock(page, 'node-click')
     await block.scrollIntoViewIfNeeded()
     const root = nodeByLabel(block, 'xxx科技有有限公司')
@@ -644,7 +647,7 @@ test.describe('交互档（accordion / expand-on-click-node / checkbox / draggab
   })
 
   test('checkbox：联动半选、checkStrictly 关闭联动、工具条方法按真实数据生效', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'checkbox')
     const block = demoBlock(page, 'checkbox')
     await block.scrollIntoViewIfNeeded()
     const root = nodeByLabel(block, 'xxx科技有有限公司')
@@ -688,7 +691,7 @@ test.describe('交互档（accordion / expand-on-click-node / checkbox / draggab
   })
 
   test('draggable：inner 放置改写层级，allow-drag / allow-drop 各拦一边', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'draggable')
     const block = demoBlock(page, 'draggable')
     await block.scrollIntoViewIfNeeded()
     const root = nodeByLabel(block, 'xxx科技有有限公司')
@@ -735,7 +738,7 @@ test.describe('交互档（accordion / expand-on-click-node / checkbox / draggab
   test('connector：svg 覆盖层随形状改写 path，切回 css 后覆盖层与形状按钮一起退场', async ({
     page,
   }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'connector')
     const block = demoBlock(page, 'connector')
     await block.scrollIntoViewIfNeeded()
     const paths = block.locator('.okr-connector-svg path')
@@ -766,7 +769,7 @@ test.describe('交互档（accordion / expand-on-click-node / checkbox / draggab
 
 test.describe('virtual（1.16.0）', () => {
   test('virtual：窗口化有界渲染，滚动揭示与 key 重挂载切换都不破几何', async ({ page }) => {
-    const errors = await openDemos(page)
+    const errors = await openDemos(page, 'virtual')
     const block = demoBlock(page, 'virtual')
     await block.scrollIntoViewIfNeeded()
     const stat = block.locator('[data-test="stat"]')

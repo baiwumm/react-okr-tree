@@ -1,0 +1,17 @@
+---
+title: 过滤
+description: 单树过滤与 OKR 双树过滤。
+---
+
+import { FilterDemo } from '@/components/demo/filter'
+import { FilterOkrDemo } from '@/components/demo/filter-okr'
+
+过滤同时作用于可见性与连接线，清空输入等于恢复全显。
+
+<DemoBlock title="过滤" description="输入即 <code>handle.filter(value)</code>；<strong>清空输入等于恢复全显</strong>（<code>filterNodeMethod</code> 里 <code>!value</code> 直接返回 <code>true</code>），多根数据也要一起恢复。" file="components/demo/filter.tsx">
+  <FilterDemo />
+</DemoBlock>
+
+<DemoBlock title="OKR 模式过滤" description="一次 <code>filter()</code> 同时作用于左右两棵树，两侧都命中的关键词会一起留下。" file="components/demo/filter-okr.tsx">
+  <FilterOkrDemo />
+</DemoBlock>

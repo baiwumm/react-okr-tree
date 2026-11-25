@@ -1,0 +1,22 @@
+---
+title: OKR 模式
+description: 双树与根对齐、分侧渲染、折叠计数。
+---
+
+import { OkrGroupDemo } from '@/components/demo/okr-group'
+import { OkrContentDemo } from '@/components/demo/okr-content'
+import { OkrNodeNumDemo } from '@/components/demo/okr-node-num'
+
+左树是同一组件的完整镜像，不是另一套 API。
+
+<DemoBlock title="OKR 双树与根对齐" description="两棵 <code>onlyBothTree</code> 的树并排，外面套 <code>OkrTreeGroup</code> 让左右子树宽度取组内最宽者；<code>alignRoot</code> 保证根节点水平坐标不随展开跳位。" file="components/demo/okr-group.tsx">
+  <OkrGroupDemo />
+</DemoBlock>
+
+<DemoBlock title="OKR 下的自定义内容" description="同一份 <code>renderContent</code> 里用 <code>node.isLeftChild</code> 分侧渲染——左树是同一组件的完整镜像，不是另一套 API。" file="components/demo/okr-content.tsx">
+  <OkrContentDemo />
+</DemoBlock>
+
+<DemoBlock title="OKR 折叠计数" description="<code>showNodeNum</code> 在左右两侧圆盘上分别显示可见子节点数（被 <code>filter</code> 隐藏的不计）。" file="components/demo/okr-node-num.tsx">
+  <OkrNodeNumDemo />
+</DemoBlock>

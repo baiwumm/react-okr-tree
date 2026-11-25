@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { demoBlock, demoTree, open, setToggle } from './helpers'
+import { demoBlock, demoTree, open, openDemo, setToggle } from './helpers'
 
 /**
  * 冒烟守卫（对应源项目 tests/visual/smoke.spec.ts）：真实浏览器打开文档站，对关键 Demo
@@ -40,16 +40,21 @@ test('关键 Demo 交互与零控制台报错', async ({ page }) => {
     errors.push(`[http ${res.status()}] ${res.url()}`)
   })
 
-  await open(page, '/docs/guide/demos/')
-
-  // 1. 三种布局都渲染出完整树
-  for (const name of ['basic', 'horizontal', 'okr-group']) {
+  // 1. 三种布局都渲染出完整树（basic / horizontal 在 layout 组，okr-group 在 okr 组）
+  await openDemo(page, 'basic')
+  for (const name of ['basic', 'horizontal']) {
     const count = await demoBlock(page, name).locator('.org-chart-node').count()
     expect(count, `${name} 未渲染节点`).toBeGreaterThan(3)
+  }
+  await openDemo(page, 'okr-group')
+  {
+    const count = await demoBlock(page, 'okr-group').locator('.org-chart-node').count()
+    expect(count, 'okr-group 未渲染节点').toBeGreaterThan(3)
   }
 
   // 2. 收起：先确认全展开态有子节点，点根节点圆盘后子容器进 is-hidden，
   //    但节点仍然挂在 DOM 里（折叠不卸载是既定语义），且 showNodeNum 的数字出现在圆盘上
+  await openDemo(page, 'collapsable')
   const collapsable = demoBlock(page, 'collapsable')
   await collapsable.scrollIntoViewIfNeeded()
   await setToggle(collapsable, 'defaultExpandAll', true)
@@ -64,6 +69,7 @@ test('关键 Demo 交互与零控制台报错', async ({ page }) => {
   expect(await tree.locator('.org-chart-node-btn-text').first().textContent()).toMatch(/\d/)
 
   // 3. 懒加载：首次展开发请求（demo 里 300ms 假延迟），子节点随后出现
+  await openDemo(page, 'lazy')
   const lazy = await demoTree(page, 'lazy')
   const before = await lazy.locator('.org-chart-node').count()
   await lazy.locator('.org-chart-node-btn').first().click()
@@ -72,6 +78,7 @@ test('关键 Demo 交互与零控制台报错', async ({ page }) => {
     .toBeGreaterThan(before)
 
   // 4. 画布：默认工具栏在，点放大让百分比变化
+  await openDemo(page, 'viewport')
   const viewport = demoBlock(page, 'viewport')
   await viewport.scrollIntoViewIfNeeded()
   await expect(viewport.locator('.okr-viewport-toolbar')).toBeVisible()
@@ -84,6 +91,7 @@ test('关键 Demo 交互与零控制台报错', async ({ page }) => {
   // 5. 拖拽：先展开根（未展开时第二个卡片不可见，dragTo 会卡在稳定性检查上）。
   //    拖的是「销售部 → 产品研发部 的 inner 区」，不是根节点——根拖到自己孩子上会被
   //    「禁止放进自身子树」挡掉，那是正确行为，只是验不出这次交互。
+  await openDemo(page, 'draggable')
   const dragWrap = demoBlock(page, 'draggable')
   await dragWrap.locator('.org-chart-node-btn').first().click()
   await page.waitForTimeout(450)

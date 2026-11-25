@@ -82,7 +82,8 @@
     "bench": "node scripts/benchmark.mjs",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
-    "gen:cross-impl": "node scripts/gen-cross-impl-fixture.mjs"
+    "gen:cross-impl": "node scripts/gen-cross-impl-fixture.mjs",
+    "gen:favicon": "node scripts/gen-favicon.mjs"
   },
   "peerDependencies": {
     "html-to-image": "^1.11.0",

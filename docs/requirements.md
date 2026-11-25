@@ -210,7 +210,7 @@ src/
 - 消费者引入方式与源项目一致：`import 'react-okr-tree/dist/style.css'`（库不自动注入样式）。
 - 过渡分两套机制，都要移植：
   1. **展开/收起状态过渡**（主路径）：容器上 `is-animated okr-anim-<name> is-hidden` 类 + 内联 `--okr-anim-duration`，纯 CSS。`animate` 且未开启减弱动效时才加类。
-  2. **子容器挂载/卸载过渡**：源项目用 Vue `<transition>`。React 侧**允许简化**（P2）：不引入新依赖，用与 `useDelayedCollapse` 同构的「延迟卸载」实现；但必须保留源项目两个语义——(a) `animate` 关闭时卸载**同步完成、不依赖 rAF**（后台标签页 rAF 被节流会让卸载挂起）；(b) `height:auto→0` 不可插值，因此收起时先只置 `visibility:hidden` 保持 `animateDuration` 毫秒，再补 `height:0; overflow:hidden`（避免幻影滚动条与下方节点跳位）。
+  2. **子容器挂载/卸载过渡**：源项目用 Vue `<transition>`。React 侧**允许简化**（P2）：不引入新依赖，用与 `useDelayedCollapse` 同构的「延迟卸载」实现（撑高状态必须与收起**同一次提交**生效——放进 effect 会让折叠帧先上屏再被撑回，实测高度序列 `735 → 395 → 735 → 395`，见 acceptance「撑高窗口首帧抖动修复」）；但必须保留源项目两个语义——(a) `animate` 关闭时卸载**同步完成、不依赖 rAF**（后台标签页 rAF 被节流会让卸载挂起）；(b) `height:auto→0` 不可插值，因此收起时先只置 `visibility:hidden` 保持 `animateDuration` 毫秒，再补 `height:0; overflow:hidden`（避免幻影滚动条与下方节点跳位）。
 
 ### R8 SSR / Next.js 兼容
 

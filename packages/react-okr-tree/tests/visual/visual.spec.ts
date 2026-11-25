@@ -215,6 +215,60 @@ test.describe('站内搜索（静态索引）', () => {
   })
 })
 
+test.describe('animate 收起不闪（撑高必须在渲染期跟进）', () => {
+  // 全局配置是 reducedMotion: 'reduce'（截图要求静态），这一组要真的看动画，单独关掉。
+  // 关掉后组件侧 animateOn 才为真，才会走「先撑高、再置 height:0」那条路径。
+  test.use({ reducedMotion: 'no-preference' })
+
+  /**
+   * 锁定 2026-11-20 的修复：`useDelayedCollapse` 原先把 setKeepHeight 放在 effect 里，
+   * effect 在提交并绘制之后才跑，于是收起的那一帧先按 height:0 提交、下一帧才被撑回来，
+   * 高度序列实测是「735 → 395 → 735 → 395」——窗口（连同它下方的页面）抖两下。
+   * 改成渲染期 setState 后，中间态不会上屏，只剩过渡结束那次必然的 height:0。
+   */
+  test('收起时容器高度只掉一次，不出现「塌一下再弹回」', async ({ page }) => {
+    await open(page, '/docs/guide/demos/')
+    const block = demoBlock(page, 'animation')
+    await block.scrollIntoViewIfNeeded()
+    await page.waitForTimeout(250)
+
+    const heights = await page.evaluate(async () => {
+      const scope = document.querySelector('#demo-animation')!
+      const btn = scope.querySelector<HTMLElement>(
+        '.org-chart-node > .org-chart-node-label > .org-chart-node-btn'
+      )!
+      const out: number[] = []
+      const read = () => out.push(Math.round(scope.getBoundingClientRect().height))
+
+      read()
+      btn.click()
+      const start = performance.now()
+      await new Promise<void>(resolve => {
+        const tick = () => {
+          read()
+          if (performance.now() - start < 420) requestAnimationFrame(tick)
+          else resolve()
+        }
+        requestAnimationFrame(tick)
+      })
+      return out
+    })
+
+    const first = heights[0]
+    const last = heights[heights.length - 1]
+    // 前提：确实收起去了（按钮没生效时下面两条会变成空断）
+    expect(last).toBeLessThan(first - 20)
+
+    // 亚像素取整会抖 ±1px，只把「大于 1px 的下降」算一次掉落
+    let drops = 0
+    for (let i = 1; i < heights.length; i++) if (heights[i] < heights[i - 1] - 1) drops += 1
+
+    expect(drops, `高度序列：${heights.join(' ')}`).toBe(1)
+    // 中途不能超过起始高度（effect 撑回时就是这一条被打破）
+    expect(Math.max(...heights), `高度序列：${heights.join(' ')}`).toBeLessThanOrEqual(first + 1)
+  })
+})
+
 test.describe('站点亮色（html 无 .dark）', () => {
   /**
    * 站点自 2026-11-20 起是暗色优先：`<html class="dark">` 直接写进 SSR 产物、

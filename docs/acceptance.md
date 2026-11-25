@@ -244,10 +244,18 @@ Vue 侧的方法清单取 `OkrTree.vue:1077` 的 `defineExpose`、props 取 `:95
 
 **暗黑终端改版批（2026-11-20，视觉层）**：文档站从「白底 + beUI 玻璃卡 + LightRays」换成「近黑底 + 朱红 + hairline」，落地页重写（`Navbar` / `Hero`（规格表 + 数据行 + 真实树终端窗）/ `QuickStart` / `Showcase` / `Features` / `Cta` / `Faq` / `Footer`），文档区随 `--color-fd-*` 映射自动跟随。**库源码、`shared/api.ts`、README 概览、组件 CSS 与 DOM 契约零改动**。可度量的事实：
 
-- 视觉基线：19 名 × 2 平台 = 38 张**全部重生成**（demo 块底色来自页面，换底色即全变）。用例总数仍 **60** 条；`site-dark-*` 反转为 `site-light-*`（站点改成暗色优先后，原「暗色用例」= 现在的默认态）。win32 19 张已入库，`-linux` 19 张待 Snapshot Bootstrap 重生成——**在新基线补齐前 `visual.yml` 会整片红，这是缺基线不是回归**。
+- 视觉基线：19 名 × 2 平台 = 38 张**全部重生成**（demo 块底色来自页面，换底色即全变）。用例总数~~仍 **60** 条~~ → **61** 条（同日修 `useDelayedCollapse` 时新增一条高度序列回归，见下段）；`site-dark-*` 反转为 `site-light-*`（站点改成暗色优先后，原「暗色用例」= 现在的默认态）。win32 19 张已入库，`-linux` 19 张待 Snapshot Bootstrap 重生成——**在新基线补齐前 `visual.yml` 会整片红，这是缺基线不是回归**。
 - 依赖：`+@heroui/react` / `+@heroui/styles` 3.2.7、`theme-switch-animation` 0.4.0 → 0.6.1、删除 `ogl` / `clsx` / `tailwind-merge`（`cn` 改用 HeroUI 导出的那份）与 7 个只服务于旧版落地页的 `components/motion/*`。lockfile 同批更新，CI 的 `--frozen-lockfile` 需同批提交。
 - 体积：文档站 CSS raw 136K → 568K、**gzip 22K → 55K**（HeroUI 的 token 层是全量的）；JS 反而下降（去掉 ogl 与 tilt/scroll 动效，落地页改用一条 CSS `@keyframes reveal`）。
 - HeroUI `Tabs.Indicator` 的位置：必须挂在**每个 `Tabs.Tab` 内部**（RAC 的 `SelectionIndicatorContext` 是 Tab 渲染子节点时提供的）。放在 `Tabs.List` 里会在静态导出预渲染阶段抛 `<SharedElement> must be rendered inside a <SharedElementTransition>`——这是上游 `react-aria-components@1.22.1` 的问题（用它的 `TabList` + `SelectionIndicator` 原样复现同一错误，`dom` 渲染器丢掉了含 `<SharedElementTransition>` 的子节点）。本站按「每个 Tab 各挂一个、只有选中的那个可见」使用它，滑块样式全走 HeroUI 默认（`tabs__indicator`），没有任何自定义类；切换时指示器会从旧 Tab 滑到新 Tab（实测 `x` 92 → 823）。
+
+**撑高窗口首帧抖动修复（2026-11-20，库侧）**：暗色改版后实测发现「Hero 终端窗里那棵树收起时会抖，展示区的不抖」，逐帧读取容器高度得到序列 **735 → 395 → 735 → 395**（终端窗是 279 → 195 → 279 → 195），确认是库的缺陷而非站点样式：`useDelayedCollapse` 把 `setKeepHeight(true)` 放在 `useEffect` 里，而 effect 在提交并绘制之后才跑——收起的那一帧先按 `height: 0` 提交上屏，下一帧才被 effect 撑回来，`animateDuration` 到点后再真正塌下去，于是抖两下。展示区的树没传 `animate`，走不到这条路径，所以看起来正常。
+
+修法：把「撑高」从 effect 挪到**渲染期**跟进（记录上一次提交的展开态，变化时同步 `setKeepHeight`），React 会把这次 setState 合并进同一次提交，中间态不上屏；effect 只保留「到期归零」的定时器。语义不变（D8 的 `visibility:hidden` 撑满 `animateDuration` 后再补 `height:0` 仍照旧），变的是它和收起**同帧**生效。
+
+门禁：`tests/visual/visual.spec.ts` 新增「animate 收起不闪（撑高必须在渲染期跟进）」，在 `reducedMotion: 'no-preference'` 下按帧采样 `#demo-animation` 的高度，断言「大于 1px 的下降只发生一次」且中途不超过起始高度。变异复测：把 hook 还原成 effect 版本 → 高度序列 `735 395 735 … 395`，这条当场红（失败信息里直接打印序列）；恢复后绿。视觉套件 60 → **61** 条，单测 305 条与 `verify:dist` 未动。
+
+**锁步待办**：上游 `vue3-okr-tree` 的 `useDelayedCollapse` 是同一份逻辑（本条从源项目移植时就是这个形状），需要在 Vue 仓同步同一处改动；版本号与 CHANGELOG 条目按锁步约定等上游先发版。
 
 **Linux 基线补齐的可执行路径**（新增 4 张只能在 CI 里生成，Windows 上生成的 `-win32` 文件不能改名冒充）：~~合并后在 GitHub Actions 手动跑~~ → 在 `chore/close-the-books` 分支上手动跑 `Snapshot Bootstrap`（`workflow_dispatch`，即 `.github/workflows/snapshot-bootstrap.yml`；`gh workflow run snapshot-bootstrap.yml --ref chore/close-the-books`）→ 它在 `ubuntu-24.04` 上执行 `pnpm test:visual:update` 并把全部 `*-linux.png` 打成 `linux-snapshots` artifact → `gh run download <RUN_ID> -n linux-snapshots && tar -xzf linux-snapshots/linux-snapshots.tgz -C packages/react-okr-tree` → **`git status --short` 必须只多出上述 4 个文件**；既有 `*-linux.png` 若有 diff，说明系统字体或渲染变了，必须逐张看图后决定，不能盲提交。补齐前 `visual.yml` 会因这 4 条缺 Linux 基线判红（缺基线而不是回归）；**同日已按这条路径补齐并提交，Visual Regression 转绿**。
 

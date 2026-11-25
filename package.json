@@ -3,6 +3,21 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "description": "react-okr-tree monorepo：组件库 packages/react-okr-tree + 文档站 apps/website",
+  "license": "MIT",
+  "author": {
+    "name": "baiwumm",
+    "email": "me@baiwumm.com",
+    "url": "https://www.baiwumm.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/baiwumm/react-okr-tree.git"
+  },
+  "bugs": {
+    "url": "https://github.com/baiwumm/react-okr-tree/issues"
+  },
+  "homepage": "https://react-okr-tree.baiwumm.com",
   "packageManager": "pnpm@11.24.0",
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"

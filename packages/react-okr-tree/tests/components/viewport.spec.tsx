@@ -75,6 +75,10 @@ const viewportElOf = (container: ParentNode) =>
   container.querySelector<HTMLElement>('.okr-viewport') as HTMLElement
 const canvasElOf = (container: ParentNode) =>
   container.querySelector<HTMLElement>('.okr-viewport-canvas') as HTMLElement
+/** jsdom 31（cssstyle）把 `translate(0px, 0px)` 序列化成 `translate(0px)`，浏览器不会。
+ *  断言内联 transform 前把第二参补回来，别让 CSS 序列化差异冒充组件回归。 */
+const transformOf = (container: ParentNode): string =>
+  canvasElOf(container).style.transform.replace(/translate\(([^,)]+)\)/g, 'translate($1, 0px)')
 const contentElOf = (container: ParentNode) =>
   container.querySelector<HTMLElement>('.okr-viewport-content') as HTMLElement
 
@@ -210,7 +214,7 @@ describe('OkrTreeViewport：缩放与复位', () => {
     inAct(() => vp.zoomOut())
     expect(vp.getZoom()).toBe(0.5)
     // 缩放值确实落到了画布的内联变换上（视口尺寸未注入 → 锚点是原点）
-    expect(canvasElOf(container).style.transform).toBe('translate(0px, 0px) scale(0.5)')
+    expect(transformOf(container)).toBe('translate(0px, 0px) scale(0.5)')
   })
 
   it('受控 zoom（对应 v-model:zoom）：方法触发 onZoomChange（钳制后）', () => {
@@ -232,7 +236,7 @@ describe('OkrTreeViewport：缩放与复位', () => {
     })
     expect(vp.getZoom()).toBe(1)
     expect(vp.getOffset()).toEqual({ x: 0, y: 0 })
-    expect(canvasElOf(container).style.transform).toBe('translate(0px, 0px) scale(1)')
+    expect(transformOf(container)).toBe('translate(0px, 0px) scale(1)')
   })
 
   it('fitToScreen 用内容尺寸计算并应用', () => {
@@ -247,7 +251,7 @@ describe('OkrTreeViewport：缩放与复位', () => {
     expect(offset).toEqual({ x: 32, y: 20 })
     expect(offset.x).toBeCloseTo((1280 - 1280 * zoom) / 2)
     expect(offset.y).toBeCloseTo((800 - 800 * zoom) / 2)
-    expect(canvasElOf(container).style.transform).toBe('translate(32px, 20px) scale(0.95)')
+    expect(transformOf(container)).toBe('translate(32px, 20px) scale(0.95)')
   })
 })
 
@@ -286,10 +290,10 @@ describe('OkrTreeViewport：拖拽平移', () => {
     firePointer(el, 'pointerdown', { pointerId: 1, clientX: 100, clientY: 100 })
     firePointer(el, 'pointermove', { pointerId: 1, clientX: 102, clientY: 101 })
     expect(vp.getOffset()).toEqual({ x: 0, y: 0 }) // 未过 3px 阈值不平移
-    expect(canvasElOf(container).style.transform).toBe('translate(0px, 0px) scale(1)')
+    expect(transformOf(container)).toBe('translate(0px, 0px) scale(1)')
     firePointer(el, 'pointermove', { pointerId: 1, clientX: 160, clientY: 140 })
     expect(vp.getOffset()).toEqual({ x: 60, y: 40 })
-    expect(canvasElOf(container).style.transform).toBe('translate(60px, 40px) scale(1)')
+    expect(transformOf(container)).toBe('translate(60px, 40px) scale(1)')
     expect(el.classList.contains('is-panning')).toBe(true) // 过了阈值才挂平移态
     firePointer(el, 'pointerup', { pointerId: 1, clientX: 160, clientY: 140 })
     expect(vp.getOffset()).toEqual({ x: 60, y: 40 }) // 抬手不再挪偏移
@@ -391,7 +395,7 @@ describe('OkrTreeViewport：centerNode 与 exportImage', () => {
     vi.spyOn(target, 'getBoundingClientRect').mockReturnValue(rectOf(1380, 1230, 160, 60))
     expect(await inActAsync(() => vp.centerNode(2))).toBe(true)
     expect(vp.getOffset()).toEqual({ x: 180, y: 140 })
-    expect(canvasElOf(container).style.transform).toBe('translate(180px, 140px) scale(1)')
+    expect(transformOf(container)).toBe('translate(180px, 140px) scale(1)')
     expect(await inActAsync(() => vp.centerNode(999))).toBe(false)
     expect(vp.getOffset()).toEqual({ x: 180, y: 140 }) // 找不到的节点不动画布
   })
@@ -516,7 +520,7 @@ describe('OkrTreeViewport：与 OkrTree 组合', () => {
     firePointer(el, 'pointerup', { pointerId: 1 })
     expect(model.offset).toEqual({ x: 30, y: 20 })
     // 宿主回填的受控值确实驱动了画布变换（而不是只有内部 state 动了）
-    expect(canvasElOf(container).style.transform).toContain('scale(1.2)')
-    expect(canvasElOf(container).style.transform).toContain('translate(30px, 20px)')
+    expect(transformOf(container)).toContain('scale(1.2)')
+    expect(transformOf(container)).toContain('translate(30px, 20px)')
   })
 })

@@ -27,7 +27,8 @@ export async function snap(locator: Locator, name: string, options?: ShotOptions
       throw new Error(
         `${message}\n\n[视觉门禁提示] ${name}：元素自身高度 ${box.height}px、视口顶边 ${box.top}px。` +
           '顶边带小数会让截图裁剪向外取整、比基线多 1 行。先取整该元素上方产生 .5px 的行高或间距，' +
-          '确认渲染无误后再跑 pnpm test:visual:update 重生成基线。\n'
+          '确认渲染无误后再跑 pnpm test:visual:update 重生成基线。\n',
+        { cause: err }
       )
     }
     throw err

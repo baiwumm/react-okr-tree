@@ -42,14 +42,14 @@ jobs:
       run:
         working-directory: packages/react-okr-tree
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           # 文档站的「最后更新」与 sitemap <lastmod> 由 fumadocs 读 git 提交时间生成，
           # actions/checkout 默认 shallow（depth=1）会把所有文件算成同一个最新提交时间，
           # 必需完整历史才能拿到每个 content 文件的真实日期
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v5
         with:
@@ -82,7 +82,7 @@ jobs:
           tar -czf ../../linux-snapshots.tgz --no-recursion -T linux-snapshots.txt
 
       - name: Upload baselines
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: linux-snapshots
           path: linux-snapshots.tgz

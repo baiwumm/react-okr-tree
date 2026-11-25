@@ -199,9 +199,9 @@ test.describe('站内搜索（静态索引）', () => {
     const input = dialog.locator('input').first()
 
     /**
-     * 结果项是 `<button>`（fumadocs 的列表项），不是链接——所以断言要落在「命中项真的
-     * 指向懒加载页」上：点进去看 URL。静态索引是异步拉的，命中判据是「出现该项」，
-     * 不是固定等待。
+     * 结果项是 `role="option"`（fumadocs 16.19 起改成 listbox / option 语义，之前是 button），
+     * 不是链接——所以断言要落在「命中项真的指向懒加载页」上：点进去看 URL。静态索引是异步拉的，
+     * 命中判据是「出现该项」，不是固定等待。
      *
      * 只写 `/懒加载子节点/` 会先命中一条 **card 片段**（索引把文档里那段 `card` 组件源码
      * 也切成了结果项，带 `href: /docs/guide/lazy` 字样），它的点击落点是所在页的锚点
@@ -209,7 +209,7 @@ test.describe('站内搜索（静态索引）', () => {
      * （`react-okr-tree 指南 懒加载子节点`），用这个模式才唯一命中并真的导航过去。
      */
     await input.fill('懒加载')
-    const hit = dialog.getByRole('button', { name: /react-okr-tree.*指南.*懒加载子节点/ })
+    const hit = dialog.getByRole('option', { name: /react-okr-tree.*指南.*懒加载子节点/ })
     await expect(hit).toHaveCount(1, { timeout: 10_000 })
     await hit.click()
     await expect(page).toHaveURL(/\/docs\/guide\/lazy/)
@@ -218,10 +218,10 @@ test.describe('站内搜索（静态索引）', () => {
     await page.keyboard.press('Control+k')
     await expect(dialog).toBeVisible()
     await dialog.locator('input').first().fill('updateKeyChildren')
-    await expect(dialog.getByRole('button', { name: /updateKeyChildren/ }).first()).toBeVisible({
+    await expect(dialog.getByRole('option', { name: /updateKeyChildren/ }).first()).toBeVisible({
       timeout: 10_000,
     })
-    await expect(dialog.getByRole('button', { name: /懒加载子节点/ })).toHaveCount(0)
+    await expect(dialog.getByRole('option', { name: /懒加载子节点/ })).toHaveCount(0)
   })
 })
 

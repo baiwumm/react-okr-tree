@@ -12,3 +12,10 @@ allowBuilds:
   esbuild: true
   '@tailwindcss/oxide': true
   sharp: true
+
+# Dependabot alert #1（GHSA-g3hv-75wg-m249，minimatch < 11.0.1 的 globparts 放大拒绝服务）：
+# 链路上唯一落在漏洞区间的是 @microsoft/api-extractor@7.60.1 依赖的 minimatch@10.2.3，
+# 而 7.60.1 已是当前最新、上游仍 pin 在 10.x。构建期只拿它匹配我们自己的路径（无外部输入），
+# 但仍固定到已修的 11.0.9：api-extractor 只用 minimatch 的同步 CJS 入口，v11 仍导出它。
+overrides:
+  '@microsoft/api-extractor>minimatch': 11.0.9

@@ -11,7 +11,7 @@
 ## 1. 项目概述
 
 - **源项目**：`vue3-okr-tree` —— 组织架构树 / OKR 树组件。核心特性是飞书 OKR 的**根节点左右双向展开**，以及纯 CSS 伪元素绘制的连接线。它本身是 `vue-okr-tree`(Vue 2 v1.0.17) 的复刻 + 增强，已发布形态为组件库 + VitePress 文档站 + Playground。
-- **新项目**：`react-okr-tree`（已发布至 npm，当前 1.17.0），用 React + TypeScript 重新实现，对外 API 与源项目**逐项对齐**（命名按 React 惯例做 kebab-case→camelCase、事件→回调、插槽→render props 的机械转换），视觉与交互效果一致。
+- **新项目**：`react-okr-tree`（已发布至 npm，当前 1.17.1），用 React + TypeScript 重新实现，对外 API 与源项目**逐项对齐**（命名按 React 惯例做 kebab-case→camelCase、事件→回调、插槽→render props 的机械转换），视觉与交互效果一致。
 - **许可与复用**：两个仓库同为 MIT、同一作者。`src/lib/okr-tree/style.css` 与 `model/transition.css` **原样平移**（不改内容、只改包名注释），这是刻意的工程决策而非偷懒，理由见 3.7。
 - **交付物**：
   1. 可发布的 React 组件库：ESM + CJS + UMD + `dist/style.css` + 类型声明；

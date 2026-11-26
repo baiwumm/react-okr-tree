@@ -2,6 +2,18 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。**版本号自 1.13.0 起与 [`vue3-okr-tree`](https://github.com/baiwumm/vue3-okr-tree) 锁步发布**：同号即同一功能面，版本决策（patch / minor / major）永远先在上游发生，本包跟随——上游发版后对齐移植，无对应变更也发同号空版本；特性面差异只发生在机制层（见 `docs/requirements.md` 第 8 节的 D1–D12）。
 
+## 1.17.1（2026-11-26）
+
+跟随上游 `vue3-okr-tree` 1.17.1 同号发布（锁步约定）。上游本批是依赖基线、CI 与文档的收口，不影响本包运行时代码；本包自己的改动如下。
+
+- **社区健康文件与协作规范**：新增 `CODE_OF_CONDUCT.md` / `CONTRIBUTING.md` / `SECURITY.md` 三件套（GitHub 直接识别为社区健康文件），issue 模板（bug / feature）、PR 模板（按本仓门禁列真源检查：API 三处同步、CSS/DOM 契约、与 Vue 仓锁步、AI trailer）、Discussions 模板（Q&A / Ideas，模板里的「不做清单」指向 requirements §10）。
+- **依赖更新改走 Dependabot**：移除从未开过 PR 的 `renovate.json`，改用 `.github/dependabot.yml`——两套并存只会重复提 PR。
+- **依赖统一升级一批**：原先 8 个 Dependabot PR 合并成一次跑（逐个合 PR 必然互撞 pnpm-lock）——motion 14 / jsdom 31 / eslint 10（含 `@eslint/js` 与 `eslint-plugin-react-hooks` 7）/ lucide-react 1.x / `@testing-library/jest-dom` 8 / react 19.3.1 / theme-switch-animation 0.7.0；GitHub Actions 同步升到 checkout@v7 / pnpm/action-setup@v6 / upload-artifact@v7。随升级修三处行为变化：jsdom 31 不再序列化 `transform` 的第二参（断言侧补回 `'0px'`）、fumadocs 16.19 的搜索结果角色是 `role="option"`（视觉用例同步）、`tests/visual/snap.ts` 补 `cause` 以满足 `preserve-caught-error`。
+- **两条 CodeQL 告警收口**：`js/incomplete-url-substring-sanitization` 改用 `URL.origin` 比对（`apps/website/scripts/verify-export.mjs`）；`js/redos` 先剥注释再断言动态 import，正则收窄（`packages/react-okr-tree/tests/model/framework-boundary.spec.ts`）。
+- **依赖安全口径**：`minimatch` 固定到 11.0.9，收掉 Dependabot alert #1（GHSA-g3hv-75wg-m249，globparts 放大拒绝服务）——链路上唯一落在漏洞区间的是 `@microsoft/api-extractor@7.60.1` 依赖的 `minimatch@10.2.3`，而 7.60.1 已是当前最新、上游仍 pin 10.x，只能用 override 顶上去（pnpm 11 不再读 `package.json` 的 `pnpm.overrides`，写在 `pnpm-workspace.yaml` 的 `overrides` 段，且只覆盖这一条父链，不动 eslint 那条已在 11.0.9 的）。
+- **活文档改为只写当前事实**：requirements / acceptance / perf 三份活文档去掉全部「~~旧~~ → 新 + 日期」叙述与审计日期，只留当前事实；`AGENTS.md` 的文档体例一节同步改写；根与 `apps/website` 的 `package.json` 补 description / license / author / repository / bugs / homepage。
+- **两处误判的验收缺口更正**：拖拽悬停的渲染计数判据早已在 `cf839cf` 补上（`local-update.spec.tsx` 四条覆盖点击 / 键盘 / 拖拽，勾选父节点的全量 bump 是设计），验收台账 §9 第 9 条与 R3 改 ✅；`react-hooks/immutability` / `react-hooks/set-state-in-render` 与 React 自带开发期告警对可变 store 设计的实际覆盖边界一并写进台账，避免后人重试现成方案。
+
 ## 1.17.0（2026-11-04）
 
 跟随上游 `vue3-okr-tree` 1.17.0 同号发布（锁步约定）。上游本批的 peer 下限收紧（`vue >=3.5.2`）不影响本包，本包 peer 仍为 `react >=18.2.0`；其余条目为同批的文档、API 表与视觉收口。

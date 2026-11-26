@@ -11,7 +11,7 @@ body:
     attributes:
       label: 库版本
       description: 安装的 react-okr-tree 版本（`npm ls react-okr-tree` 可查），以及 React 版本。
-      placeholder: react-okr-tree 1.17.0 · react 19.2.0
+      placeholder: react-okr-tree 1.17.1 · react 19.2.0
     validations:
       required: true
   - type: dropdown

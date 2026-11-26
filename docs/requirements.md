@@ -469,7 +469,7 @@ Demo 数据集：移植 `playground/data.ts`（`baseData` / `keyedData` / `conte
 
 | 依赖                                   | 锁定版本 | 说明                                                                                                                                                                                               |
 | -------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `next`                                 | 16.2.6   | App Router；`(home)` 路由组放落地页、`docs/[[...slug]]` 放文档                                                                                                                                     |
+| `next`                                 | 16.4.6   | App Router；`(home)` 路由组放落地页、`docs/[[...slug]]` 放文档                                                                                                                                     |
 | `react` / `react-dom`                  | 19.3.1   | 文档站锁 19.x，与库的 peer 下限 18.2 互不干涉（见 11.1）                                                                                                                                           |
 | `fumadocs-core` / `fumadocs-ui`        | 16.19.7  | `RootProvider`（i18n `zh-CN` + theme）、`DocsLayout` / `DocsPage` / `DocsBody` / `DocsTitle` / `DocsDescription`、内置 `CodeBlock`（shiki）                                                        |
 | `fumadocs-mdx`                         | 15.6.4   | `source.config.ts` 的 `defineDocs({ dir: 'content' })`；`next.config.mjs` 用 `createMDX()` 包装                                                                                                    |
